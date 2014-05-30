@@ -1,5 +1,5 @@
-Websocket Client (and Server…) for PHP
-======================================
+Websocket Client for PHP
+========================
 
 [![Build Status](https://travis-ci.org/Textalk/websocket-php.png)](https://travis-ci.org/Textalk/websocket-php)
 

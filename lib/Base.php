@@ -3,7 +3,8 @@
 namespace WebSocket;
 
 class Base {
-  protected $socket, $is_connected = false;
+  protected $socket, $is_connected = false, $is_closing = false, $last_opcode = null,
+    $close_status = null;
 
   protected static $opcodes = array(
     'text'   => 1,
@@ -13,11 +14,15 @@ class Base {
     'pong'   => 10,
   );
 
-  public function send($payload, $opcode = 'text', $masked = false) {
-    if (!$this->is_connected) $this->connect();
+  public function getLastOpcode()  { return $this->last_opcode;  }
+  public function getCloseStatus() { return $this->close_status; }
+  public function isConnected()    { return $this->is_connected; }
 
-    if (!in_array($opcode, array('text', 'binary'))) {
-      throw new BadOpcodeException('Only opcodes "text" and "binary" are supported in send.');
+  public function send($payload, $opcode = 'text', $masked = false) {
+    if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
+
+    if (!in_array($opcode, array_keys(self::$opcodes))) {
+      throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
     }
 
     // Binary string for header.
@@ -92,18 +97,10 @@ class Base {
       throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
     }
     $opcode = $opcode_ints[$opcode_int];
-
-    if ($opcode === 'close') {
-      fclose($this->socket);
-      $this->is_connected = false;
-
-      // Throw ConnectionException?
-      return false;
-    }
+    $this->last_opcode = $opcode;
 
     // Masking?
     $mask = (boolean) (ord($data[1]) >> 7);  // Bit 0 in byte 1
-    if ($mask) echo "Using masking! ", self::sprintB($data), "\n";
 
     // Payload length
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
@@ -116,18 +113,57 @@ class Base {
     // Get masking key.
     if ($mask) $masking_key = $this->read(4);
 
-    $data = $this->read($payload_length);
+    // Get the actual payload, if any (might not be for e.g. close frames.
+    if ($payload_length > 0) {
+      $data = $this->read($payload_length);
 
-    if (!$mask) return $data;
+      if ($mask) {
+        // Unmask payload.
+        $payload = '';
+        for ($i = 0; $i < $payload_length; $i++) $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+      }
+      else $payload = $data;
+    }
 
-    // Unmask payload.
-    $payload = '';
-    for ($i = 0; $i < $payload_length; $i++) $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+    if ($opcode === 'close') {
+      // Get the close status.
+      if ($payload_length >= 2) {
+        $status_bin = $payload[0] . $payload[1];
+        $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
+        $this->close_status = $status;
+        $payload = substr($payload, 2);
+      }
+
+      if ($this->is_closing) $this->is_closing = false; // A close response, all done.
+      else $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
+
+      // And close the socket.
+      fclose($this->socket);
+      $this->is_connected = false;
+    }
+
     return $payload;
   }
 
+  /**
+   * Tell the socket to close.
+   *
+   * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
+   * @param string  $message A closing message, max 125 bytes.
+   */
+  public function close($status = 1000, $message = 'ttfn') {
+    $status_binstr = sprintf('%016b', $status);
+    $status_str = '';
+    foreach (str_split($status_binstr, 8) as $binstr) $status_str .= chr(bindec($binstr));
+    $this->send($status_str . $message, 'close', true);
+
+    $this->is_closing = true;
+    $response = $this->receive(); // Receiving a close frame will close the socket now.
+
+    return $response;
+  }
+
   protected function write($data) {
-    //echo "Writing: ”{$data}”\n";
     $written = fwrite($this->socket, $data);
 
     if ($written < strlen($data)) {
@@ -157,7 +193,6 @@ class Base {
       }
       $data .= $buffer;
     }
-    //echo "Read: ”{$data}”\n";
     return $data;
   }
 

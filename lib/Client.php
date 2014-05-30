@@ -21,7 +21,10 @@ class Client extends Base {
   }
 
   public function __destruct() {
-    if ($this->socket) fclose($this->socket);
+    if ($this->socket) {
+      if (get_resource_type($this->socket) === 'stream') fclose($this->socket);
+      $this->socket = null;
+    }
   }
 
   /**

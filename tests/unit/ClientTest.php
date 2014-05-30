@@ -12,7 +12,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $pidfile    = 'build/server.pid';
     exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 
-    usleep(10000);
+    usleep(500000);
     self::$port = trim(file_get_contents($outputfile));
 
     echo "Server started with port: ", self::$port, "\n";

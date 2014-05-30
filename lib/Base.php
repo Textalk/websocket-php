@@ -18,6 +18,14 @@ class Base {
   public function getCloseStatus() { return $this->close_status; }
   public function isConnected()    { return $this->is_connected; }
 
+  public function setTimeout($timeout) {
+    $this->options['timeout'] = $timeout;
+
+    if ($this->socket && get_resource_type($this->socket) === 'stream') {
+      stream_set_timeout($this->socket);
+    }
+  }
+
   public function send($payload, $opcode = 'text', $masked = false) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 

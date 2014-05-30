@@ -173,10 +173,9 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
    * @dataProvider timeoutProvider
    */
   public function testTimeout($timeout) {
-    $start_time = microtime(true);
-
     try {
       $ws = new Client('ws://example.org:1111', array('timeout' => $timeout));
+      $start_time = microtime(true);
       $ws->send('foo');
     }
     catch (WebSocket\ConnectionException $e) {
@@ -192,6 +191,23 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
       array(1),
       array(2),
     );
+  }
+
+  public function testChangeTimeout() {
+    $timeout = 1;
+
+    try {
+      $ws = new Client('ws://example.org:1111', array('timeout' => 5));
+      $ws->setTimeout($timeout);
+      $start_time = microtime(true);
+      $ws->send('foo');
+    }
+    catch (WebSocket\ConnectionException $e) {
+      $this->assertLessThan($timeout + 0.2, microtime(true) - $start_time);
+      $this->assertGreaterThan($timeout - 0.2, microtime(true) - $start_time);
+    }
+
+    if (!isset($e)) $this->fail('Should have timed out and thrown a ConnectionException');
   }
 
   public function testSocketCloseOnDestroy() {}

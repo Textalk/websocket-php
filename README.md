@@ -2,6 +2,7 @@ Websocket Client for PHP
 ========================
 
 [![Build Status](https://travis-ci.org/Textalk/websocket-php.png)](https://travis-ci.org/Textalk/websocket-php)
+[![Coverage Status](https://coveralls.io/repos/Textalk/websocket-php/badge.png)](https://coveralls.io/r/Textalk/websocket-php)
 
 This package mainly contains a WebSocket client for PHP.
 

@@ -2,7 +2,6 @@
     "name": "textalk/websocket",
     "description": "WebSocket client and server",
     "license": "MIT",
-    "version": "0.1.0",
     "authors": [
         {
             "name": "Fredrik Liljegren",

@@ -21,7 +21,8 @@ class Server extends Base {
     }
   }
 
-  public function getPort() { return $this->port; }
+  public function getPort() { return $this->port;         }
+  public function getPath() { return $this->request_path; }
 
   public function accept() {
     $this->socket = stream_socket_accept($this->listening);
@@ -43,6 +44,15 @@ class Server extends Base {
       $metadata = stream_get_meta_data($this->socket);
     } while ($buffer !== '' && !feof($this->socket) && $metadata['unread_bytes'] > 0);
 
+    if (!preg_match('/GET (.*) HTTP\//mUi', $request, $matches)) {
+      throw new ConnectionException("No GET in request:\n" . $request);
+    }
+    $get_uri = trim($matches[1]);
+    $uri_parts = parse_url($get_uri);
+
+    $this->request_path = $uri_parts['path'];
+    /// @todo Get query and fragment as well.
+
     if (!preg_match('#Sec-WebSocket-Key:\s(.*)$#mUi', $request, $matches)) {
       throw new ConnectionException("Client had no Key in upgrade request:\n" . $request);
     }
@@ -51,7 +61,6 @@ class Server extends Base {
 
     /// @todo Validate key length and base 64...
     $response_key = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-
 
     $header = "HTTP/1.1 101 Switching Protocols\r\n"
       . "Upgrade: websocket\r\n"

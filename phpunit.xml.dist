@@ -30,7 +30,13 @@
       <log type="coverage-clover" target="build/logs/clover.xml"/>
     </logging>
     <filter>
+      <blacklist>
+        <file>lib/Server.php</file>
+      </blacklist>
       <whitelist addUncoveredFilesFromWhitelist="true">
+        <exclude>
+          <file>lib/Server.php</file>
+        </exclude>
         <directory suffix=".php">lib/</directory>
       </whitelist>
     </filter>

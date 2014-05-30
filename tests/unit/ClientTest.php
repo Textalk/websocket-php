@@ -23,8 +23,48 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $ws->send('exit');
   }
 
+  public function setup() {
+    // Setup server side coverage catching
+    $this->test_id = rand();
+  }
+
+  protected function getCodeCoverage() {
+    $files = glob(dirname(dirname(dirname(__FILE__))) . '/build/tmp/' . $this->test_id . '.*');
+
+    if (count($files) > 1) {
+      echo "We have more than one coverage file...\n";
+    }
+
+    foreach ($files as $file) {
+      $buffer = file_get_contents($file);
+      $coverage_data = unserialize($buffer);
+    }
+
+    if (!isset($coverage_data)) return array();
+
+    return $coverage_data;
+  }
+
+  public function run(PHPUnit_Framework_TestResult $result = NULL) {
+    if ($result === NULL) {
+      $result = $this->createResult();
+    }
+
+    $this->collectCodeCoverageInformation = $result->getCollectCodeCoverageInformation();
+
+    parent::run($result);
+
+    if ($this->collectCodeCoverageInformation) {
+      $result->getCodeCoverage()->append(
+        $this->getCodeCoverage(), $this
+      );
+    }
+
+    return $result;
+  }
+
   public function testInstantiation() {
-    $ws = new Client('ws://localhost:' . self::$port);
+    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
 
     $this->assertInstanceOf('WebSocket\Client', $ws);
   }
@@ -33,7 +73,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
    * @dataProvider dataLengthProvider
    */
   public function testEcho($data_length) {
-    $ws = new Client('ws://localhost:' . self::$port);
+    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
 
     $greeting = '';
     for ($i = 0; $i < $data_length; $i++) $greeting .= 'o';
@@ -56,7 +96,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
   }
 
   public function testOrgEchoTwice() {
-    $ws = new Client('ws://localhost:' . self::$port);
+    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
 
     for ($i = 0; $i < 2; $i++) {
       $greeting = 'Hello WebSockets ' . $i;
@@ -64,6 +104,25 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
       $response = $ws->receive();
       $this->assertEquals($greeting, $response);
     }
+  }
+
+  public function testClose() {
+    // Start a NEW dedicated server for this test
+    $cmd = 'php examples/echoserver.php';
+    $outputfile = 'build/serveroutput_close.txt';
+    $pidfile    = 'build/server_close.pid';
+    exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+
+    usleep(500000);
+    $port = trim(file_get_contents($outputfile));
+
+    $ws = new Client('ws://localhost:' . $port . '/' . $this->test_id);
+    $ws->send('exit');
+    $response = $ws->receive();
+
+    $this->assertEquals('ttfn', $response);
+    $this->assertEquals(1000, $ws->getCloseStatus());
+    $this->assertFalse($ws->isConnected());
   }
 
   /**
@@ -102,7 +161,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
   }
 
   public function testMaskedEcho() {
-    $ws = new Client('ws://localhost:' . self::$port);
+    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
 
     $greeting = 'Hello WebSockets';
     $ws->send($greeting, 'text', true);
@@ -139,7 +198,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
 
   /**
    * @expectedException WebSocket\BadOpcodeException
-   * @expectedExceptionMessage Only opcodes "text" and "binary" are supported in send.
+   * @expectedExceptionMessage Bad opcode 'bad_opcode'
    */
   public function testSendBadOpcode() {
     $ws = new Client('ws://echo.websocket.org');

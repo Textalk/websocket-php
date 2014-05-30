@@ -1,6 +1,8 @@
 Websocket Client (and Server…) for PHP
 ======================================
 
+[![Build Status](https://travis-ci.org/Textalk/websocket-php.png)](https://travis-ci.org/Textalk/websocket-php)
+
 This package mainly contains a WebSocket client for PHP.
 
 I made it because the state of other WebSocket clients I could found was either very poor

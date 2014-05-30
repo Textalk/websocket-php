@@ -23,8 +23,8 @@ Install
 # Install composer
 curl -s http://getcomposer.org/installer | php
 
-# Generate vendor/autload.php (and install dev-dependendencies)
-php composer.phar install
+# Generate vendor/autload.php
+php composer.phar install --no-dev
 
 ```
 

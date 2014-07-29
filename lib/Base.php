@@ -22,7 +22,7 @@ class Base {
     $this->options['timeout'] = $timeout;
 
     if ($this->socket && get_resource_type($this->socket) === 'stream') {
-      stream_set_timeout($this->socket);
+      stream_set_timeout($this->socket, $timeout);
     }
   }
 

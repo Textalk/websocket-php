@@ -34,6 +34,8 @@ class Client extends Base {
     $url_parts = parse_url($this->socket_uri);
     $scheme    = $url_parts['scheme'];
     $host      = $url_parts['host'];
+    $user      = isset($url_parts['user']) ? $url_parts['user'] : '';
+    $pass      = isset($url_parts['pass']) ? $url_parts['pass'] : '';
     $port      = isset($url_parts['port']) ? $url_parts['port'] : ($scheme === 'wss' ? 443 : 80);
     $path      = isset($url_parts['path']) ? $url_parts['path'] : '/';
     $query     = isset($url_parts['query'])    ? $url_parts['query'] : '';
@@ -60,9 +62,15 @@ class Client extends Base {
       );
     }
 
+    $authHeader = '';
+    if ($user || $pass) {
+        $authHeader = 'Authorization: Basic ' . base64_encode($user . ':' . $pass) . "\r\n";
+    }
+
     $key = self::generateKey();
     $header =
       "GET " . $path_with_query . " HTTP/1.1\r\n"
+      . $authHeader
       . (array_key_exists('origin', $this->options) ? "Origin: {$this->options['origin']}\r\n" : '')
       . "Host: " . $host . "\r\n"
       . "Sec-WebSocket-Key: " . $key . "\r\n"
@@ -84,8 +92,9 @@ class Client extends Base {
     /// @todo Handle version switching
 
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
+      $address = $scheme . '://' . $host . '/' . $path_with_query;
       throw new ConnectionException(
-        "Connection to '{$this->socket_uri}' failed: Server sent invalid upgrade response:\n"
+        "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
         . $response
       );
     }

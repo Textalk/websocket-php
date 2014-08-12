@@ -86,6 +86,8 @@ class Base {
   }
 
   public function receive() {
+    if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
+
     // Just read the main fragment information first.
     $data = $this->read(2);
 

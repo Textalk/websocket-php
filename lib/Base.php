@@ -26,7 +26,7 @@ class Base {
     }
   }
 
-  public function send($payload, $opcode = 'text', $masked = false) {
+  public function send($payload, $opcode = 'text', $masked = true) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
     if (!in_array($opcode, array_keys(self::$opcodes))) {

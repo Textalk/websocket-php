@@ -6,8 +6,14 @@ namespace WebSocket;
  * This is just a simple stub for testing the Client.  It could be made useful…
  */
 class Server extends Base {
-  protected $addr, $port, $listening;
+  protected $addr, $port, $listening, $request;
 
+  /**
+   * @param array   $options
+   *   Associative array containing:
+   *   - timeout:  Set the socket timeout in seconds.  Default: 5
+   *   - port:     Chose port for listening.
+   */
   public function __construct(array $options = array()) {
     $this->port = isset($options['port']) ? $options['port'] : 8000;
     $this->options = $options;
@@ -21,8 +27,19 @@ class Server extends Base {
     }
   }
 
-  public function getPort() { return $this->port;         }
-  public function getPath() { return $this->request_path; }
+  public function getPort()    { return $this->port;         }
+  public function getPath()    { return $this->request_path; }
+  public function getRequest() { return $this->request;      }
+
+  public function getHeader($header) {
+    foreach ($this->request as $row) {
+      if (stripos($row, $header) !== false) {
+        list($headername, $headervalue) = explode(":", $row);
+        return trim($headervalue);
+      }
+    }
+    return null;
+  }
 
   public function accept() {
     $this->socket = stream_socket_accept($this->listening);
@@ -42,7 +59,7 @@ class Server extends Base {
       $buffer = stream_get_line($this->socket, 1024, "\r\n");
       $request .= $buffer . "\n";
       $metadata = stream_get_meta_data($this->socket);
-    } while ($buffer !== '' && !feof($this->socket) && $metadata['unread_bytes'] > 0);
+    } while (!feof($this->socket) && $metadata['unread_bytes'] > 0);
 
     if (!preg_match('/GET (.*) HTTP\//mUi', $request, $matches)) {
       throw new ConnectionException("No GET in request:\n" . $request);
@@ -50,6 +67,7 @@ class Server extends Base {
     $get_uri = trim($matches[1]);
     $uri_parts = parse_url($get_uri);
 
+    $this->request = explode("\n", $request);
     $this->request_path = $uri_parts['path'];
     /// @todo Get query and fragment as well.
 
@@ -66,7 +84,6 @@ class Server extends Base {
       . "Upgrade: websocket\r\n"
       . "Connection: Upgrade\r\n"
       . "Sec-WebSocket-Accept: $response_key\r\n"
-      . "Sec-WebSocket-Protocol: chat\r\n"
       . "\r\n";
 
     $this->write($header);

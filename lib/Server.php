@@ -6,7 +6,7 @@ namespace WebSocket;
  * This is just a simple stub for testing the Client.  It could be made useful…
  */
 class Server extends Base {
-  protected $addr, $port, $listening;
+  protected $addr, $port, $listening, $request;
 
   public function __construct(array $options = array()) {
     $this->port = isset($options['port']) ? $options['port'] : 8000;
@@ -21,8 +21,19 @@ class Server extends Base {
     }
   }
 
-  public function getPort() { return $this->port;         }
-  public function getPath() { return $this->request_path; }
+  public function getPort()    { return $this->port;         }
+  public function getPath()    { return $this->request_path; }
+  public function getRequest() { return $this->request;      }
+
+  public function getHeader($header) {
+    foreach ($this->request as $row) {
+      if (stripos($row, $header) !== false) {
+        list($headername, $headervalue) = explode(":", $row);
+        return trim($headervalue);
+      }
+    }
+    return null;
+  }
 
   public function accept() {
     $this->socket = stream_socket_accept($this->listening);
@@ -50,6 +61,7 @@ class Server extends Base {
     $get_uri = trim($matches[1]);
     $uri_parts = parse_url($get_uri);
 
+    $this->request = explode("\n", $request);
     $this->request_path = $uri_parts['path'];
     /// @todo Get query and fragment as well.
 
@@ -62,11 +74,14 @@ class Server extends Base {
     /// @todo Validate key length and base 64...
     $response_key = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
+    /// @todo Negotiate sub protocol.
+    $subprotocol = null;
+
     $header = "HTTP/1.1 101 Switching Protocols\r\n"
       . "Upgrade: websocket\r\n"
       . "Connection: Upgrade\r\n"
       . "Sec-WebSocket-Accept: $response_key\r\n"
-      . "Sec-WebSocket-Protocol: chat\r\n"
+      . ($subprotocol ? "Sec-WebSocket-Protocol: $subprotocol\r\n" : '')
       . "\r\n";
 
     $this->write($header);

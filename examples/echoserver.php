@@ -10,7 +10,7 @@ require(dirname(dirname(__FILE__)) . '/vendor/autoload.php');
 
 use WebSocket\Server;
 
-$server = new Server(array('timeout' => 2));
+$server = new Server(array('timeout' => 200));
 
 echo $server->getPort(), "\n";
 
@@ -34,7 +34,12 @@ while ($connection = $server->accept()) {
         exit;
       }
 
-      $server->send($message);
+      if ($auth = $server->getHeader('Authorization')) {
+        $server->send("$auth - $message", 'text', false);
+      }
+      else {
+        $server->send($message, 'text', false);
+      }
     }
   }
   catch (WebSocket\ConnectionException $e) {

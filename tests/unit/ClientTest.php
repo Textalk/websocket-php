@@ -84,6 +84,20 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals($greeting, $response);
   }
 
+  public function testBasicAuth() {
+    $user = 'JohnDoe';
+    $pass = 'eoDnhoJ';
+
+    $ws = new Client("ws://$user:$pass@localhost:" . self::$port . '/' . $this->test_id);
+
+    $greeting = 'Howdy';
+    $ws->send($greeting);
+    $response = $ws->receive();
+
+    // Echo server will prefix basic authed requests.
+    $this->assertEquals("Basic Sm9obkRvZTplb0RuaG9K - $greeting", $response);
+  }
+
   public function dataLengthProvider() {
     return array(
       array(8),

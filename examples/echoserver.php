@@ -35,7 +35,10 @@ while ($connection = $server->accept()) {
         exit;
       }
 
-      if ($auth = $server->getHeader('Authorization')) {
+      if ($message === 'Dump headers') {
+        $server->send(implode("\r\n", $server->getRequest()));
+      }
+      elseif ($auth = $server->getHeader('Authorization')) {
         $server->send("$auth - $message", 'text', false);
       }
       else {

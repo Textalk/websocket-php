@@ -5,4 +5,4 @@ update:
 	composer.phar update
 
 test:
-	./vendor/bin/phpunit
+	./vendor/bin/phpunit --strict

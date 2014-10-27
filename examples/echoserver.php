@@ -10,6 +10,7 @@ require(dirname(dirname(__FILE__)) . '/vendor/autoload.php');
 
 use WebSocket\Server;
 
+// Setting timeout to 200 seconds to make time for all tests and manual runs.
 $server = new Server(array('timeout' => 200));
 
 echo $server->getPort(), "\n";

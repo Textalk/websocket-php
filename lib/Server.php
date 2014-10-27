@@ -80,14 +80,10 @@ class Server extends Base {
     /// @todo Validate key length and base 64...
     $response_key = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
-    /// @todo Negotiate sub protocol.
-    $subprotocol = null;
-
     $header = "HTTP/1.1 101 Switching Protocols\r\n"
       . "Upgrade: websocket\r\n"
       . "Connection: Upgrade\r\n"
       . "Sec-WebSocket-Accept: $response_key\r\n"
-      . ($subprotocol ? "Sec-WebSocket-Protocol: $subprotocol\r\n" : '')
       . "\r\n";
 
     $this->write($header);

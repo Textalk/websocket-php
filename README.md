@@ -18,16 +18,18 @@ of Connections and check them periodically for new data, send something to them 
 process handling one connection.  But, I have no use for that right now.  (Actually, I would
 suggest a language with better asynchronous handling than PHP for that.)
 
-Install
--------
-```bash
-# Install composer
-curl -s http://getcomposer.org/installer | php
+Installing
+----------
 
-# Generate vendor/autload.php
-php composer.phar install --no-dev
+Preferred way to install is with [Composer](https://getcomposer.org/).
 
-```
+Just add
+
+    "require": {
+      "textalk/websocket": "1.0.*"
+    }
+
+in your projects composer.json.
 
 Client usage:
 -------------
@@ -41,3 +43,22 @@ $client->send("Hello WebSocket.org!");
 
 echo $client->receive(); // Will output 'Hello WebSocket.org!'
 ```
+
+Developer install
+-----------------
+
+Development depends on php, php-curl and php-xdebug.
+
+```bash
+# Will get composer, install dependencies and run tests
+make test
+```
+
+Changelog
+---------
+
+1.0.0
+
+ * Release as production ready.
+ * Adding option to set/override headers.
+ * Supporting basic authentication from user:pass in URL.

@@ -6,11 +6,11 @@ class Client extends Base {
   protected $socket_uri;
 
   /**
-   * @param string  $socket   A ws/wss-URI
+   * @param string  $uri      A ws/wss-URI
    * @param array   $options
    *   Associative array containing:
-   *   - origin:       Used to set the origin header.
    *   - timeout:      Set the socket timeout in seconds.  Default: 5
+   *   - headers:      Associative array of headers to set/override.
    */
   public function __construct($uri, $options = array()) {
     $this->options = $options;
@@ -62,24 +62,48 @@ class Client extends Base {
       );
     }
 
-    $auth_header = ($user || $pass)
-      ? 'Authorization: Basic ' . base64_encode($user . ':' . $pass) . "\r\n" : '';
+    // Set timeout on the stream as well.
+    stream_set_timeout($this->socket, $this->options['timeout']);
 
+    // Generate the WebSocket key.
     $key = self::generateKey();
+
+    // Default headers (using lowercase for simpler array_merge below).
+    $headers = array(
+      'host'                  => $host,
+      'user-agent'            => 'websocket-client-php',
+      'connection'            => 'Upgrade',
+      'upgrade'               => 'websocket',
+      'sec-websocket-key'     => $key,
+      'sec-websocket-version' => '13',
+    );
+
+    // Handle basic authentication.
+    if ($user || $pass) {
+      $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass) . "\r\n";
+    }
+
+    // Deprecated way of adding origin (use headers instead).
+    if (isset($this->options['origin'])) $headers['origin'] = $this->options['origin'];
+
+    // Add and override with headers from options.
+    if (isset($this->options['headers'])) {
+      $headers = array_merge($headers, array_change_key_case($this->options['headers']));
+    }
+
     $header =
       "GET " . $path_with_query . " HTTP/1.1\r\n"
-      . $auth_header
-      . (array_key_exists('origin', $this->options) ? "Origin: {$this->options['origin']}\r\n" : '')
-      . "Host: " . $host . "\r\n"
-      . "Sec-WebSocket-Key: " . $key . "\r\n"
-      . "User-Agent: websocket-client-php\r\n"
-      . "Upgrade: websocket\r\n"
-      . "Connection: Upgrade\r\n"
-      . "Sec-WebSocket-Version: 13\r\n"
-      . "\r\n";
+      . implode(
+        "\r\n", array_map(
+          function($key, $value) { return "$key: $value"; }, array_keys($headers), $headers
+        )
+      )
+      . "\r\n\r\n";
 
+    // Send headers.
     $this->write($header);
 
+    // Get server response.
     $response = '';
     do {
       $buffer = stream_get_line($this->socket, 1024, "\r\n");
@@ -89,6 +113,7 @@ class Client extends Base {
 
     /// @todo Handle version switching
 
+    // Validate response.
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
       $address = $scheme . '://' . $host . '/' . $path_with_query;
       throw new ConnectionException(

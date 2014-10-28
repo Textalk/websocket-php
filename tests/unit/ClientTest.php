@@ -224,14 +224,70 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     if (!isset($e)) $this->fail('Should have timed out and thrown a ConnectionException');
   }
 
-  public function testSocketCloseOnDestroy() {}
+  public function testDefaultHeaders() {
+    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
+
+    $ws->send('Dump headers');
+
+    $this->assertRegExp(
+      "/GET \/$this->test_id HTTP\/1.1\r\n"
+      . "host: localhost\r\n"
+      . "user-agent: websocket-client-php\r\n"
+      . "connection: Upgrade\r\n"
+      . "upgrade: websocket\r\n"
+      . "sec-websocket-key: .*\r\n"
+      . "sec-websocket-version: 13\r\n/",
+      $ws->receive()
+    );
+  }
+
+  public function testUserAgentOverride() {
+    $ws = new Client(
+      'ws://localhost:' . self::$port . '/' . $this->test_id,
+      array('headers' => array('User-Agent' => 'Deep thought'))
+    );
+
+    $ws->send('Dump headers');
+
+    $this->assertRegExp(
+      "/GET \/$this->test_id HTTP\/1.1\r\n"
+      . "host: localhost\r\n"
+      . "user-agent: Deep thought\r\n"
+      . "connection: Upgrade\r\n"
+      . "upgrade: websocket\r\n"
+      . "sec-websocket-key: .*\r\n"
+      . "sec-websocket-version: 13\r\n/",
+      $ws->receive()
+    );
+  }
+
+  public function testAddingHeaders() {
+    $ws = new Client(
+      'ws://localhost:' . self::$port . '/' . $this->test_id,
+      array('headers' => array('X-Cooler-Than-Beeblebrox' => 'Slartibartfast'))
+    );
+
+    $ws->send('Dump headers');
+
+    $this->assertRegExp(
+      "/GET \/$this->test_id HTTP\/1.1\r\n"
+      . "host: localhost\r\n"
+      . "user-agent: websocket-client-php\r\n"
+      . "connection: Upgrade\r\n"
+      . "upgrade: websocket\r\n"
+      . "sec-websocket-key: .*\r\n"
+      . "sec-websocket-version: 13\r\n"
+      . "x-cooler-than-beeblebrox: Slartibartfast\r\n/",
+      $ws->receive()
+    );
+  }
 
   /**
    * @expectedException WebSocket\BadOpcodeException
    * @expectedExceptionMessage Bad opcode 'bad_opcode'
    */
   public function testSendBadOpcode() {
-    $ws = new Client('ws://echo.websocket.org');
+    $ws = new Client('ws://localhost:' . self::$port);
     $ws->send('foo', 'bad_opcode');
   }
 }

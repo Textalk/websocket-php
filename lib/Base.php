@@ -112,6 +112,8 @@ class Base {
     // Masking?
     $mask = (boolean) (ord($data[1]) >> 7);  // Bit 0 in byte 1
 
+    $payload = "";
+    
     // Payload length
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
     if ($payload_length > 125) {

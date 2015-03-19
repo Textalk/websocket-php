@@ -231,7 +231,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
 
     $this->assertRegExp(
       "/GET \/$this->test_id HTTP\/1.1\r\n"
-      . "host: localhost\r\n"
+      . "host: localhost:".self::$port."\r\n"
       . "user-agent: websocket-client-php\r\n"
       . "connection: Upgrade\r\n"
       . "upgrade: websocket\r\n"
@@ -251,7 +251,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
 
     $this->assertRegExp(
       "/GET \/$this->test_id HTTP\/1.1\r\n"
-      . "host: localhost\r\n"
+      . "host: localhost:".self::$port."\r\n"
       . "user-agent: Deep thought\r\n"
       . "connection: Upgrade\r\n"
       . "upgrade: websocket\r\n"
@@ -271,7 +271,7 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
 
     $this->assertRegExp(
       "/GET \/$this->test_id HTTP\/1.1\r\n"
-      . "host: localhost\r\n"
+      . "host: localhost:".self::$port."\r\n"
       . "user-agent: websocket-client-php\r\n"
       . "connection: Upgrade\r\n"
       . "upgrade: websocket\r\n"

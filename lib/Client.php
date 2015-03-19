@@ -70,7 +70,7 @@ class Client extends Base {
 
     // Default headers (using lowercase for simpler array_merge below).
     $headers = array(
-      'host'                  => $host,
+      'host'                  => $host . ":" . $port,
       'user-agent'            => 'websocket-client-php',
       'connection'            => 'Upgrade',
       'upgrade'               => 'websocket',

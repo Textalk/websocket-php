@@ -115,7 +115,7 @@ class Client extends Base {
 
     // Validate response.
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
-      $address = $scheme . '://' . $host . '/' . $path_with_query;
+      $address = $scheme . '://' . $host . $path_with_query;
       throw new ConnectionException(
         "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
         . $response

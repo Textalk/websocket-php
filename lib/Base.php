@@ -42,16 +42,6 @@ class Base {
     // record the length of the payload
     $payload_length = strlen($payload);
 
-    // if the payload is less than or equal to a single fragment, then
-    // just send the single fragment
-    if ($payload_length <= $this->options['fragment_size']) {
-      return $this->send_fragment(true, $payload, $opcode, $masked);
-    }
-
-    //
-    // we are sending a huge payload
-    //
-
     $fragment_cursor = 0;
     // while we have data to send
     while ($payload_length > $fragment_cursor) {
@@ -126,6 +116,8 @@ class Base {
 
   public function receive() {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
+
+    $this->huge_payload = '';
 
     $response = null;
     while (is_null($response)) $response = $this->receive_fragment();
@@ -207,7 +199,6 @@ class Base {
 
     // if this is not the last fragment, then we need to save the payload
     if (!$final) {
-      $this->huge_payload = ($this->huge_payload ?: '');
       $this->huge_payload .= $payload;
       return null;
     }

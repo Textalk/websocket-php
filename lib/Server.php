@@ -17,7 +17,7 @@ class Server extends Base {
   public function __construct(array $options = array()) {
 
     // the fragment size
-    if (!array_key_exists('fragment_size', $options)) $options['fragment_size'] = 512;
+    if (!array_key_exists('fragment_size', $options)) $options['fragment_size'] = 4096;
 
 
     $this->port = isset($options['port']) ? $options['port'] : 8000;

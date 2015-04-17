@@ -19,8 +19,11 @@ while ($connection = $server->accept()) {
   $test_id = $server->getPath();
   $test_id = substr($test_id, 1);
 
-  xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
-  PHPUnit_Extensions_SeleniumCommon_ExitHandler::init();
+  if (function_exists('xdebug_get_code_coverage'))
+    xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+
+  if (class_exists('PHPUnit_Extensions_SeleniumCommon_ExitHandler'))
+    PHPUnit_Extensions_SeleniumCommon_ExitHandler::init();
 
   try {
     while(1) {
@@ -56,6 +59,9 @@ exit;
 
 
 function save_coverage_data($test_id) {
+
+  if (!function_exists('xdebug_get_code_coverage')) return;
+
   $data = xdebug_get_code_coverage();
   xdebug_stop_code_coverage();
 

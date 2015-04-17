@@ -127,6 +127,14 @@ class Base {
   public function receive() {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
+    $response = null;
+    while (is_null($response)) $response = $this->receive_fragment();
+
+    return $response;
+  }
+
+  public function receive_fragment() {
+
     // Just read the main fragment information first.
     $data = $this->read(2);
 
@@ -201,7 +209,7 @@ class Base {
     if (!$final) {
       $this->huge_payload = ($this->huge_payload ?: '');
       $this->huge_payload .= $payload;
-      return;
+      return null;
     }
     // this is the last fragment, and we are processing a huge_payload
     else if ($this->huge_payload) {

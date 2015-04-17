@@ -125,7 +125,7 @@ class Base {
     return $response;
   }
 
-  public function receive_fragment() {
+  protected function receive_fragment() {
 
     // Just read the main fragment information first.
     $data = $this->read(2);

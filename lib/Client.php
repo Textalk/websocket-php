@@ -17,6 +17,9 @@ class Client extends Base {
 
     if (!array_key_exists('timeout', $this->options)) $this->options['timeout'] = 5;
 
+    // the fragment size
+    if (!array_key_exists('fragment_size', $this->options)) $this->options['fragment_size'] = 512;
+
     $this->socket_uri = $uri;
   }
 

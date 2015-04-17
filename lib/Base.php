@@ -186,10 +186,11 @@ class Base {
         $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
         $this->close_status = $status;
         $payload = substr($payload, 2);
+
+        if (!$this->is_closing) $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
       }
 
       if ($this->is_closing) $this->is_closing = false; // A close response, all done.
-      else $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
 
       // And close the socket.
       fclose($this->socket);

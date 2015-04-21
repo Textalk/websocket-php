@@ -29,8 +29,12 @@ class Base {
 
   public function setFragmentSize($fragment_size) {
     $this->options['fragment_size'] = $fragment_size;
+    return $this;
   }
 
+  public function getFragmentSize() {
+    return $this->options['fragment_size'];
+  }
 
   public function send($payload, $opcode = 'text', $masked = true) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!

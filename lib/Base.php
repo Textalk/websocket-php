@@ -27,7 +27,7 @@ class Base {
     }
   }
 
-  public function setFragmantSize($fragment_size) {
+  public function setFragmentSize($fragment_size) {
     $this->options['fragment_size'] = $fragment_size;
   }
 

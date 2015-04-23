@@ -11,10 +11,10 @@ class ClientTracker extends Client {
 	public $fragment_count;
 
 	public function __construct($uri, $options = array()) {
-		$this->fragment_count = [
+		$this->fragment_count = array(
 			'send' => 0,
 			'receive' => 0,
-		];
+		);
 
 		return parent::__construct($uri, $options);
 	}

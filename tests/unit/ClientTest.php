@@ -1,6 +1,7 @@
 <?php
 
 use WebSocket\Client;
+use WebSocket\Tests\ClientTracker;
 
 class WebSocketTest extends PHPUnit_Framework_TestCase {
   protected static $port;
@@ -70,10 +71,27 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
   }
 
   /**
+   * Data provider for testEcho
+   *
+   * @return  array of data
+   */
+  public function dataLengthProvider() {
+    return array(
+      array(8),
+      array(126),
+      array(127),
+      array(128),
+      array(65000),
+      array(66000),
+    );
+  }
+
+  /**
    * @dataProvider dataLengthProvider
    */
   public function testEcho($data_length) {
-    $ws = new Client('ws://localhost:' . self::$port . '/' . $this->test_id);
+    $ws = new ClientTracker('ws://localhost:' . self::$port . '/' . $this->test_id);
+    $ws->setFragmentSize(rand(10,512));
 
     $greeting = '';
     for ($i = 0; $i < $data_length; $i++) $greeting .= 'o';
@@ -82,6 +100,8 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $response = $ws->receive();
 
     $this->assertEquals($greeting, $response);
+    $this->assertEquals($ws->fragment_count['send'], ceil($data_length / $ws->getFragmentSize()));
+    $this->assertEquals($ws->fragment_count['receive'], ceil($data_length / 4096)); // the server sends with size 4096
   }
 
   public function testBasicAuth() {
@@ -96,17 +116,6 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
 
     // Echo server will prefix basic authed requests.
     $this->assertEquals("Basic Sm9obkRvZTplb0RuaG9K - $greeting", $response);
-  }
-
-  public function dataLengthProvider() {
-    return array(
-      array(8),
-      array(126),
-      array(127),
-      array(128),
-      array(65000),
-      array(66000),
-    );
   }
 
   public function testOrgEchoTwice() {
@@ -289,5 +298,11 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
   public function testSendBadOpcode() {
     $ws = new Client('ws://localhost:' . self::$port);
     $ws->send('foo', 'bad_opcode');
+  }
+
+  public function testSetFragmentSize() {
+    $ws = new Client('ws://localhost:' . self::$port);
+    $size = $ws->setFragmentSize(123)->getFragmentSize();
+    $this->assertSame(123, $size);
   }
 }

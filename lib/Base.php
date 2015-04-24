@@ -4,14 +4,15 @@ namespace WebSocket;
 
 class Base {
   protected $socket, $is_connected = false, $is_closing = false, $last_opcode = null,
-    $close_status = null;
+    $close_status = null, $huge_payload = null;
 
   protected static $opcodes = array(
-    'text'   => 1,
-    'binary' => 2,
-    'close'  => 8,
-    'ping'   => 9,
-    'pong'   => 10,
+    'continuation' => 0,
+    'text'         => 1,
+    'binary'       => 2,
+    'close'        => 8,
+    'ping'         => 9,
+    'pong'         => 10,
   );
 
   public function getLastOpcode()  { return $this->last_opcode;  }
@@ -26,6 +27,15 @@ class Base {
     }
   }
 
+  public function setFragmentSize($fragment_size) {
+    $this->options['fragment_size'] = $fragment_size;
+    return $this;
+  }
+
+  public function getFragmentSize() {
+    return $this->options['fragment_size'];
+  }
+
   public function send($payload, $opcode = 'text', $masked = true) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
@@ -33,13 +43,36 @@ class Base {
       throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
     }
 
+    // record the length of the payload
+    $payload_length = strlen($payload);
+
+    $fragment_cursor = 0;
+    // while we have data to send
+    while ($payload_length > $fragment_cursor) {
+      // get a fragment of the payload
+      $sub_payload = substr($payload, $fragment_cursor, $this->options['fragment_size']);
+
+      // advance the cursor
+      $fragment_cursor += $this->options['fragment_size'];
+
+      // is this the final fragment to send?
+      $final = $payload_length <= $fragment_cursor;
+
+      // send the fragment
+      $this->send_fragment($final, $sub_payload, $opcode, $masked);
+
+      // all fragments after the first will be marked a continuation
+      $opcode = 'continuation';
+    }
+
+  }
+
+  protected function send_fragment($final, $payload, $opcode, $masked) {
     // Binary string for header.
     $frame_head_binstr = '';
 
-
     // Write FIN, final fragment bit.
-    $final = true; /// @todo Support HUGE payloads.
-    $frame_head_binstr .= $final ? '1' : '0';
+    $frame_head_binstr .= (bool) $final ? '1' : '0';
 
     // RSV 1, 2, & 3 false and unused.
     $frame_head_binstr .= '000';
@@ -88,6 +121,16 @@ class Base {
   public function receive() {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
+    $this->huge_payload = '';
+
+    $response = null;
+    while (is_null($response)) $response = $this->receive_fragment();
+
+    return $response;
+  }
+
+  protected function receive_fragment() {
+
     // Just read the main fragment information first.
     $data = $this->read(2);
 
@@ -107,13 +150,17 @@ class Base {
       throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
     }
     $opcode = $opcode_ints[$opcode_int];
-    $this->last_opcode = $opcode;
+
+    // record the opcode if we are not receiving a continutation fragment
+    if ($opcode !== 'continuation') {
+      $this->last_opcode = $opcode;
+    }
 
     // Masking?
     $mask = (boolean) (ord($data[1]) >> 7);  // Bit 0 in byte 1
 
-    $payload = "";
-    
+    $payload = '';
+
     // Payload length
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
     if ($payload_length > 125) {
@@ -131,7 +178,6 @@ class Base {
 
       if ($mask) {
         // Unmask payload.
-        $payload = '';
         for ($i = 0; $i < $payload_length; $i++) $payload .= ($data[$i] ^ $masking_key[$i % 4]);
       }
       else $payload = $data;
@@ -144,14 +190,27 @@ class Base {
         $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
         $this->close_status = $status;
         $payload = substr($payload, 2);
+
+        if (!$this->is_closing) $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
       }
 
       if ($this->is_closing) $this->is_closing = false; // A close response, all done.
-      else $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
 
       // And close the socket.
       fclose($this->socket);
       $this->is_connected = false;
+    }
+
+    // if this is not the last fragment, then we need to save the payload
+    if (!$final) {
+      $this->huge_payload .= $payload;
+      return null;
+    }
+    // this is the last fragment, and we are processing a huge_payload
+    else if ($this->huge_payload) {
+      // sp we need to retreive the whole payload
+      $payload = $this->huge_payload .= $payload;
+      $this->huge_payload = null;
     }
 
     return $payload;

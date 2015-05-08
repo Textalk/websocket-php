@@ -1,15 +1,11 @@
 <?php
 
 /**
- * This file is part of Websocket PHP
  * Copyright (C) 2014, 2015 Textalk
  * Copyright (C) 2015 Patrick McCarren - added testSetFragmentSize
  *
- * Websocket PHP is free software: Permission to use, copy, modify, and/or distribute this software
- * for any purpose with or without fee is hereby granted, provided that the above copyright notice
- * and this permission notice appear in all copies.
- *
- * https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
+ * This file is part of Websocket PHP and is free software under the ISC License.
+ * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
  */
 
 use WebSocket\Client;

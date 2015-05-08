@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * This file is part of Websocket PHP
+ * Copyright (C) 2014, 2015 Textalk
+ * Copyright (C) 2015 Patrick McCarren - added payload fragmentation for huge payloads
+ *
+ * Websocket PHP is free software: Permission to use, copy, modify, and/or distribute this software
+ * for any purpose with or without fee is hereby granted, provided that the above copyright notice
+ * and this permission notice appear in all copies.
+ *
+ * https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
+ */
+
 namespace WebSocket;
 
 class Base {

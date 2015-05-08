@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * This file is part of Websocket PHP
+ * Copyright (C) 2015 Patrick McCarren
+ *
+ * Websocket PHP is free software: Permission to use, copy, modify, and/or distribute this software
+ * for any purpose with or without fee is hereby granted, provided that the above copyright notice
+ * and this permission notice appear in all copies.
+ *
+ * https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
+ */
+
 namespace WebSocket\Tests;
 
 use WebSocket\Client;

@@ -259,8 +259,8 @@ class Base {
       if ($buffer === false) {
         $metadata = stream_get_meta_data($this->socket);
         throw new ConnectionException(
-          'Broken frame, read ' . strlen($payload_data) . ' of stated '
-          . $payload_length . ' bytes.  Stream state: '
+          'Broken frame, read ' . strlen($data) . ' of stated '
+          . $length . ' bytes.  Stream state: '
           . json_encode($metadata)
         );
       }

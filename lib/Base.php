@@ -191,6 +191,11 @@ class Base {
       else $payload = $data;
     }
 
+    // if we received a ping, send a pong
+    if ($opcode === 'ping') {
+      $this->send('pong', 'pong', true);
+    }
+
     if ($opcode === 'close') {
       // Get the close status.
       if ($payload_length >= 2) {

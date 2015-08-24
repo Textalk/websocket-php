@@ -63,8 +63,14 @@ class Client extends Base {
 
     $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
 
+    $context = stream_context_create(array(
+        'ssl' => array(
+            'verify_peer' => true,
+            'allow_self_signed'=> true
+        )
+    ));
     // Open the socket.  @ is there to supress warning that we will catch in check below instead.
-    $this->socket = @fsockopen($host_uri, $port, $errno, $errstr, $this->options['timeout']);
+    $this->socket = @stream_socket_client($host_uri.':'.$port, $errno, $errstr, $this->options['timeout'], STREAM_CLIENT_CONNECT, $context);
 
     if ($this->socket === false) {
       throw new ConnectionException(

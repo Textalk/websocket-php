@@ -114,12 +114,7 @@ class Client extends Base {
     $this->write($header);
 
     // Get server response.
-    $response = '';
-    do {
-      $buffer = stream_get_line($this->socket, 1024, "\r\n");
-      $response .= $buffer . "\n";
-      $metadata = stream_get_meta_data($this->socket);
-    } while (!feof($this->socket) && $metadata['unread_bytes'] > 0);
+    $response = stream_get_contents ($this->socket);
 
     /// @todo Handle version switching
 

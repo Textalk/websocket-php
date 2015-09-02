@@ -119,7 +119,11 @@ class Client extends Base {
       $buffer = stream_get_line($this->socket, 1024, "\r\n");
       $response .= $buffer . "\n";
       $metadata = stream_get_meta_data($this->socket);
-    } while (!feof($this->socket) && $metadata['unread_bytes'] > 0);
+
+      if (strlen($buffer) > 0 && (feof($this->socket) || $metadata['unread_bytes'] === 0)) {
+        throw new ConnectionException('Premature ending of header: ' . json_encode($response));
+      }
+    } while (strlen($buffer) > 0); // Read until the empty line that ends the header.
 
     /// @todo Handle version switching
 

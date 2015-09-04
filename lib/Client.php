@@ -113,17 +113,8 @@ class Client extends Base {
     // Send headers.
     $this->write($header);
 
-    // Get server response.
-    $response = '';
-    do {
-      $buffer = stream_get_line($this->socket, 1024, "\r\n");
-      $response .= $buffer . "\n";
-      $metadata = stream_get_meta_data($this->socket);
-
-      if (strlen($buffer) > 0 && (feof($this->socket) || $metadata['unread_bytes'] === 0)) {
-        throw new ConnectionException('Premature ending of header: ' . json_encode($response));
-      }
-    } while (strlen($buffer) > 0); // Read until the empty line that ends the header.
+    // Get server response header (terminated with double CR+LF).
+    $response = stream_get_line($this->socket, 1024, "\r\n\r\n");
 
     /// @todo Handle version switching
 

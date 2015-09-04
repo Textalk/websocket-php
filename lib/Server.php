@@ -54,9 +54,11 @@ class Server extends Base {
   }
 
   public function accept() {
-    $this->socket = stream_socket_accept($this->listening);
-
-    if (array_key_exists('timeout', $this->options)) {
+    if (empty($this->options['timeout'])) {
+      $this->socket = stream_socket_accept($this->listening);
+    }
+    else {
+      $this->socket = stream_socket_accept($this->listening, $this->options['timeout']);
       stream_set_timeout($this->socket, $this->options['timeout']);
     }
 

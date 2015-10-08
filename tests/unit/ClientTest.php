@@ -320,9 +320,9 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     stream_context_set_option($context, 'ssl', 'verify_host', true);
     stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
 
-    $options = [
+    $options = array(
       'context' => $context
-    ];
+    );
 
     $ws = new Client('ws://localhost:' . self::$port, $options);
     $ws->send('foo');
@@ -336,9 +336,9 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
   public function testSetInvalidStreamContextOptions() {
     $context = false;
 
-    $options = [
+    $options = array(
         'context' => $context
-    ];
+    );
 
     $ws = new Client('ws://localhost:' . self::$port, $options);
     $ws->send('foo');

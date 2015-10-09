@@ -16,6 +16,7 @@ class Client extends Base {
    * @param string  $uri      A ws/wss-URI
    * @param array   $options
    *   Associative array containing:
+   *   - context:      Set the stream context. Default: empty context
    *   - timeout:      Set the socket timeout in seconds.  Default: 5
    *   - headers:      Associative array of headers to set/override.
    */
@@ -63,8 +64,29 @@ class Client extends Base {
 
     $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
 
+    // Set the stream context options if they're already set in the config
+    if(isset($this->options['context'])) {
+      // Suppress the error since we'll catch it below
+      if(@get_resource_type($this->options['context']) === 'stream-context') {
+        $context = $this->options['context'];
+      } else {
+        throw new \InvalidArgumentException(
+            "Stream context in \$options['context'] isn't a valid context"
+        );
+      }
+    } else {
+      $context = stream_context_create();
+    }
+
     // Open the socket.  @ is there to supress warning that we will catch in check below instead.
-    $this->socket = @fsockopen($host_uri, $port, $errno, $errstr, $this->options['timeout']);
+    $this->socket = @stream_socket_client(
+        $host_uri . ':' . $port,
+        $errno,
+        $errstr,
+        $this->options['timeout'],
+        STREAM_CLIENT_CONNECT,
+        $context
+    );
 
     if ($this->socket === false) {
       throw new ConnectionException(

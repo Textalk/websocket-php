@@ -361,4 +361,34 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $size = $ws->setFragmentSize(123)->getFragmentSize();
     $this->assertSame(123, $size);
   }
+
+  public function testSetStreamContextOptions() {
+    $context = stream_context_create();
+    stream_context_set_option($context, 'ssl', 'verify_peer', true);
+    stream_context_set_option($context, 'ssl', 'verify_host', true);
+    stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
+
+    $options = array(
+      'context' => $context
+    );
+
+    $ws = new Client('ws://localhost:' . self::$port, $options);
+    $ws->send('foo');
+    $this->assertTrue(get_resource_type($ws->options['context']) === 'stream-context');
+  }
+
+  /**
+   * @expectedException \InvalidArgumentException
+   * @expectedExceptionMessage Stream context in $options['context'] isn't a valid context
+   */
+  public function testSetInvalidStreamContextOptions() {
+    $context = false;
+
+    $options = array(
+        'context' => $context
+    );
+
+    $ws = new Client('ws://localhost:' . self::$port, $options);
+    $ws->send('foo');
+  }
 }

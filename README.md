@@ -78,6 +78,34 @@ See COPYING.
 Changelog
 ---------
 
+1.2.0
+
+ * Adding stream context options (to set e.g. SSL `allow_self_signed`).
+
+1.1.2
+
+ * Fixed error message on broken frame.
+
+1.1.1
+
+ * Adding license information.
+
+1.1.0
+
+ * Supporting huge payloads.
+
+1.0.3
+
+ * Bugfix: Correcting address in error-message
+
+1.0.2
+
+ * Bugfix: Add port in request-header.
+
+1.0.1
+
+ * Fixing a bug from empty payloads.
+
 1.0.0
 
  * Release as production ready.

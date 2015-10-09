@@ -60,6 +60,7 @@ License ([ISC](http://en.wikipedia.org/wiki/ISC_license))
 
 Copyright (C) 2014, 2015 Textalk
 Copyright (C) 2015 Patrick McCarren - added payload fragmentation for huge payloads
+Copyright (C) 2015 Ignas Bernotas - added stream context options
 
 Websocket PHP is free software: Permission to use, copy, modify, and/or distribute this software
 for any purpose with or without fee is hereby granted, provided that the above copyright notice and

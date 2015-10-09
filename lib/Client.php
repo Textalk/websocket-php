@@ -65,27 +65,29 @@ class Client extends Base {
     $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
 
     // Set the stream context options if they're already set in the config
-    if(isset($this->options['context'])) {
+    if (isset($this->options['context'])) {
       // Suppress the error since we'll catch it below
-      if(@get_resource_type($this->options['context']) === 'stream-context') {
+      if (@get_resource_type($this->options['context']) === 'stream-context') {
         $context = $this->options['context'];
-      } else {
+      }
+      else {
         throw new \InvalidArgumentException(
-            "Stream context in \$options['context'] isn't a valid context"
+          "Stream context in \$options['context'] isn't a valid context"
         );
       }
-    } else {
+    }
+    else {
       $context = stream_context_create();
     }
 
     // Open the socket.  @ is there to supress warning that we will catch in check below instead.
     $this->socket = @stream_socket_client(
-        $host_uri . ':' . $port,
-        $errno,
-        $errstr,
-        $this->options['timeout'],
-        STREAM_CLIENT_CONNECT,
-        $context
+      $host_uri . ':' . $port,
+      $errno,
+      $errstr,
+      $this->options['timeout'],
+      STREAM_CLIENT_CONNECT,
+      $context
     );
 
     if ($this->socket === false) {

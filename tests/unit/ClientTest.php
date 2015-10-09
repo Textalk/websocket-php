@@ -362,7 +362,10 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
     $this->assertSame(123, $size);
   }
 
-  public function testSetStreamContextOptions() {
+  /**
+   * @dataProvider serverPortProvider
+   */
+  public function testSetStreamContextOptions($port) {
     $context = stream_context_create();
     stream_context_set_option($context, 'ssl', 'verify_peer', true);
     stream_context_set_option($context, 'ssl', 'verify_host', true);
@@ -372,23 +375,27 @@ class WebSocketTest extends PHPUnit_Framework_TestCase {
       'context' => $context
     );
 
-    $ws = new Client('ws://localhost:' . self::$port, $options);
+    $ws = new Client('ws://localhost:' . self::$ports[$port], $options);
+    // Do a send to touch the context using code in connect.  We can't really assert that the
+    // stream has the correct context, but we make sure it doesn't crash.
     $ws->send('foo');
     $this->assertTrue(get_resource_type($ws->options['context']) === 'stream-context');
   }
 
   /**
+   * @dataProvider serverPortProvider
+   *
    * @expectedException \InvalidArgumentException
    * @expectedExceptionMessage Stream context in $options['context'] isn't a valid context
    */
-  public function testSetInvalidStreamContextOptions() {
+  public function testSetInvalidStreamContextOptions($port) {
     $context = false;
 
     $options = array(
-        'context' => $context
+      'context' => $context
     );
 
-    $ws = new Client('ws://localhost:' . self::$port, $options);
+    $ws = new Client('ws://localhost:' . self::$ports[$port], $options);
     $ws->send('foo');
   }
 }

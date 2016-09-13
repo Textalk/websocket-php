@@ -75,53 +75,61 @@ class Base {
 
   }
 
+  private const FIRST_BYTE_MASK       = 0b10001111;
+  private const SECOND_BYTE_MASK      = 0b11111111;
+
+  private const FINAL_BIT             = 0b10000000;
+  private const OPCODE_MASK           = 0b00001111;
+
+  private const MASKED_BIT            = 0b10000000;
+  private const PAYLOAD_MASK          = 0b01111111;
+
+  private const PAYLOAD_LENGTH_16BIT  = 0b01111110;
+  private const PAYLOAD_LENGTH_64BIT  = 0b01111111;
+
+
   protected function send_fragment($final, $payload, $opcode, $masked) {
-    // Binary string for header.
-    $frame_head_binstr = '';
 
-    // Write FIN, final fragment bit.
-    $frame_head_binstr .= (bool) $final ? '1' : '0';
+    $frame = [0, 0];
 
-    // RSV 1, 2, & 3 false and unused.
-    $frame_head_binstr .= '000';
-
-    // Opcode rest of the byte.
-    $frame_head_binstr .= sprintf('%04b', self::$opcodes[$opcode]);
-
-    // Use masking?
-    $frame_head_binstr .= $masked ? '1' : '0';
+    // Set final bit
+    $frame[0] |= self::FINAL_BIT * !!$final;
+    // Set correct opcode
+    $frame[0] |= self::OPCODE_MASK & self::$opcodes[$opcode];
+    // Reset reserved bytes
+    $frame[0] &= self::FIRST_BYTE_MASK;
 
     // 7 bits of payload length...
     $payload_length = strlen($payload);
     if ($payload_length > 65535) {
-      $frame_head_binstr .= decbin(127);
-      $frame_head_binstr .= sprintf('%064b', $payload_length);
+      $length_opcode = self::PAYLOAD_LENGTH_64BIT;
+      array_push($frame, pack('J', $payload_length));
     }
     elseif ($payload_length > 125) {
-      $frame_head_binstr .= decbin(126);
-      $frame_head_binstr .= sprintf('%016b', $payload_length);
+      $length_opcode = self::PAYLOAD_LENGTH_16BIT;
+      array_push($frame, pack('n', $payload_length));
     }
     else {
-      $frame_head_binstr .= sprintf('%07b', $payload_length);
+      $length_opcode = $payload_length;
     }
 
-    $frame = '';
+    // Set masked mode
+    $frame[1] |= self::MASKED_BIT * !!$masked;
+    $frame[1] |= self::PAYLOAD_MASK & $length_opcode;
 
-    // Write frame head to frame.
-    foreach (str_split($frame_head_binstr, 8) as $binstr) $frame .= chr(bindec($binstr));
 
     // Handle masking
     if ($masked) {
       // generate a random mask:
       $mask = '';
       for ($i = 0; $i < 4; $i++) $mask .= chr(rand(0, 255));
-      $frame .= $mask;
+      array_push($frame, $mask);
+
+      for ($i = 0; $i < $payload_length; $i++) $payload[$i] = $payload[$i] ^ $mask[$i & 3];
     }
 
-    // Append payload to frame:
-    for ($i = 0; $i < $payload_length; $i++) {
-      $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
-    }
+    // Append payload to frame
+    array_push($frame, $payload);
 
     $this->write($frame);
   }
@@ -216,10 +224,12 @@ class Base {
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
     if ($payload_length > 125) {
       if ($payload_length === 126)
-        $payload_bytes = substr($data, 2, 2); // 126: Payload is a 16-bit unsigned int
+        $unpack_mode = 'n'; // 126: 'n' means big-endian 16-bit unsigned int
       else
-        $payload_bytes = substr($data, 2, 8); // 127: Payload is a 64-bit unsigned int
-      $payload_length = bindec(self::sprintB($payload_bytes));
+        $unpack_mode = 'J'; // 127: 'J' means big-endian 64-bit unsigned int
+
+      $unpacked = unpack($unpack_mode, substr($data, 2));
+      $payload_length = current($unpacked);
     }
 
     // Try again later when fragment is downloaded
@@ -246,8 +256,9 @@ class Base {
     if ($opcode === 'close') {
       // Get the close status.
       if ($payload_length >= 2) {
-        $status_bin = $payload[0] . $payload[1];
-        $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
+        $status_bin = substr($payload, 0, 2);
+        $status = current(unpack('n', $status_bin));
+
         $this->close_status = $status;
         $payload = substr($payload, 2);
 
@@ -283,9 +294,8 @@ class Base {
    * @param string  $message A closing message, max 125 bytes.
    */
   public function close($status = 1000, $message = 'ttfn') {
-    $status_binstr = sprintf('%016b', $status);
-    $status_str = '';
-    foreach (str_split($status_binstr, 8) as $binstr) $status_str .= chr(bindec($binstr));
+    $status_str = pack('n', $status);
+
     $this->send($status_str . $message, 'close', true);
 
     $this->is_closing = true;
@@ -295,6 +305,18 @@ class Base {
   }
 
   protected function write($data) {
+
+    // Array contains binary data and split-ed bytes
+    if (is_array($data)) {
+      foreach ($data as $part)
+        $this->write($part);
+      return;
+    }
+
+    // If it is not binary data, then it is byte
+    if (!is_string($data))
+      $data = pack('C', $data);
+
     $written = fwrite($this->socket, $data);
 
     if ($written < strlen($data)) {
@@ -334,15 +356,5 @@ class Base {
   protected function unreaded() {
     $metadata = stream_get_meta_data($this->socket);
     return $metadata['unread_bytes'];
-  }
-
-
-  /**
-   * Helper to convert a binary to a string of '0' and '1'.
-   */
-  protected static function sprintB($string) {
-    $return = '';
-    for ($i = 0; $i < strlen($string); $i++) $return .= sprintf("%08b", ord($string[$i]));
-    return $return;
   }
 }

@@ -149,8 +149,6 @@ class Base {
     $this->unparsed_fragment .= $this->read($minimum_remain);
 
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
-    if ($payload_length <= 125)
-
 
     switch ($payload_length)
     {
@@ -179,8 +177,11 @@ class Base {
 
   protected function receive_fragment() {
 
-    // Just read the main fragment information first.
-    $data = $this->read(2);
+    $data = $this->receive_fragment_header();
+
+    // Buffer not ready for header
+    if ($data === null)
+      return null;
 
     // Is this the final fragment?  // Bit 0 in byte 0
     /// @todo Handle huge payloads with multiple fragments.
@@ -212,10 +213,16 @@ class Base {
     // Payload length
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
     if ($payload_length > 125) {
-      if ($payload_length === 126) $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
-      else                         $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
-      $payload_length = bindec(self::sprintB($data));
+      if ($payload_length === 126)
+        $payload_bytes = substr($data, 2, 2); // 126: Payload is a 16-bit unsigned int
+      else
+        $payload_bytes = substr($data, 2, 8); // 127: Payload is a 64-bit unsigned int
+      $payload_length = bindec(self::sprintB($payload_bytes));
     }
+
+    // Try again later when fragment is downloaded
+    if ($this->will_block($mask * 4 + $payload))
+      return null;
 
     // Get masking key.
     if ($mask) $masking_key = $this->read(4);

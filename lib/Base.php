@@ -126,13 +126,15 @@ class Base {
     $this->write($frame);
   }
 
-  public function receive() {
+  public function receive($try = false) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
     $this->huge_payload = '';
 
     $response = null;
-    while (is_null($response)) $response = $this->receive_fragment();
+    do {
+      $response = $this->receive_fragment();
+    } while (is_null($response) && !$try);
 
     return $response;
   }
@@ -141,14 +143,14 @@ class Base {
 
   protected function receive_fragment_header() {
     $minimum_size = 2;
-    $minimum_remain = strlen($this->unparsed_fragment) - $minimum_size;
+    $minimum_remain = $minimum_size - strlen($this->unparsed_fragment);
 
     if ($this->will_block($minimum_remain))
       return null;
 
     $this->unparsed_fragment .= $this->read($minimum_remain);
 
-    $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
+    $payload_length = (integer) ord($this->unparsed_fragment[1]) & 127; // Bits 1-7 in byte 1
 
     switch ($payload_length)
     {
@@ -221,8 +223,11 @@ class Base {
     }
 
     // Try again later when fragment is downloaded
-    if ($this->will_block($mask * 4 + $payload))
+    if ($this->will_block($mask * 4 + $payload_length))
       return null;
+
+    // Enter fragment reading state
+    $this->unparsed_fragment = '';
 
     // Get masking key.
     if ($mask) $masking_key = $this->read(4);

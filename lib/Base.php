@@ -275,6 +275,15 @@ class Base {
     return $data;
   }
 
+  protected function will_block($length) {
+    return $this->unreaded() < $length;
+  }
+
+  protected function unreaded() {
+    $metadata = stream_get_meta_data($this->socket);
+    return $metadata['unread_bytes'];
+  }
+
 
   /**
    * Helper to convert a binary to a string of '0' and '1'.

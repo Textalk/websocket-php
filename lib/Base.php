@@ -137,6 +137,46 @@ class Base {
     return $response;
   }
 
+  protected $unparsed_fragment = '';
+
+  protected function receive_fragment_header() {
+    $minimum_size = 2;
+    $minimum_remain = strlen($this->unparsed_fragment) - $minimum_size;
+
+    if ($this->will_block($minimum_remain))
+      return null;
+
+    $this->unparsed_fragment .= $this->read($minimum_remain);
+
+    $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
+    if ($payload_length <= 125)
+
+
+    switch ($payload_length)
+    {
+    default:
+      return $this->unparsed_fragment;
+    case 126:
+      $extra_header_bytes = 2;
+      break;
+    case 127:
+      $extra_header_bytes = 8;
+      break;
+    }
+
+    $extra_remain =
+      $minimum_size
+      + $extra_header_bytes
+      - strlen($this->unparsed_fragment);
+
+    if ($this->will_block($extra_remain))
+      return null;
+
+    $this->unparsed_fragment .= $this->read($extra_remain);
+
+    return $this->unparsed_fragment;
+  }
+
   protected function receive_fragment() {
 
     // Just read the main fragment information first.

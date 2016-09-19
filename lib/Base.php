@@ -23,6 +23,18 @@ class Base {
     'pong'         => 10,
   );
 
+  private const FIRST_BYTE_MASK       = 0b10001111;
+  private const SECOND_BYTE_MASK      = 0b11111111;
+
+  private const FINAL_BIT             = 0b10000000;
+  private const OPCODE_MASK           = 0b00001111;
+
+  private const MASKED_BIT            = 0b10000000;
+  private const PAYLOAD_LENGTH_MASK   = 0b01111111;
+
+  private const PAYLOAD_LENGTH_16BIT  = 0b01111110;
+  private const PAYLOAD_LENGTH_64BIT  = 0b01111111;
+
   public function getLastOpcode()  { return $this->last_opcode;  }
   public function getCloseStatus() { return $this->close_status; }
   public function isConnected()    { return $this->is_connected; }
@@ -75,18 +87,6 @@ class Base {
 
   }
 
-  private const FIRST_BYTE_MASK       = 0b10001111;
-  private const SECOND_BYTE_MASK      = 0b11111111;
-
-  private const FINAL_BIT             = 0b10000000;
-  private const OPCODE_MASK           = 0b00001111;
-
-  private const MASKED_BIT            = 0b10000000;
-  private const PAYLOAD_MASK          = 0b01111111;
-
-  private const PAYLOAD_LENGTH_16BIT  = 0b01111110;
-  private const PAYLOAD_LENGTH_64BIT  = 0b01111111;
-
 
   protected function send_fragment($final, $payload, $opcode, $masked) {
 
@@ -115,7 +115,7 @@ class Base {
 
     // Set masked mode
     $frame[1] |= self::MASKED_BIT * !!$masked;
-    $frame[1] |= self::PAYLOAD_MASK & $length_opcode;
+    $frame[1] |= self::PAYLOAD_LENGTH_MASK & $length_opcode;
 
 
     // Handle masking
@@ -158,16 +158,16 @@ class Base {
 
     $this->unparsed_fragment .= $this->read($minimum_remain);
 
-    $payload_length = (integer) ord($this->unparsed_fragment[1]) & 127; // Bits 1-7 in byte 1
+    $payload_length = ord($this->unparsed_fragment[1]) & 127; // Bits 1-7 in byte 1
 
     switch ($payload_length)
     {
     default:
       return $this->unparsed_fragment;
-    case 126:
+    case self::PAYLOAD_LENGTH_16BIT:
       $extra_header_bytes = 2;
       break;
-    case 127:
+    case self::PAYLOAD_LENGTH_64BIT:
       $extra_header_bytes = 8;
       break;
     }
@@ -195,15 +195,17 @@ class Base {
 
     // Is this the final fragment?  // Bit 0 in byte 0
     /// @todo Handle huge payloads with multiple fragments.
-    $final = (boolean) (ord($data[0]) & 1 << 7);
+    $final = ord($data[0]) & self::FINAL_BIT;
 
-    // Should be unused, and must be false…  // Bits 1, 2, & 3
-    $rsv1  = (boolean) (ord($data[0]) & 1 << 6);
-    $rsv2  = (boolean) (ord($data[0]) & 1 << 5);
-    $rsv3  = (boolean) (ord($data[0]) & 1 << 4);
+    // Should be zero
+    $rsv = ord($data[0]) & ~self::FIRST_BYTE_MASK;
+
+    if ($rsv !== 0) {
+      throw new ConnectionException("Reserved bits should be zero");
+    }
 
     // Parse opcode
-    $opcode_int = ord($data[0]) & 31; // Bits 4-7
+    $opcode_int = ord($data[0]) & self::OPCODE_MASK;
     $opcode_ints = array_flip(self::$opcodes);
     if (!array_key_exists($opcode_int, $opcode_ints)) {
       throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
@@ -216,14 +218,16 @@ class Base {
     }
 
     // Masking?
-    $mask = (boolean) (ord($data[1]) >> 7);  // Bit 0 in byte 1
+    $mask = ord($data[1]) & self::MASKED_BIT;
 
     $payload = '';
 
+
     // Payload length
-    $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
+    $payload_length = ord($data[1]) & self::PAYLOAD_LENGTH_MASK;
+
     if ($payload_length > 125) {
-      if ($payload_length === 126)
+      if ($payload_length === self::PAYLOAD_LENGTH_16BIT)
         $unpack_mode = 'n'; // 126: 'n' means big-endian 16-bit unsigned int
       else
         $unpack_mode = 'J'; // 127: 'J' means big-endian 64-bit unsigned int
@@ -248,16 +252,16 @@ class Base {
 
       if ($mask) {
         // Unmask payload.
-        for ($i = 0; $i < $payload_length; $i++) $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+        for ($i = 0; $i < $payload_length; $i++) $data[$i] = $data[$i] ^ $masking_key[$i & 3];
       }
-      else $payload = $data;
+
+      $payload = $data;
     }
 
     if ($opcode === 'close') {
       // Get the close status.
       if ($payload_length >= 2) {
-        $status_bin = substr($payload, 0, 2);
-        $status = current(unpack('n', $status_bin));
+        $status = current(unpack('n', $payload)); // read 16-bit short
 
         $this->close_status = $status;
         $payload = substr($payload, 2);

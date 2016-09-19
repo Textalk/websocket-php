@@ -326,8 +326,10 @@ class Base {
     }
   }
 
+  protected $socket_buffer = '';
+
   protected function read($length) {
-    $data = '';
+    $data = &$this->socket_buffer;
     while (strlen($data) < $length) {
       $buffer = fread($this->socket, $length - strlen($data));
       if ($buffer === false) {
@@ -346,15 +348,35 @@ class Base {
       }
       $data .= $buffer;
     }
-    return $data;
+
+    $return = substr($data, 0, $length);
+    $data = substr($data, $length);
+    return $return;
+  }
+
+  protected function bufferize($length) {
+    while (1) {
+      $buffer_length = strlen($this->socket_buffer);
+      $remain = $length - $buffer_length;
+
+      if ($remain <= 0)
+        return true;
+
+      $fetched = fread($this->socket, $remain);
+
+      if ($fetched === false)
+        break;
+
+      if (strlen($fetched) == 0)
+        break;
+
+      $this->socket_buffer .= $fetched;
+    }
+
+    return false;
   }
 
   protected function will_block($length) {
-    return $this->unreaded() < $length;
-  }
-
-  protected function unreaded() {
-    $metadata = stream_get_meta_data($this->socket);
-    return $metadata['unread_bytes'];
+    return !$this->bufferize($length);
   }
 }

@@ -160,6 +160,9 @@ class Client extends Base {
       throw new ConnectionException('Server sent bad upgrade response.');
     }
 
+    // Set non blocking mode
+    stream_set_blocking($this->socket, false);
+
     $this->is_connected = true;
   }
 

@@ -64,6 +64,8 @@ class Server extends Base {
 
     $this->performHandshake();
 
+    stream_set_blocking($this->socket, false);
+
     return $this->socket;
   }
 

@@ -45,9 +45,9 @@ class ClientTracker extends Client {
 	/**
 	 * Reset the receive counter
 	 */
-	public function receive() {
+	public function receive($try = false) {
 		$this->fragment_count['receive'] = 0;
-		return parent::receive();
+		return parent::receive($try);
 	}
 
 	/**

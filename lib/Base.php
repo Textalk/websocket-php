@@ -23,17 +23,17 @@ class Base {
     'pong'         => 10,
   );
 
-  private const FIRST_BYTE_MASK       = 0b10001111;
-  private const SECOND_BYTE_MASK      = 0b11111111;
+  private static $FIRST_BYTE_MASK       = 0b10001111;
+  private static $SECOND_BYTE_MASK      = 0b11111111;
 
-  private const FINAL_BIT             = 0b10000000;
-  private const OPCODE_MASK           = 0b00001111;
+  private static $FINAL_BIT             = 0b10000000;
+  private static $OPCODE_MASK           = 0b00001111;
 
-  private const MASKED_BIT            = 0b10000000;
-  private const PAYLOAD_LENGTH_MASK   = 0b01111111;
+  private static $MASKED_BIT            = 0b10000000;
+  private static $PAYLOAD_LENGTH_MASK   = 0b01111111;
 
-  private const PAYLOAD_LENGTH_16BIT  = 0b01111110;
-  private const PAYLOAD_LENGTH_64BIT  = 0b01111111;
+  private static $PAYLOAD_LENGTH_16BIT  = 0b01111110;
+  private static $PAYLOAD_LENGTH_64BIT  = 0b01111111;
 
   public function getLastOpcode()  { return $this->last_opcode;  }
   public function getCloseStatus() { return $this->close_status; }
@@ -93,20 +93,20 @@ class Base {
     $frame = [0, 0];
 
     // Set final bit
-    $frame[0] |= self::FINAL_BIT * !!$final;
+    $frame[0] |= self::$FINAL_BIT * !!$final;
     // Set correct opcode
-    $frame[0] |= self::OPCODE_MASK & self::$opcodes[$opcode];
+    $frame[0] |= self::$OPCODE_MASK & self::$opcodes[$opcode];
     // Reset reserved bytes
-    $frame[0] &= self::FIRST_BYTE_MASK;
+    $frame[0] &= self::$FIRST_BYTE_MASK;
 
     // 7 bits of payload length...
     $payload_length = strlen($payload);
     if ($payload_length > 65535) {
-      $length_opcode = self::PAYLOAD_LENGTH_64BIT;
+      $length_opcode = self::$PAYLOAD_LENGTH_64BIT;
       array_push($frame, pack('J', $payload_length));
     }
     elseif ($payload_length > 125) {
-      $length_opcode = self::PAYLOAD_LENGTH_16BIT;
+      $length_opcode = self::$PAYLOAD_LENGTH_16BIT;
       array_push($frame, pack('n', $payload_length));
     }
     else {
@@ -114,8 +114,8 @@ class Base {
     }
 
     // Set masked mode
-    $frame[1] |= self::MASKED_BIT * !!$masked;
-    $frame[1] |= self::PAYLOAD_LENGTH_MASK & $length_opcode;
+    $frame[1] |= self::$MASKED_BIT * !!$masked;
+    $frame[1] |= self::$PAYLOAD_LENGTH_MASK & $length_opcode;
 
 
     // Handle masking
@@ -164,10 +164,10 @@ class Base {
     {
     default:
       return $this->unparsed_fragment;
-    case self::PAYLOAD_LENGTH_16BIT:
+    case self::$PAYLOAD_LENGTH_16BIT:
       $extra_header_bytes = 2;
       break;
-    case self::PAYLOAD_LENGTH_64BIT:
+    case self::$PAYLOAD_LENGTH_64BIT:
       $extra_header_bytes = 8;
       break;
     }
@@ -195,17 +195,17 @@ class Base {
 
     // Is this the final fragment?  // Bit 0 in byte 0
     /// @todo Handle huge payloads with multiple fragments.
-    $final = ord($data[0]) & self::FINAL_BIT;
+    $final = ord($data[0]) & self::$FINAL_BIT;
 
     // Should be zero
-    $rsv = ord($data[0]) & ~self::FIRST_BYTE_MASK;
+    $rsv = ord($data[0]) & ~self::$FIRST_BYTE_MASK;
 
     if ($rsv !== 0) {
       throw new ConnectionException("Reserved bits should be zero");
     }
 
     // Parse opcode
-    $opcode_int = ord($data[0]) & self::OPCODE_MASK;
+    $opcode_int = ord($data[0]) & self::$OPCODE_MASK;
     $opcode_ints = array_flip(self::$opcodes);
     if (!array_key_exists($opcode_int, $opcode_ints)) {
       throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
@@ -218,16 +218,16 @@ class Base {
     }
 
     // Masking?
-    $mask = ord($data[1]) & self::MASKED_BIT;
+    $mask = ord($data[1]) & self::$MASKED_BIT;
 
     $payload = '';
 
 
     // Payload length
-    $payload_length = ord($data[1]) & self::PAYLOAD_LENGTH_MASK;
+    $payload_length = ord($data[1]) & self::$PAYLOAD_LENGTH_MASK;
 
     if ($payload_length > 125) {
-      if ($payload_length === self::PAYLOAD_LENGTH_16BIT)
+      if ($payload_length === self::$PAYLOAD_LENGTH_16BIT)
         $unpack_mode = 'n'; // 126: 'n' means big-endian 16-bit unsigned int
       else
         $unpack_mode = 'J'; // 127: 'J' means big-endian 64-bit unsigned int

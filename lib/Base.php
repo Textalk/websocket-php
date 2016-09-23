@@ -12,7 +12,7 @@ namespace WebSocket;
 
 class Base {
   protected $socket, $is_connected = false, $is_closing = false, $last_opcode = null,
-    $close_status = null, $huge_payload = null;
+    $close_status = null, $huge_payload = '';
 
   protected static $opcodes = array(
     'continuation' => 0,
@@ -136,8 +136,6 @@ class Base {
 
   public function receive($try = false) {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
-
-    $this->huge_payload = '';
 
     $response = null;
     do {
@@ -285,7 +283,7 @@ class Base {
     else if ($this->huge_payload) {
       // sp we need to retreive the whole payload
       $payload = $this->huge_payload .= $payload;
-      $this->huge_payload = null;
+      $this->huge_payload = '';
     }
 
     return $payload;

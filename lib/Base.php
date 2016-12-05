@@ -146,11 +146,6 @@ class Base {
     /// @todo Handle huge payloads with multiple fragments.
     $final = (boolean) (ord($data[0]) & 1 << 7);
 
-    // Should be unused, and must be false…  // Bits 1, 2, & 3
-    $rsv1  = (boolean) (ord($data[0]) & 1 << 6);
-    $rsv2  = (boolean) (ord($data[0]) & 1 << 5);
-    $rsv3  = (boolean) (ord($data[0]) & 1 << 4);
-
     // Parse opcode
     $opcode_int = ord($data[0]) & 31; // Bits 4-7
     $opcode_ints = array_flip(self::$opcodes);

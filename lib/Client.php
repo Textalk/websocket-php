@@ -174,4 +174,11 @@ class Client extends Base {
     for ($i = 0; $i < 16; $i++) $key .= $chars[mt_rand(0, $chars_length-1)];
     return base64_encode($key);
   }
+
+
+  public function reconnect() {
+    $this->connect();
+  }
+
+    
 }

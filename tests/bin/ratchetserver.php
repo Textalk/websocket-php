@@ -4,7 +4,7 @@
  * This file is constructed to avoid issues with using the provided Client towards a Ratchet server.
  */
 
-require(dirname(dirname(dirname(__FILE__))) . '/vendor/autoload.php');
+require(\dirname(\dirname(\dirname(__FILE__))) . '/vendor/autoload.php');
 
 use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;

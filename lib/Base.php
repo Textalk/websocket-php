@@ -45,7 +45,10 @@ class Base {
   }
 
   public function send($payload, $opcode = 'text', $masked = true) {
-    if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
+    /// @todo This is a client function, fixme!
+    if (!$this->is_connected || !$this->socket) {
+      $this->connect();
+    }
 
     if (!in_array($opcode, array_keys(self::$opcodes))) {
       throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");

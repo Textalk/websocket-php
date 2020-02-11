@@ -205,4 +205,19 @@ class Client extends Base
 
     return base64_encode($key);
   }
+
+ /**
+  * @return void|string
+  */
+  protected function checkConnection() {
+      if (!$this->is_connected || !$this->socket) {
+          try {
+              $this->connect();
+          } catch (BadUriException $exception) {
+              return $exception->getMessage();
+          } catch (ConnectionException $exception) {
+              return $exception->getMessage();
+          }
+      }
+  }
 }

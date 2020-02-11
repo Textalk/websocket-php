@@ -10,10 +10,23 @@
 
 namespace WebSocket;
 
-class Base {
-  protected $socket, $is_connected = false, $is_closing = false, $last_opcode = null,
-    $close_status = null, $huge_payload = null;
+/**
+ * Class Base
+ */
+class Base
+{
+  protected $socket;
 
+  /**
+   * @var bool
+   */
+  protected $is_connected = false, $is_closing = false;
+
+  protected $last_opcode = null, $close_status = null, $huge_payload = null;
+
+  /**
+   * @var array
+   */
   protected static $opcodes = array(
     'continuation' => 0,
     'text'         => 1,
@@ -23,10 +36,24 @@ class Base {
     'pong'         => 10,
   );
 
-  public function getLastOpcode()  { return $this->last_opcode;  }
-  public function getCloseStatus() { return $this->close_status; }
-  public function isConnected()    { return $this->is_connected; }
+  public function getLastOpcode() {
+      return $this->last_opcode;
+  }
 
+  public function getCloseStatus() {
+      return $this->close_status;
+  }
+
+  /**
+  * @return bool
+  */
+  public function isConnected() {
+      return $this->is_connected;
+  }
+
+  /**
+   * @param $timeout
+   */
   public function setTimeout($timeout) {
     $this->options['timeout'] = $timeout;
 
@@ -37,13 +64,25 @@ class Base {
 
   public function setFragmentSize($fragment_size) {
     $this->options['fragment_size'] = $fragment_size;
+
     return $this;
   }
 
+  /**
+   * @return int
+   */
   public function getFragmentSize() {
     return $this->options['fragment_size'];
   }
 
+ /**
+  * @param        $payload
+  * @param string $opcode
+  * @param bool   $masked
+  *
+  * @throws BadOpcodeException
+  * @throws ConnectionException
+  */
   public function send($payload, $opcode = 'text', $masked = true) {
     /// @todo This is a client function, fixme!
     if (!$this->is_connected || !$this->socket) {
@@ -56,8 +95,8 @@ class Base {
 
     // record the length of the payload
     $payload_length = strlen($payload);
-
     $fragment_cursor = 0;
+
     // while we have data to send
     while ($payload_length > $fragment_cursor) {
       // get a fragment of the payload
@@ -75,22 +114,25 @@ class Base {
       // all fragments after the first will be marked a continuation
       $opcode = 'continuation';
     }
-
   }
 
+  /**
+  * @param $final
+  * @param $payload
+  * @param $opcode
+  * @param $masked
+  *
+  * @throws ConnectionException
+  */
   protected function send_fragment($final, $payload, $opcode, $masked) {
     // Binary string for header.
     $frame_head_binstr = '';
-
     // Write FIN, final fragment bit.
     $frame_head_binstr .= (bool) $final ? '1' : '0';
-
     // RSV 1, 2, & 3 false and unused.
     $frame_head_binstr .= '000';
-
     // Opcode rest of the byte.
     $frame_head_binstr .= sprintf('%04b', self::$opcodes[$opcode]);
-
     // Use masking?
     $frame_head_binstr .= $masked ? '1' : '0';
 
@@ -99,25 +141,28 @@ class Base {
     if ($payload_length > 65535) {
       $frame_head_binstr .= decbin(127);
       $frame_head_binstr .= sprintf('%064b', $payload_length);
-    }
-    elseif ($payload_length > 125) {
+    } elseif ($payload_length > 125) {
       $frame_head_binstr .= decbin(126);
       $frame_head_binstr .= sprintf('%016b', $payload_length);
-    }
-    else {
+    } else {
       $frame_head_binstr .= sprintf('%07b', $payload_length);
     }
 
     $frame = '';
-
     // Write frame head to frame.
-    foreach (str_split($frame_head_binstr, 8) as $binstr) $frame .= chr(bindec($binstr));
+    foreach (str_split($frame_head_binstr, 8) as $binstr) {
+        $frame .= chr(bindec($binstr));
+    }
 
     // Handle masking
     if ($masked) {
       // generate a random mask:
       $mask = '';
-      for ($i = 0; $i < 4; $i++) $mask .= chr(rand(0, 255));
+
+      for ($i = 0; $i < 4; $i++) {
+          $mask .= chr(rand(0, 255));
+      }
+
       $frame .= $mask;
     }
 
@@ -129,19 +174,35 @@ class Base {
     $this->write($frame);
   }
 
+ /**
+  * @return false|string|null
+  *
+  * @throws ConnectionException
+  * @throws BadOpcodeException
+  */
   public function receive() {
-    if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
+  /// @todo This is a client function, fixme!
+    if (!$this->is_connected || !$this->socket) {
+        $this->connect();
+    }
 
     $this->huge_payload = '';
 
     $response = null;
-    while (is_null($response)) $response = $this->receive_fragment();
+    while (is_null($response)) {
+        $response = $this->receive_fragment();
+    }
 
     return $response;
   }
 
+ /**
+  * @return false|string|null
+  *
+  * @throws BadOpcodeException
+  * @throws ConnectionException
+  */
   protected function receive_fragment() {
-
     // Just read the main fragment information first.
     $data = $this->read(2);
 
@@ -157,9 +218,11 @@ class Base {
     // Parse opcode
     $opcode_int = ord($data[0]) & 31; // Bits 4-7
     $opcode_ints = array_flip(self::$opcodes);
+
     if (!array_key_exists($opcode_int, $opcode_ints)) {
       throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
     }
+
     $opcode = $opcode_ints[$opcode_int];
 
     // record the opcode if we are not receiving a continutation fragment
@@ -169,19 +232,25 @@ class Base {
 
     // Masking?
     $mask = (boolean) (ord($data[1]) >> 7);  // Bit 0 in byte 1
-
     $payload = '';
 
     // Payload length
     $payload_length = (integer) ord($data[1]) & 127; // Bits 1-7 in byte 1
     if ($payload_length > 125) {
-      if ($payload_length === 126) $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
-      else                         $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
+      // 126: Payload is a 16-bit unsigned int
+      if ($payload_length === 126) {
+          $data = $this->read(2);
+      } else { // 127: Payload is a 64-bit unsigned int
+          $data = $this->read(8);
+      }
+
       $payload_length = bindec(self::sprintB($data));
     }
 
     // Get masking key.
-    if ($mask) $masking_key = $this->read(4);
+    if ($mask) {
+        $masking_key = $this->read(4);
+    }
 
     // Get the actual payload, if any (might not be for e.g. close frames.
     if ($payload_length > 0) {
@@ -189,9 +258,12 @@ class Base {
 
       if ($mask) {
         // Unmask payload.
-        for ($i = 0; $i < $payload_length; $i++) $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+        for ($i = 0; $i < $payload_length; $i++) {
+            $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+        }
+      } else {
+          $payload = $data;
       }
-      else $payload = $data;
     }
 
     if ($opcode === 'close') {
@@ -202,23 +274,29 @@ class Base {
         $this->close_status = $status;
         $payload = substr($payload, 2);
 
-        if (!$this->is_closing) $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
+        // Respond.
+        if (!$this->is_closing) {
+            $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true);
+        }
       }
 
-      if ($this->is_closing) $this->is_closing = false; // A close response, all done.
+      // A close response, all done.
+      if ($this->is_closing) {
+          $this->is_closing = false;
+      }
 
       // And close the socket.
       fclose($this->socket);
+
       $this->is_connected = false;
     }
 
     // if this is not the last fragment, then we need to save the payload
     if (!$final) {
       $this->huge_payload .= $payload;
+
       return null;
-    }
-    // this is the last fragment, and we are processing a huge_payload
-    else if ($this->huge_payload) {
+    } else if ($this->huge_payload) { // this is the last fragment, and we are processing a huge_payload
       // sp we need to retreive the whole payload
       $payload = $this->huge_payload .= $payload;
       $this->huge_payload = null;
@@ -227,24 +305,37 @@ class Base {
     return $payload;
   }
 
-  /**
-   * Tell the socket to close.
-   *
-   * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
-   * @param string  $message A closing message, max 125 bytes.
-   */
+ /**
+  * Tell the socket to close.
+  *
+  * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
+  * @param string  $message A closing message, max 125 bytes.
+  *
+  * @return false|string|null
+  *
+  * @throws BadOpcodeException
+  * @throws ConnectionException
+  */
   public function close($status = 1000, $message = 'ttfn') {
     $status_binstr = sprintf('%016b', $status);
     $status_str = '';
-    foreach (str_split($status_binstr, 8) as $binstr) $status_str .= chr(bindec($binstr));
+
+    foreach (str_split($status_binstr, 8) as $binstr) {
+        $status_str .= chr(bindec($binstr));
+    }
+
     $this->send($status_str . $message, 'close', true);
 
     $this->is_closing = true;
-    $response = $this->receive(); // Receiving a close frame will close the socket now.
-
-    return $response;
+    // Receiving a close frame will close the socket now.
+    return $this->receive();
   }
 
+ /**
+  * @param $data
+  *
+  * @throws ConnectionException
+  */
   protected function write($data) {
     $written = fwrite($this->socket, $data);
 
@@ -255,36 +346,51 @@ class Base {
     }
   }
 
+ /**
+  * @param $length
+  *
+  * @return string
+  * @throws ConnectionException
+  */
   protected function read($length) {
     $data = '';
+
     while (strlen($data) < $length) {
       $buffer = fread($this->socket, $length - strlen($data));
+
       if ($buffer === false) {
         $metadata = stream_get_meta_data($this->socket);
+
         throw new ConnectionException(
-          'Broken frame, read ' . strlen($data) . ' of stated '
-          . $length . ' bytes.  Stream state: '
-          . json_encode($metadata)
-        );
+          'Broken frame, read ' . strlen($data) . ' of stated ' . $length . ' bytes.  Stream state: '
+          . json_encode($metadata));
       }
+
       if ($buffer === '') {
         $metadata = stream_get_meta_data($this->socket);
-        throw new ConnectionException(
-          'Empty read; connection dead?  Stream state: ' . json_encode($metadata)
-        );
+
+        throw new ConnectionException('Empty read; connection dead?  Stream state: ' . json_encode($metadata));
       }
+
       $data .= $buffer;
     }
+
     return $data;
   }
 
 
   /**
    * Helper to convert a binary to a string of '0' and '1'.
+   *
+   * @return string
    */
   protected static function sprintB($string) {
     $return = '';
-    for ($i = 0; $i < strlen($string); $i++) $return .= sprintf("%08b", ord($string[$i]));
+
+    for ($i = 0; $i < strlen($string); $i++) {
+        $return .= sprintf("%08b", ord($string[$i]));
+    }
+
     return $return;
   }
 }

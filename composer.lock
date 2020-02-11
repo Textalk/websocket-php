@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "hash": "f6f14bc9c810b095a59db5aaf5d137ee",
+    "content-hash": "85e28ab1d9cd332f4502e2b4be65b249",
     "packages": [],
     "packages-dev": [
         {
@@ -53,7 +53,7 @@
                 "server",
                 "sockets"
             ],
-            "time": "2015-05-27 12:51:05"
+            "time": "2015-05-27T12:51:05+00:00"
         },
         {
             "name": "evenement/evenement",
@@ -99,7 +99,7 @@
                 "event-dispatcher",
                 "event-emitter"
             ],
-            "time": "2012-11-02 14:49:47"
+            "time": "2012-11-02T14:49:47+00:00"
         },
         {
             "name": "guzzle/guzzle",
@@ -194,7 +194,8 @@
                 "rest",
                 "web service"
             ],
-            "time": "2015-03-18 18:23:50"
+            "abandoned": "guzzlehttp/guzzle",
+            "time": "2015-03-18T18:23:50+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -256,7 +257,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-08-04 03:42:39"
+            "time": "2015-08-04T03:42:39+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -301,7 +302,7 @@
                 "filesystem",
                 "iterator"
             ],
-            "time": "2013-10-10 15:34:57"
+            "time": "2013-10-10T15:34:57+00:00"
         },
         {
             "name": "phpunit/php-text-template",
@@ -342,7 +343,7 @@
             "keywords": [
                 "template"
             ],
-            "time": "2015-06-21 13:50:34"
+            "time": "2015-06-21T13:50:34+00:00"
         },
         {
             "name": "phpunit/php-timer",
@@ -383,7 +384,7 @@
             "keywords": [
                 "timer"
             ],
-            "time": "2015-06-21 08:01:12"
+            "time": "2015-06-21T08:01:12+00:00"
         },
         {
             "name": "phpunit/php-token-stream",
@@ -432,7 +433,7 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2015-08-16 08:51:00"
+            "time": "2015-08-16T08:51:00+00:00"
         },
         {
             "name": "phpunit/phpunit",
@@ -506,7 +507,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2014-08-17 08:07:02"
+            "time": "2014-08-17T08:07:02+00:00"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -563,7 +564,8 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2014-06-12 07:22:15"
+            "abandoned": true,
+            "time": "2014-06-12T07:22:15+00:00"
         },
         {
             "name": "phpunit/phpunit-selenium",
@@ -617,7 +619,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2013-11-22 08:54:11"
+            "time": "2013-11-22T08:54:11+00:00"
         },
         {
             "name": "psr/log",
@@ -655,7 +657,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2012-12-21 11:40:51"
+            "time": "2012-12-21T11:40:51+00:00"
         },
         {
             "name": "react/event-loop",
@@ -698,7 +700,7 @@
             "keywords": [
                 "event-loop"
             ],
-            "time": "2014-02-26 17:36:58"
+            "time": "2014-02-26T17:36:58+00:00"
         },
         {
             "name": "react/socket",
@@ -739,7 +741,7 @@
             "keywords": [
                 "Socket"
             ],
-            "time": "2014-05-25 17:02:16"
+            "time": "2014-05-25T17:02:16+00:00"
         },
         {
             "name": "react/stream",
@@ -787,7 +789,7 @@
                 "pipe",
                 "stream"
             ],
-            "time": "2014-09-10 03:32:31"
+            "time": "2014-09-10T03:32:31+00:00"
         },
         {
             "name": "satooshi/php-coveralls",
@@ -862,26 +864,26 @@
                 "github",
                 "test"
             ],
-            "time": "2014-11-11 15:35:34"
+            "time": "2014-11-11T15:35:34+00:00"
         },
         {
             "name": "sebastian/comparator",
-            "version": "1.2.0",
+            "version": "1.2.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "937efb279bd37a375bcadf584dec0726f84dbf22"
+                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/937efb279bd37a375bcadf584dec0726f84dbf22",
-                "reference": "937efb279bd37a375bcadf584dec0726f84dbf22",
+                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
+                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3",
                 "sebastian/diff": "~1.2",
-                "sebastian/exporter": "~1.2"
+                "sebastian/exporter": "~1.2 || ~2.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "~4.4"
@@ -926,7 +928,7 @@
                 "compare",
                 "equality"
             ],
-            "time": "2015-07-26 15:48:44"
+            "time": "2017-01-29T09:50:25+00:00"
         },
         {
             "name": "sebastian/diff",
@@ -978,7 +980,7 @@
             "keywords": [
                 "diff"
             ],
-            "time": "2015-02-22 15:13:53"
+            "time": "2015-02-22T15:13:53+00:00"
         },
         {
             "name": "sebastian/environment",
@@ -1028,7 +1030,7 @@
                 "environment",
                 "hhvm"
             ],
-            "time": "2015-08-03 06:14:51"
+            "time": "2015-08-03T06:14:51+00:00"
         },
         {
             "name": "sebastian/exporter",
@@ -1094,7 +1096,7 @@
                 "export",
                 "exporter"
             ],
-            "time": "2015-06-21 07:55:53"
+            "time": "2015-06-21T07:55:53+00:00"
         },
         {
             "name": "sebastian/recursion-context",
@@ -1147,7 +1149,7 @@
             ],
             "description": "Provides functionality to recursively process PHP variables",
             "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2015-06-21 08:04:50"
+            "time": "2015-06-21T08:04:50+00:00"
         },
         {
             "name": "sebastian/version",
@@ -1182,19 +1184,19 @@
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2015-06-21 13:59:46"
+            "time": "2015-06-21T13:59:46+00:00"
         },
         {
             "name": "symfony/config",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Config.git",
+                "url": "https://github.com/symfony/config.git",
                 "reference": "6c905bbed1e728226de656e4c07d620dfe9e80d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Config/zipball/6c905bbed1e728226de656e4c07d620dfe9e80d9",
+                "url": "https://api.github.com/repos/symfony/config/zipball/6c905bbed1e728226de656e4c07d620dfe9e80d9",
                 "reference": "6c905bbed1e728226de656e4c07d620dfe9e80d9",
                 "shasum": ""
             },
@@ -1232,19 +1234,19 @@
             ],
             "description": "Symfony Config Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-09 16:07:40"
+            "time": "2015-07-09T16:07:40+00:00"
         },
         {
             "name": "symfony/console",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Console.git",
+                "url": "https://github.com/symfony/console.git",
                 "reference": "d6cf02fe73634c96677e428f840704bfbcaec29e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Console/zipball/d6cf02fe73634c96677e428f840704bfbcaec29e",
+                "url": "https://api.github.com/repos/symfony/console/zipball/d6cf02fe73634c96677e428f840704bfbcaec29e",
                 "reference": "d6cf02fe73634c96677e428f840704bfbcaec29e",
                 "shasum": ""
             },
@@ -1289,19 +1291,19 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-28 15:18:12"
+            "time": "2015-07-28T15:18:12+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/EventDispatcher.git",
+                "url": "https://github.com/symfony/event-dispatcher.git",
                 "reference": "9310b5f9a87ec2ea75d20fec0b0017c77c66dac3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/9310b5f9a87ec2ea75d20fec0b0017c77c66dac3",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/9310b5f9a87ec2ea75d20fec0b0017c77c66dac3",
                 "reference": "9310b5f9a87ec2ea75d20fec0b0017c77c66dac3",
                 "shasum": ""
             },
@@ -1347,19 +1349,19 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "https://symfony.com",
-            "time": "2015-06-18 19:21:56"
+            "time": "2015-06-18T19:21:56+00:00"
         },
         {
             "name": "symfony/filesystem",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Filesystem.git",
+                "url": "https://github.com/symfony/filesystem.git",
                 "reference": "2d7b2ddaf3f548f4292df49a99d19c853d43f0b8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Filesystem/zipball/2d7b2ddaf3f548f4292df49a99d19c853d43f0b8",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/2d7b2ddaf3f548f4292df49a99d19c853d43f0b8",
                 "reference": "2d7b2ddaf3f548f4292df49a99d19c853d43f0b8",
                 "shasum": ""
             },
@@ -1396,19 +1398,19 @@
             ],
             "description": "Symfony Filesystem Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-09 16:07:40"
+            "time": "2015-07-09T16:07:40+00:00"
         },
         {
             "name": "symfony/http-foundation",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/HttpFoundation.git",
+                "url": "https://github.com/symfony/http-foundation.git",
                 "reference": "863af6898081b34c65d42100c370b9f3c51b70ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/HttpFoundation/zipball/863af6898081b34c65d42100c370b9f3c51b70ca",
+                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/863af6898081b34c65d42100c370b9f3c51b70ca",
                 "reference": "863af6898081b34c65d42100c370b9f3c51b70ca",
                 "shasum": ""
             },
@@ -1449,19 +1451,19 @@
             ],
             "description": "Symfony HttpFoundation Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-22 10:11:00"
+            "time": "2015-07-22T10:11:00+00:00"
         },
         {
             "name": "symfony/routing",
             "version": "v2.7.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Routing.git",
+                "url": "https://github.com/symfony/routing.git",
                 "reference": "ea9134f277162b02e5f80ac058b75a77637b0d26"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Routing/zipball/ea9134f277162b02e5f80ac058b75a77637b0d26",
+                "url": "https://api.github.com/repos/symfony/routing/zipball/ea9134f277162b02e5f80ac058b75a77637b0d26",
                 "reference": "ea9134f277162b02e5f80ac058b75a77637b0d26",
                 "shasum": ""
             },
@@ -1520,7 +1522,7 @@
                 "uri",
                 "url"
             ],
-            "time": "2015-07-09 16:07:40"
+            "time": "2015-07-09T16:07:40+00:00"
         },
         {
             "name": "symfony/stopwatch",
@@ -1569,7 +1571,7 @@
             ],
             "description": "Symfony Stopwatch Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-01 18:23:16"
+            "time": "2015-07-01T18:23:16+00:00"
         },
         {
             "name": "symfony/yaml",
@@ -1618,7 +1620,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2015-07-28 14:07:07"
+            "time": "2015-07-28T14:07:07+00:00"
         }
     ],
     "aliases": [],

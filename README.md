@@ -9,7 +9,7 @@ This package mainly contains a WebSocket client for PHP.
 I made it because the state of other WebSocket clients I could found was either very poor
 (sometimes failing on large frames) or had huge dependencies (React…).
 
-The Client should be good.  If it isn't, tell me!
+The Client should be good.
 
 The Server there because much of the code would be identical in writing a server, and because it is
 used for the tests.  To be really useful though, there should be a Connection-class returned from a
@@ -22,14 +22,9 @@ Installing
 ----------
 
 Preferred way to install is with [Composer](https://getcomposer.org/).
-
-Just add
-
-    "require": {
-      "textalk/websocket": "1.0.*"
-    }
-
-in your projects composer.json.
+```
+composer require phrity/util-numerics
+```
 
 Client usage:
 -------------

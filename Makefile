@@ -5,7 +5,7 @@ update:
 	./composer.phar update
 
 test: vendor/bin/phpunit build
-	./vendor/bin/phpunit --strict
+	./vendor/bin/phpunit
 
 composer.phar:
 	curl -s http://getcomposer.org/installer | php

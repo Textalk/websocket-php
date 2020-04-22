@@ -23,7 +23,7 @@ Installing
 
 Preferred way to install is with [Composer](https://getcomposer.org/).
 ```
-composer require phrity/util-numerics
+composer require textalk/websocket
 ```
 
 Client usage:

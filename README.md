@@ -39,23 +39,39 @@ $client->send("Hello WebSocket.org!");
 echo $client->receive(); // Will output 'Hello WebSocket.org!'
 ```
 
-Developer install
+Development and contrubutions
 -----------------
 
-Development depends on php, php-curl and php-xdebug.
+Install or update dependencies using [Composer](https://getcomposer.org/).
+```
+# Install dependencies
+make install
 
-```bash
-# Will get composer, install dependencies and run tests
+# Update dependencies
+make update
+```
+
+This project uses [https://www.php-fig.org/psr/psr-1/](PSR1) and [https://www.php-fig.org/psr/psr-12/](PSR12) code standards.
+```
+# Check code standard adherence
+make cs-check
+```
+
+Unit tests with [https://phpunit.readthedocs.io/en/8.1/](PHPUnit).
+```
+# Check code standard adherence
 make test
 ```
+
 
 
 License ([ISC](http://en.wikipedia.org/wiki/ISC_license))
 ---------------------------------------------------------
 
-Copyright (C) 2014, 2015 Textalk
+Copyright (C) 2014-2020 Textalk/Abicart
 Copyright (C) 2015 Patrick McCarren - added payload fragmentation for huge payloads
 Copyright (C) 2015 Ignas Bernotas - added stream context options
+Copyright (C) 2015 Patrick McCarren - added ping/pong support
 
 Websocket PHP is free software: Permission to use, copy, modify, and/or distribute this software
 for any purpose with or without fee is hereby granted, provided that the above copyright notice and

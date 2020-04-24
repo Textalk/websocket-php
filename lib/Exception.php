@@ -1,4 +1,7 @@
 <?php
 
 namespace WebSocket;
-class Exception extends \Exception {}
+
+class Exception extends \Exception
+{
+}

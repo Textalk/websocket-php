@@ -39,7 +39,7 @@ $client->send("Hello WebSocket.org!");
 echo $client->receive(); // Will output 'Hello WebSocket.org!'
 ```
 
-Development and contrubutions
+Development and contribution
 -----------------
 
 Install or update dependencies using [Composer](https://getcomposer.org/).
@@ -62,8 +62,6 @@ Unit tests with [https://phpunit.readthedocs.io/en/8.1/](PHPUnit).
 # Check code standard adherence
 make test
 ```
-
-
 
 License ([ISC](http://en.wikipedia.org/wiki/ISC_license))
 ---------------------------------------------------------

@@ -136,10 +136,7 @@ class Base
         if ($masked) {
             // generate a random mask:
             $mask = '';
-            for (
-                $i = 0; $i < 4;
-                $i++
-            ) {
+            for ($i = 0; $i < 4; $i++) {
                 $mask .= chr(rand(0, 255));
             }
             $frame .= $mask;
@@ -224,10 +221,7 @@ class Base
 
             if ($mask) {
                 // Unmask payload.
-                for (
-                    $i = 0; $i < $payload_length;
-                    $i++
-                ) {
+                for ($i = 0; $i < $payload_length; $i++) {
                     $payload .= ($data[$i] ^ $masking_key[$i % 4]);
                 }
             } else {
@@ -340,10 +334,7 @@ class Base
     protected static function sprintB($string)
     {
         $return = '';
-        for (
-            $i = 0; $i < strlen($string);
-            $i++
-        ) {
+        for ($i = 0; $i < strlen($string); $i++) {
             $return .= sprintf("%08b", ord($string[$i]));
         }
         return $return;

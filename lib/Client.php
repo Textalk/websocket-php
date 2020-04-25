@@ -117,12 +117,12 @@ class Client extends Base
 
         // Default headers (using lowercase for simpler array_merge below).
         $headers = array(
-        'host'                  => $host . ":" . $port,
-        'user-agent'            => 'websocket-client-php',
-        'connection'            => 'Upgrade',
-        'upgrade'               => 'websocket',
-        'sec-websocket-key'     => $key,
-        'sec-websocket-version' => '13',
+            'host'                  => $host . ":" . $port,
+            'user-agent'            => 'websocket-client-php',
+            'connection'            => 'Upgrade',
+            'upgrade'               => 'websocket',
+            'sec-websocket-key'     => $key,
+            'sec-websocket-version' => '13',
         );
 
         // Handle basic authentication.
@@ -140,9 +140,7 @@ class Client extends Base
             $headers = array_merge($headers, array_change_key_case($this->options['headers']));
         }
 
-        $header =
-        "GET " . $path_with_query . " HTTP/1.1\r\n"
-        . implode(
+        $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(
             "\r\n",
             array_map(
                 function ($key, $value) {
@@ -151,8 +149,7 @@ class Client extends Base
                 array_keys($headers),
                 $headers
             )
-        )
-        . "\r\n\r\n";
+        ) . "\r\n\r\n";
 
         // Send headers.
         $this->write($header);
@@ -173,7 +170,7 @@ class Client extends Base
 
         $keyAccept = trim($matches[1]);
         $expectedResonse
-        = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+            = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
         if ($keyAccept !== $expectedResonse) {
             throw new ConnectionException('Server sent bad upgrade response.');

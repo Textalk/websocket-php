@@ -26,6 +26,9 @@ Preferred way to install is with [Composer](https://getcomposer.org/).
 composer require textalk/websocket
 ```
 
+Currently support PHP versions `^5.4` and `^7.0`.
+
+
 Client usage:
 -------------
 ```php
@@ -51,13 +54,13 @@ make install
 make update
 ```
 
-This project uses [https://www.php-fig.org/psr/psr-1/](PSR1) and [https://www.php-fig.org/psr/psr-12/](PSR12) code standards.
+This project uses [PSR-1](https://www.php-fig.org/psr/psr-1/) and [PSR-12](https://www.php-fig.org/psr/psr-12/) code standards.
 ```
 # Check code standard adherence
 make cs-check
 ```
 
-Unit tests with [https://phpunit.readthedocs.io/en/8.1/](PHPUnit).
+Unit tests with [PHPUnit](https://phpunit.readthedocs.io/).
 ```
 # Run unit tests
 make test

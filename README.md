@@ -59,7 +59,7 @@ make cs-check
 
 Unit tests with [https://phpunit.readthedocs.io/en/8.1/](PHPUnit).
 ```
-# Check code standard adherence
+# Run unit tests
 make test
 ```
 

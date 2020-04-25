@@ -12,10 +12,7 @@ php:
   - 5.4
 
 before_script:
-  - curl -s http://getcomposer.org/installer | php
-  - php composer.phar install --dev --no-interaction
+  - make install build
 
 script:
-  - mkdir -p build/logs
-  - ./vendor/bin/phpunit --coverage-clover build/logs/clover.xml
-  - ./vendor/bin/coveralls -v
+  - make coverage cs-check

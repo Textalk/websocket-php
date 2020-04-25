@@ -1,4 +1,7 @@
 <?php
 
 namespace WebSocket;
-class BadOpcodeException extends Exception {}
+
+class BadOpcodeException extends Exception
+{
+}

@@ -20,7 +20,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "WebSocket\\Tests\\": "tests"
+            "WebSocket\\Tests\\": "tests",
+            "WebSocket\\": "tests/mock"
         }
     },
     "require": {

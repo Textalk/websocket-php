@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This class is used by tests to mock and track various socket/straem calls.
+ * This class is used by tests to mock and track various socket/stream calls.
  */
 
 namespace WebSocket;
@@ -12,7 +12,7 @@ class MockSocket
     private static $queue = [];
     private static $asserter = [];
 
-    // Handler called by function overlaods in mock-socket.php
+    // Handler called by function overloads in mock-socket.php
     public static function handle($function, $params = [])
     {
         $current = array_shift(self::$queue);
@@ -47,7 +47,7 @@ class MockSocket
     {
         switch ($op) {
             case 'chr-array':
-                // Cobver int array to string
+                // Convert int array to string
                 $out = '';
                 foreach ($data as $val) {
                     $out .= chr($val);

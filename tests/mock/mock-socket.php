@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is used by tests to overload and mock various socket/straem calls.
+ * This file is used by tests to overload and mock various socket/stream calls.
  */
 
 namespace WebSocket;

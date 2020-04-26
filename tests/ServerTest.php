@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Test case for Server
+ * Test case for Server.
+ * Note that this test is performed by mocking socket/stream calls.
  */
 
 namespace WebSocket;

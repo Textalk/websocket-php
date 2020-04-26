@@ -10,6 +10,11 @@ namespace WebSocket;
 class ServerTest extends \PHPUnit_Framework_TestCase
 {
 
+    public function setUp()
+    {
+        error_reporting(-1);
+    }
+
     public function testServerMasked()
     {
         MockSocket::initialize('server.construct', $this);

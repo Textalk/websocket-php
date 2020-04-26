@@ -259,8 +259,7 @@
         "function": "fwrite",
         "params": [
             "@mock-stream",
-            "HTTP\/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: YmysboNHNoWzWVeQpduY7xELjgU=\r\n\r\n",
-            null
+            "HTTP\/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: YmysboNHNoWzWVeQpduY7xELjgU=\r\n\r\n"
         ],
         "return": 129
     }

@@ -1,12 +1,17 @@
 [
     {
+        "function": "fwrite",
+        "params": [],
+        "return":12
+    },
+    {
         "function": "fread",
         "params": [
             "@mock-stream",
             2
         ],
         "return-op": "chr-array",
-        "return": [129, 152]
+        "return": [136,154]
     },
     {
         "function": "fread",
@@ -15,15 +20,22 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [191, 120, 168, 138]
+        "return": [245,55,62,8]
     },
     {
         "function": "fread",
         "params": [
             "@mock-stream",
-            24
+            26
         ],
         "return-op": "chr-array",
-        "return": [252,20,193,239,209,12,136,249,218,22,204,227,209,31,136,235,159,21,205,249,204,25,207,239]
+        "return": [246,223,125,100,154,68,91,40,148,84,85,102,154,64,82,109,145,80,91,108,207,23,15,56,197,7]
+    },
+    {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
     }
 ]

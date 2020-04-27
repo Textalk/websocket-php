@@ -1,0 +1,24 @@
+[
+    {
+        "function": "stream_set_timeout",
+        "params": [
+            "@mock-stream",
+            300
+        ],
+        "return": true
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 22
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 14
+    }
+]

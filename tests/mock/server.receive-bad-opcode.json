@@ -6,7 +6,7 @@
             2
         ],
         "return-op": "chr-array",
-        "return": [129, 152]
+        "return": [140, 115]
     },
     {
         "function": "fread",
@@ -15,7 +15,7 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [191, 120, 168, 138]
+        "return": [252,20,193,239]
     },
     {
         "function": "fread",

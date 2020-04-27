@@ -45,10 +45,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.receive-simple', $this);
         $message = $server->receive();
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertEquals('Client sending a message', $message);
+        $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($server->isConnected());
-        $this->assertEquals(4096, $server->getFragmentSize());
         $this->assertNull($server->getCloseStatus());
         $this->assertEquals('text', $server->getLastOpcode());
 
@@ -56,9 +55,15 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->send('Server sending a message');
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($server->isConnected());
-        $this->assertEquals(4096, $server->getFragmentSize());
         $this->assertNull($server->getCloseStatus());
         $this->assertEquals('text', $server->getLastOpcode());
+
+        MockSocket::initialize('server.close', $this);
+        $server->close();
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($server->isConnected());
+        $this->assertEquals(1000, $server->getCloseStatus());
+        $this->assertEquals('close', $server->getLastOpcode());
     }
 
     public function testServerWithTimeout()
@@ -69,6 +74,41 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept-timeout', $this);
         $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testPayload128()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        $payload = file_get_contents(__DIR__ . '/mock/payload.128.txt');
+
+        MockSocket::initialize('server.send-payload-128', $this);
+        $server->send($payload);
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testPayload65536()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        $payload = file_get_contents(__DIR__ . '/mock/payload.65536.txt');
+        $server->setFragmentSize(65540);
+
+        MockSocket::initialize('server.send-payload-65536', $this);
+        $server->send($payload);
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -104,5 +144,33 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept-failed-ws-key', $this);
         $server->accept();
+    }
+
+    /**
+     * @expectedException        WebSocket\BadOpcodeException
+     * @expectedExceptionMessage Bad opcode 'bad'.  Try 'text' or 'binary'.
+     */
+    public function testSendBadOpcode()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Bad Opcode', 'bad');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Bad opcode in websocket frame: 12
+     */
+    public function testRecieveBadOpcode()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        MockSocket::initialize('server.receive-bad-opcode', $this);
+        $message = $server->receive();
+        var_dump($server->getLastOpcode());
     }
 }

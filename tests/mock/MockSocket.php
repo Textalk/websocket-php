@@ -53,6 +53,9 @@ class MockSocket
                     $out .= chr($val);
                 }
                 return $out;
+            case 'file':
+                $content = file_get_contents(__DIR__ . "/{$data[0]}");
+                return substr($content, $data[1], $data[2]);
         }
     }
 }

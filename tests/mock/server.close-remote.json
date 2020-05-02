@@ -1,0 +1,41 @@
+[
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [136, 135]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [54, 79, 233, 244]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            7
+        ],
+        "return-op": "chr-array",
+        "return": [117, 35, 134, 135, 95, 33, 142]
+    },
+    {
+        "function": "fwrite",
+        "params": [],
+        "return": 33
+    },
+    {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    }
+]

@@ -1,0 +1,63 @@
+[
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 17
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [138, 132]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [136, 245, 102, 27]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [248, 154, 8, 124]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [138, 139]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [87, 205, 109, 255]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            11
+        ],
+        "return-op": "chr-array",
+        "return": [20, 161, 4, 154, 57, 185, 77, 143, 62, 163, 10]
+    }
+]

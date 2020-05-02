@@ -1,9 +1,0 @@
-[
-    {
-        "function": "fwrite",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": 65550
-    }
-]

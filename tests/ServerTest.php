@@ -43,16 +43,10 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('websocket-client-php', $server->getHeader('USER-AGENT'));
         $this->assertNull($server->getHeader('no such header'));
 
-        MockSocket::initialize('server.receive-simple', $this);
+        MockSocket::initialize('server.send-receive', $this);
+        $server->send('Server sending a message');
         $message = $server->receive();
         $this->assertEquals('Client sending a message', $message);
-        $this->assertTrue(MockSocket::isEmpty());
-        $this->assertTrue($server->isConnected());
-        $this->assertNull($server->getCloseStatus());
-        $this->assertEquals('text', $server->getLastOpcode());
-
-        MockSocket::initialize('server.send-simple', $this);
-        $server->send('Server sending a message');
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($server->isConnected());
         $this->assertNull($server->getCloseStatus());
@@ -89,8 +83,10 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         $payload = file_get_contents(__DIR__ . '/mock/payload.128.txt');
 
-        MockSocket::initialize('server.send-payload-128', $this);
-        $server->send($payload);
+        MockSocket::initialize('server.send-receive-128', $this);
+        $server->send($payload, 'text', false);
+        $message = $server->receive();
+        $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -107,8 +103,50 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $payload = file_get_contents(__DIR__ . '/mock/payload.65536.txt');
         $server->setFragmentSize(65540);
 
-        MockSocket::initialize('server.send-payload-65536', $this);
-        $server->send($payload);
+        MockSocket::initialize('server.send-receive-65536', $this);
+        $server->send($payload, 'text', false);
+        $message = $server->receive();
+        $this->assertEquals($payload, $message);
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testPingPong()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.ping-pong', $this);
+        $server->send('Server ping', 'ping');
+        $message = $server->receive();
+        $this->assertEquals('pong', $message);
+
+        $message = $server->receive();
+        $this->assertEquals('Client ping', $message);
+
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testRemoteCloses()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.close-remote', $this);
+
+        /// @todo: Payload substr in Base.php probably wrong
+        $message = $server->receive();
+        $this->assertEquals('osing', $message);
+
         $this->assertTrue(MockSocket::isEmpty());
     }
 

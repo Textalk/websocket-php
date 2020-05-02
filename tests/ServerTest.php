@@ -124,11 +124,13 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->send('Server ping', 'ping');
         $message = $server->receive();
         $this->assertEquals('pong', $message);
+        $this->assertEquals('pong', $server->getLastOpcode());
 
         $message = $server->receive();
         $this->assertEquals('Client ping', $message);
 
         $this->assertTrue(MockSocket::isEmpty());
+        $this->assertEquals('ping', $server->getLastOpcode());
     }
 
     public function testRemoteCloses()
@@ -148,6 +150,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('osing', $message);
 
         $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($server->isConnected());
+        $this->assertEquals(17260, $server->getCloseStatus());
+        $this->assertEquals('close', $server->getLastOpcode());
     }
 
     /**

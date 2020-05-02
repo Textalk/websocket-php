@@ -22,7 +22,7 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [136, 245, 102, 27]
+        "return": [168, 170, 40, 134]
     },
     {
         "function": "fread",
@@ -31,8 +31,9 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [248, 154, 8, 124]
+        "return": [216, 197, 70, 225]
     },
+
     {
         "function": "fread",
         "params": [
@@ -40,7 +41,7 @@
             2
         ],
         "return-op": "chr-array",
-        "return": [138, 139]
+        "return": [137, 139]
     },
     {
         "function": "fread",
@@ -49,7 +50,7 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [87, 205, 109, 255]
+        "return": [180, 77, 192, 201]
     },
     {
         "function": "fread",
@@ -58,6 +59,13 @@
             11
         ],
         "return-op": "chr-array",
-        "return": [20, 161, 4, 154, 57, 185, 77, 143, 62, 163, 10]
+        "return": [247, 33, 169, 172, 218, 57, 224, 185, 221, 35, 167]
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 10
     }
 ]

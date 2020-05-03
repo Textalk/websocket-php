@@ -10,7 +10,8 @@ class MockSocket
 {
 
     private static $queue = [];
-    private static $asserter = [];
+    private static $stored = [];
+    private static $asserter;
 
     // Handler called by function overloads in mock-socket.php
     public static function handle($function, $params = [])
@@ -21,7 +22,7 @@ class MockSocket
             self::$asserter->assertEquals($param, $params[$index], json_encode([$current, $params]));
         }
         if (isset($current['return-op'])) {
-            return self::op($current['return-op'], $current['return']);
+            return self::op($current['return-op'], $params, $current['return']);
         }
         if (isset($current['return'])) {
             return $current['return'];
@@ -38,12 +39,13 @@ class MockSocket
     // Initialize call queue
     public static function initialize($op_file, $asserter)
     {
-        self::$queue = json_decode(file_get_contents(__DIR__ . "/{$op_file}.json"), true);
+        $file = dirname(__DIR__) . "/scripts/{$op_file}.json";
+        self::$queue = json_decode(file_get_contents($file), true);
         self::$asserter = $asserter;
     }
 
     // Special output handling
-    private static function op($op, $data)
+    private static function op($op, $params, $data)
     {
         switch ($op) {
             case 'chr-array':
@@ -56,6 +58,15 @@ class MockSocket
             case 'file':
                 $content = file_get_contents(__DIR__ . "/{$data[0]}");
                 return substr($content, $data[1], $data[2]);
+            case 'key-save':
+                preg_match('#Sec-WebSocket-Key:\s(.*)$#mUi', $params[1], $matches);
+                self::$stored['sec-websocket-key'] = trim($matches[1]);
+                return $data;
+            case 'key-respond':
+                $key = self::$stored['sec-websocket-key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+                $encoded = base64_encode(pack('H*', sha1($key)));
+                return str_replace('{key}', $encoded, $data);
         }
+        return $data;
     }
 }

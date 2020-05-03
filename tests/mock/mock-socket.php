@@ -51,3 +51,18 @@ function fread()
     $args = func_get_args();
     return MockSocket::handle('fread', $args);
 }
+function stream_context_create()
+{
+    $args = func_get_args();
+    return MockSocket::handle('stream_context_create', $args);
+}
+function stream_socket_client()
+{
+    $args = func_get_args();
+    return MockSocket::handle('stream_socket_client', $args);
+}
+function get_resource_type()
+{
+    $args = func_get_args();
+    return MockSocket::handle('get_resource_type', $args);
+}

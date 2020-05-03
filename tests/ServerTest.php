@@ -110,6 +110,24 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testMultiFragment()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.send-receive-multi-fragment', $this);
+        $server->setFragmentSize(8);
+        $server->send('Multi fragment test');
+        $message = $server->receive();
+        $this->assertEquals('Multi fragment test', $message);
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
     public function testPingPong()
     {
         MockSocket::initialize('server.construct', $this);
@@ -214,6 +232,47 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         MockSocket::initialize('server.receive-bad-opcode', $this);
         $message = $server->receive();
-        var_dump($server->getLastOpcode());
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Could only write 18 out of 22 bytes.
+     */
+    public function testBrokenWrite()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        MockSocket::initialize('server.broken-write', $this);
+        $server->send('Failing to write');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Broken frame, read 0 of stated 2 bytes.
+     */
+    public function testBrokenRead()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        MockSocket::initialize('server.broken-read', $this);
+        $server->receive();
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Empty read; connection dead?
+     */
+    public function testEmptyRead()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        MockSocket::initialize('server.broken-read-empty', $this);
+        $server->receive();
     }
 }

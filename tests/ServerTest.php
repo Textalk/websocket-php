@@ -231,7 +231,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
-        MockSocket::initialize('server.receive-bad-opcode', $this);
+        MockSocket::initialize('receive-bad-opcode', $this);
         $message = $server->receive();
     }
 
@@ -245,7 +245,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
-        MockSocket::initialize('server.broken-write', $this);
+        MockSocket::initialize('send-broken-write', $this);
         $server->send('Failing to write');
     }
 
@@ -259,7 +259,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
-        MockSocket::initialize('server.broken-read', $this);
+        MockSocket::initialize('receive-broken-read', $this);
         $server->receive();
     }
 
@@ -273,7 +273,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
-        MockSocket::initialize('server.broken-read-empty', $this);
+        MockSocket::initialize('receive-empty-read', $this);
         $server->receive();
     }
 }

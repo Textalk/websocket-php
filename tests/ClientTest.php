@@ -187,7 +187,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($client->isConnected());
     }
 
-    public function tesReconnect()
+    public function testReconnect()
     {
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
@@ -204,7 +204,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('client.reconnect', $this);
         $message = $client->receive();
         $this->assertTrue(MockSocket::isEmpty());
-        $this->assertFalse($client->isConnected());
+        $this->assertTrue($client->isConnected());
     }
 
     /**

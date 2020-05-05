@@ -15,16 +15,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         error_reporting(-1);
     }
 
-    public function tearDown()
-    {
-    }
-
     public function testClientMasked()
     {
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');
         $this->assertTrue(MockSocket::isEmpty());
+        $this->assertEquals(4096, $client->getFragmentSize());
 
         MockSocket::initialize('send-receive', $this);
         $client->send('Sending a message');
@@ -119,6 +116,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $message = $client->receive();
         $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
+        $this->assertEquals(65540, $client->getFragmentSize());
     }
 
     public function testMultiFragment()
@@ -134,6 +132,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $message = $client->receive();
         $this->assertEquals('Multi fragment test', $message);
         $this->assertTrue(MockSocket::isEmpty());
+        $this->assertEquals(8, $client->getFragmentSize());
     }
 
     public function testPingPong()
@@ -175,6 +174,39 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('close', $client->getLastOpcode());
     }
 
+    public function testSetTimeout()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('config-timeout', $this);
+        $client->setTimeout(300);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertTrue($client->isConnected());
+    }
+
+    public function tesReconnect()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('client.close', $this);
+        $client->close();
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(1000, $client->getCloseStatus());
+        $this->assertEquals('close', $client->getLastOpcode());
+
+        MockSocket::initialize('client.reconnect', $this);
+        $message = $client->receive();
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($client->isConnected());
+    }
+
     /**
      * @expectedException        WebSocket\BadUriException
      * @expectedExceptionMessage Url should have scheme ws or wss
@@ -203,7 +235,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testFailedConnection()
     {
-        $this->markTestSkipped('Need to init params before call');
         MockSocket::initialize('client.connect-failed', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');

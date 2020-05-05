@@ -7,9 +7,10 @@
         "return": "stream"
     },
     {
-        "function": "fclose",
+        "function": "stream_set_timeout",
         "params": [
-            "@mock-stream"
+            "@mock-stream",
+            300
         ],
         "return": true
     }

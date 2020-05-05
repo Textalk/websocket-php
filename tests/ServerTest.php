@@ -13,7 +13,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         error_reporting(-1);
-        $this->markTestSkipped(); // Temporarily disabled
     }
 
     public function testServerMasked()
@@ -172,6 +171,22 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($server->isConnected());
         $this->assertEquals(17260, $server->getCloseStatus());
         $this->assertEquals('close', $server->getLastOpcode());
+    }
+
+    public function testSetTimeout()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('config-timeout', $this);
+        $server->setTimeout(300);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertTrue($server->isConnected());
     }
 
     /**

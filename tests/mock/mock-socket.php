@@ -56,9 +56,9 @@ function stream_context_create()
     $args = func_get_args();
     return MockSocket::handle('stream_context_create', $args);
 }
-function stream_socket_client()
+function stream_socket_client($remote_socket, &$errno, &$errstr, $timeout, $flags, $context)
 {
-    $args = func_get_args();
+    $args = [$remote_socket, $errno, $errstr, $timeout, $flags, $context];
     return MockSocket::handle('stream_socket_client', $args);
 }
 function get_resource_type()

@@ -22,8 +22,8 @@ Code coverage by [Coveralls](https://coveralls.io/github/Textalk/websocket-php).
 
 ## Test strategy
 
-The unit tests rely on overloading certain socket and stream functions in PHP.
-The method parametres and returns are perofrmed as "scripts", defined as JSON files.
+Test set up overloads various stream and socket functions,
+and use "scripts" to define and mock input/output of these functions.
 
-This set up is somewhat complex, but allow testing without actual servers and streams active.
-It is also possible to mock various failures and unexpected results.
+This set up negates the dependency on running servers,
+and allow testing various errors that might occur.

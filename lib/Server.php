@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014, 2015 Textalk
+ * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -9,9 +9,6 @@
 
 namespace WebSocket;
 
-/**
- * This is just a simple stub for testing the Client.  It could be made useful…
- */
 class Server extends Base
 {
     protected $addr;
@@ -40,8 +37,16 @@ class Server extends Base
         } while ($this->listening === false && $this->port++ < 10000);
 
         if (!$this->listening) {
-            throw new ConnectionException("Could not open listening socket.");
+            throw new ConnectionException("Could not open server socket: $errstr", $errno);
         }
+    }
+
+    public function __destruct()
+    {
+        if ($this->isConnected()) {
+            fclose($this->socket);
+        }
+        $this->socket = null;
     }
 
     public function getPort()
@@ -72,16 +77,26 @@ class Server extends Base
 
     public function accept()
     {
+        $this->socket = null;
+        return (bool)$this->listening;
+    }
+
+    protected function connect()
+    {
+        set_error_handler(function ($errno, $errstr) {
+            throw new ConnectionException($errstr, $errno);
+        }, E_WARNING | E_ERROR);
+
         if (empty($this->options['timeout'])) {
-            $this->socket = stream_socket_accept($this->listening);
+            $this->socket = @stream_socket_accept($this->listening);
         } else {
-            $this->socket = stream_socket_accept($this->listening, $this->options['timeout']);
+            $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
         $this->performHandshake();
 
-        return $this->socket;
+        restore_error_handler();
     }
 
     protected function performHandshake()
@@ -119,6 +134,5 @@ class Server extends Base
                 . "\r\n";
 
         $this->write($header);
-        $this->is_connected = true;
     }
 }

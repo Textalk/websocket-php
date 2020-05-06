@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(-1);
+
 /**
  * This file is used for the tests, but can also serve as an example of a WebSocket\Server.
  */

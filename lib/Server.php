@@ -15,6 +15,7 @@ class Server extends Base
     protected $port;
     protected $listening;
     protected $request;
+    protected $request_path;
 
     /**
      * @param array $options

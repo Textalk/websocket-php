@@ -52,6 +52,7 @@ class WebSocketTest extends \PHPUnit_Framework_TestCase
 
     public function setup()
     {
+        error_reporting(-1);
         // Setup server side coverage catching
         $this->test_id = rand();
     }

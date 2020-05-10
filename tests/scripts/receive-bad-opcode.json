@@ -1,0 +1,11 @@
+[
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [140, 115]
+    }
+]

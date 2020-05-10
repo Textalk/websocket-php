@@ -1,0 +1,16 @@
+[
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 18
+    }
+]

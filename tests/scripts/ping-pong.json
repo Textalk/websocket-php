@@ -1,0 +1,98 @@
+[
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 17
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [138, 132]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [168, 170, 40, 134]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [216, 197, 70, 225]
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [137, 139]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [180, 77, 192, 201]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            11
+        ],
+        "return-op": "chr-array",
+        "return": [247, 33, 169, 172, 218, 57, 224, 185, 221, 35, 167]
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 10
+    }
+]

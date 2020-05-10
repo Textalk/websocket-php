@@ -276,6 +276,9 @@ class Base
      */
     public function close($status = 1000, $message = 'ttfn')
     {
+        if (!$this->isConnected()) {
+            return null;
+        }
         $status_binstr = sprintf('%016b', $status);
         $status_str = '';
         foreach (str_split($status_binstr, 8) as $binstr) {

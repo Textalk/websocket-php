@@ -32,11 +32,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('client.close', $this);
         $this->assertTrue($client->isConnected());
         $this->assertNull($client->getCloseStatus());
-        $client->close();
 
+        $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
         $this->assertEquals('close', $client->getLastOpcode());
+
+        $client->close();
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(1000, $client->getCloseStatus());
+        $this->assertEquals('close', $client->getLastOpcode());
+
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -224,6 +230,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         MockSocket::initialize('client.connect', $this);
         $client = new Client('bad://localhost:8000/my/mock/path');
+        $client->send('Connect');
+    }
+
+    /**
+     * @expectedException        WebSocket\BadUriException
+     * @expectedExceptionMessage Invalid url 'this is not an url' provided.
+     */
+    public function testBadUrl()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('this is not an url');
         $client->send('Connect');
     }
 

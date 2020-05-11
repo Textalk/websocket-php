@@ -223,7 +223,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('server.accept-failed-http', $this);
         $server->accept();
         $server->send('Connect');
-   }
+    }
 
     /**
      * @expectedException        WebSocket\ConnectionException

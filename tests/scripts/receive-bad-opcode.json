@@ -4,7 +4,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fread",

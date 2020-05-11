@@ -4,7 +4,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fwrite",
@@ -18,7 +18,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fread",
@@ -52,7 +52,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fread",
@@ -86,7 +86,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fwrite",

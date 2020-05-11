@@ -4,7 +4,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": false
+        "return": "Unknown"
     },
     {
         "function": "stream_context_create",
@@ -28,7 +28,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "stream_set_timeout",
@@ -88,6 +88,6 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     }
 ]

@@ -4,21 +4,21 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "get_resource_type",
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "get_resource_type",
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fwrite",
@@ -30,7 +30,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "fread",
@@ -71,6 +71,6 @@
         "params": [
             "@mock-stream"
         ],
-        "return": false
+        "return": "Unknown"
     }
 ]

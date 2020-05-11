@@ -38,7 +38,7 @@ class Server extends Base
         } while ($this->listening === false && $this->port++ < 10000);
 
         if (!$this->listening) {
-            throw new ConnectionException("Could not open server socket: $errstr", $errno);
+            throw new ConnectionException("Could not open listening socket: $errstr", $errno);
         }
     }
 

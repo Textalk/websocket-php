@@ -1,0 +1,7 @@
+[
+    {
+        "function": "stream_socket_accept",
+        "params": [],
+        "return": false
+    }
+]

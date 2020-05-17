@@ -58,6 +58,18 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1000, $server->getCloseStatus());
         $this->assertEquals('close', $server->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
+
+        $server->close(); // Already closed
+    }
+
+    public function testDestruct()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-destruct', $this);
+        $server->accept();
+        $message = $server->receive();
     }
 
     public function testServerWithTimeout()
@@ -210,6 +222,34 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     {
         MockSocket::initialize('server.construct-failed-socket-server', $this);
         $server = new Server(['port' => 9999]);
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Server failed to connect
+     */
+    public function testFailedConnect()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $server->send('Connect');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Server failed to connect
+     */
+    public function testFailedConnectTimeout()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['timeout' => 300]);
+
+        MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $server->send('Connect');
     }
 
     /**

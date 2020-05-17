@@ -84,20 +84,20 @@ class Server extends Base
 
     protected function connect()
     {
-        set_error_handler(function ($errno, $errstr) {
-            throw new ConnectionException($errstr, $errno);
-        }, E_WARNING | E_ERROR);
-
         if (empty($this->options['timeout'])) {
             $this->socket = @stream_socket_accept($this->listening);
+            if (!$this->socket) {
+                throw new ConnectionException('Server failed to connect.');
+            }
         } else {
             $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
+            if (!$this->socket) {
+                throw new ConnectionException('Server failed to connect.');
+            }
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
         $this->performHandshake();
-
-        restore_error_handler();
     }
 
     protected function performHandshake()

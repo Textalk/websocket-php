@@ -6,9 +6,9 @@
 
 namespace WebSocket;
 
-function stream_socket_server()
+function stream_socket_server($local_socket, &$errno, &$errstr)
 {
-    $args = func_get_args();
+    $args = [$local_socket, $errno, $errstr];
     return MockSocket::handle('stream_socket_server', $args);
 }
 function stream_socket_accept()

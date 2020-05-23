@@ -23,7 +23,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
-        $this->assertTrue(MockSocket::isEmpty());
+        $server->send('Connect');
         $this->assertEquals(8000, $server->getPort());
         $this->assertEquals('/my/mock/path', $server->getPath());
         $this->assertTrue($server->isConnected());
@@ -42,22 +42,34 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         ], $server->getRequest());
         $this->assertEquals('websocket-client-php', $server->getHeader('USER-AGENT'));
         $this->assertNull($server->getHeader('no such header'));
+        $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('send-receive', $this);
         $server->send('Sending a message');
         $message = $server->receive();
         $this->assertEquals('Receiving a message', $message);
         $this->assertTrue(MockSocket::isEmpty());
-        $this->assertTrue($server->isConnected());
         $this->assertNull($server->getCloseStatus());
         $this->assertEquals('text', $server->getLastOpcode());
 
         MockSocket::initialize('server.close', $this);
         $server->close();
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($server->isConnected());
         $this->assertEquals(1000, $server->getCloseStatus());
         $this->assertEquals('close', $server->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+
+        $server->close(); // Already closed
+    }
+
+    public function testDestruct()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-destruct', $this);
+        $server->accept();
+        $message = $server->receive();
     }
 
     public function testServerWithTimeout()
@@ -68,6 +80,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept-timeout', $this);
         $server->accept();
+        $server->send('Connect');
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -79,6 +92,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         $payload = file_get_contents(__DIR__ . '/mock/payload.128.txt');
@@ -98,6 +113,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         $payload = file_get_contents(__DIR__ . '/mock/payload.65536.txt');
@@ -118,6 +135,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('send-receive-multi-fragment', $this);
@@ -136,6 +155,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('ping-pong', $this);
@@ -159,6 +180,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('close-remote', $this);
@@ -181,22 +204,52 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('config-timeout', $this);
         $server->setTimeout(300);
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
     }
 
     /**
      * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionMessage Could not open listening socket.
+     * @expectedExceptionMessage Could not open listening socket:
      */
     public function testFailedSocketServer()
     {
         MockSocket::initialize('server.construct-failed-socket-server', $this);
         $server = new Server(['port' => 9999]);
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Server failed to connect
+     */
+    public function testFailedConnect()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $server->send('Connect');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionMessage Server failed to connect
+     */
+    public function testFailedConnectTimeout()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['timeout' => 300]);
+
+        MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $server->send('Connect');
     }
 
     /**
@@ -209,6 +262,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept-failed-http', $this);
         $server->accept();
+        $server->send('Connect');
     }
 
     /**
@@ -221,6 +275,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept-failed-ws-key', $this);
         $server->accept();
+        $server->send('Connect');
     }
 
     /**
@@ -233,6 +288,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
         $server->send('Bad Opcode', 'bad');
     }
 
@@ -246,6 +302,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
         MockSocket::initialize('receive-bad-opcode', $this);
         $message = $server->receive();
     }
@@ -260,6 +317,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
         MockSocket::initialize('send-broken-write', $this);
         $server->send('Failing to write');
     }
@@ -274,6 +332,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
         MockSocket::initialize('receive-broken-read', $this);
         $server->receive();
     }
@@ -288,6 +347,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
+        $server->send('Connect');
         MockSocket::initialize('receive-empty-read', $this);
         $server->receive();
     }

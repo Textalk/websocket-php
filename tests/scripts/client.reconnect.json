@@ -1,5 +1,12 @@
 [
     {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "Unknown"
+    },
+    {
         "function": "stream_context_create",
         "params": [],
         "return": "@mock-stream-context"
@@ -15,6 +22,13 @@
             "@mock-stream-context"
         ],
         "return": "@mock-stream"
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "stream_set_timeout",
@@ -68,5 +82,12 @@
         ],
         "return-op": "chr-array",
         "return": [115, 10, 246, 203, 72, 25, 252, 192, 70, 79, 244, 142, 76, 10, 230, 221, 64, 8, 240]
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     }
 ]

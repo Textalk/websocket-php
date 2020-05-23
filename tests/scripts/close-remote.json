@@ -1,5 +1,12 @@
 [
     {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
+    },
+    {
         "function": "fread",
         "params": [
             "@mock-stream",
@@ -25,6 +32,13 @@
         ],
         "return-op": "chr-array",
         "return": [117, 35, 134, 135, 95, 33, 142]
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "fwrite",

@@ -1,5 +1,12 @@
 [
     {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
+    },
+    {
         "function": "fwrite",
         "params": [],
         "return": 14
@@ -13,6 +20,13 @@
         "function": "fwrite",
         "params": [],
         "return": 9
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "fread",

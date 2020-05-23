@@ -5,12 +5,5 @@
             "@mock-stream"
         ],
         "return": "stream"
-    },
-    {
-        "function": "fwrite",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": 18
     }
 ]

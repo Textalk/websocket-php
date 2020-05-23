@@ -27,18 +27,32 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->send('Sending a message');
         $message = $client->receive();
         $this->assertTrue(MockSocket::isEmpty());
-        $this->assertTrue($client->isConnected());
-        $this->assertNull($client->getCloseStatus());
         $this->assertEquals('text', $client->getLastOpcode());
 
         MockSocket::initialize('client.close', $this);
+        $this->assertTrue($client->isConnected());
+        $this->assertNull($client->getCloseStatus());
+
         $client->close();
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
         $this->assertEquals('close', $client->getLastOpcode());
 
-        // Catch destruct routine
+        $client->close();
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(1000, $client->getCloseStatus());
+        $this->assertEquals('close', $client->getLastOpcode());
+
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testDestruct()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+
         MockSocket::initialize('client.destruct', $this);
     }
 
@@ -150,7 +164,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $message = $client->receive();
         $this->assertEquals('Client ping', $message);
-
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertEquals('ping', $client->getLastOpcode());
     }
@@ -168,10 +181,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $message = $client->receive();
         $this->assertEquals('osing', $message);
 
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());
         $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
     }
 
     public function testSetTimeout()
@@ -183,8 +196,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('config-timeout', $this);
         $client->setTimeout(300);
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($client->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
     }
 
     public function testReconnect()
@@ -195,16 +208,18 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.close', $this);
+        $this->assertTrue($client->isConnected());
+        $this->assertNull($client->getCloseStatus());
         $client->close();
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
         $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.reconnect', $this);
         $message = $client->receive();
-        $this->assertTrue(MockSocket::isEmpty());
         $this->assertTrue($client->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
     }
 
     /**
@@ -215,6 +230,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         MockSocket::initialize('client.connect', $this);
         $client = new Client('bad://localhost:8000/my/mock/path');
+        $client->send('Connect');
+    }
+
+    /**
+     * @expectedException        WebSocket\BadUriException
+     * @expectedExceptionMessage Invalid url 'this is not an url' provided.
+     */
+    public function testBadUrl()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('this is not an url');
         $client->send('Connect');
     }
 
@@ -271,6 +297,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');
+
+        MockSocket::initialize('send-bad-opcode', $this);
         $client->send('Bad Opcode', 'bad');
     }
 

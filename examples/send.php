@@ -9,3 +9,5 @@ $client = new Client("ws://localhost:{$argv[1]}");
 $client->send($argv[2]);
 
 echo $client->receive();
+
+$client->close();

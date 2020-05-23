@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014, 2015 Textalk
- * Copyright (C) 2015 Ignas Bernotas - added context options and handling
+ * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -40,12 +39,10 @@ class Client extends Base
 
     public function __destruct()
     {
-        if ($this->socket) {
-            if (get_resource_type($this->socket) === 'stream') {
-                fclose($this->socket);
-            }
-            $this->socket = null;
+        if ($this->isConnected()) {
+            fclose($this->socket);
         }
+        $this->socket = null;
     }
 
     /**
@@ -54,6 +51,11 @@ class Client extends Base
     protected function connect()
     {
         $url_parts = parse_url($this->socket_uri);
+        if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
+            throw new BadUriException(
+                "Invalid url '$this->socket_uri' provided."
+            );
+        }
         $scheme    = $url_parts['scheme'];
         $host      = $url_parts['host'];
         $user      = isset($url_parts['user']) ? $url_parts['user'] : '';
@@ -103,7 +105,7 @@ class Client extends Base
             $context
         );
 
-        if ($this->socket === false) {
+        if (!$this->isConnected()) {
             throw new ConnectionException(
                 "Could not open socket to \"$host:$port\": $errstr ($errno)."
             );
@@ -175,8 +177,6 @@ class Client extends Base
         if ($keyAccept !== $expectedResonse) {
             throw new ConnectionException('Server sent bad upgrade response.');
         }
-
-        $this->is_connected = true;
     }
 
     /**

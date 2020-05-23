@@ -1,10 +1,24 @@
 [
     {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
+    },
+    {
         "function": "fwrite",
         "params": [
             "@mock-stream"
         ],
         "return": 17
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "fread",
@@ -33,7 +47,13 @@
         "return-op": "chr-array",
         "return": [216, 197, 70, 225]
     },
-
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
+    },
     {
         "function": "fread",
         "params": [
@@ -60,6 +80,13 @@
         ],
         "return-op": "chr-array",
         "return": [247, 33, 169, 172, 218, 57, 224, 185, 221, 35, 167]
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "fwrite",

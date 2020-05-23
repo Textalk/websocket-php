@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014, 2015 Textalk
- * Copyright (C) 2015 Patrick McCarren - added payload fragmentation for huge payloads
+ * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -13,7 +12,6 @@ namespace WebSocket;
 class Base
 {
     protected $socket;
-    protected $is_connected = false;
     protected $is_closing = false;
     protected $last_opcode = null;
     protected $close_status = null;
@@ -40,14 +38,14 @@ class Base
 
     public function isConnected()
     {
-        return $this->is_connected;
+        return $this->socket && get_resource_type($this->socket) == 'stream';
     }
 
     public function setTimeout($timeout)
     {
         $this->options['timeout'] = $timeout;
 
-        if ($this->socket && get_resource_type($this->socket) === 'stream') {
+        if ($this->isConnected()) {
             stream_set_timeout($this->socket, $timeout);
         }
     }
@@ -65,8 +63,8 @@ class Base
 
     public function send($payload, $opcode = 'text', $masked = true)
     {
-        if (!$this->is_connected) {
-            $this->connect(); /// @todo This is a client function, fixme!
+        if (!$this->isConnected()) {
+            $this->connect();
         }
 
         if (!in_array($opcode, array_keys(self::$opcodes))) {
@@ -152,8 +150,8 @@ class Base
 
     public function receive()
     {
-        if (!$this->is_connected) {
-            $this->connect(); /// @todo This is a client function, fixme!
+        if (!$this->isConnected()) {
+            $this->connect();
         }
 
         $this->huge_payload = '';
@@ -253,7 +251,6 @@ class Base
 
             // And close the socket.
             fclose($this->socket);
-            $this->is_connected = false;
         }
 
         // if this is not the last fragment, then we need to save the payload
@@ -279,6 +276,9 @@ class Base
      */
     public function close($status = 1000, $message = 'ttfn')
     {
+        if (!$this->isConnected()) {
+            return null;
+        }
         $status_binstr = sprintf('%016b', $status);
         $status_str = '';
         foreach (str_split($status_binstr, 8) as $binstr) {

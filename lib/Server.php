@@ -11,6 +11,13 @@ namespace WebSocket;
 
 class Server extends Base
 {
+    // Default options
+    protected static $default_options = [
+      'timeout'       => null,
+      'fragment_size' => 4096,
+      'port'          => 8000,
+    ];
+
     protected $addr;
     protected $port;
     protected $listening;
@@ -20,18 +27,14 @@ class Server extends Base
     /**
      * @param array $options
      *   Associative array containing:
-     *   - timeout:  Set the socket timeout in seconds.  Default: 5
-     *   - port:     Chose port for listening.
+     *   - timeout:       Set the socket timeout in seconds.
+     *   - fragment_size: Set framgemnt size.  Default: 4096
+     *   - port:          Chose port for listening. Default 8000.
      */
     public function __construct(array $options = array())
     {
-        // The fragment size
-        if (!array_key_exists('fragment_size', $options)) {
-            $options['fragment_size'] = 4096;
-        }
-
-        $this->port = isset($options['port']) ? $options['port'] : 8000;
-        $this->options = $options;
+        $this->options = array_merge(self::$default_options, $options);
+        $this->port = $this->options['port'];
 
         do {
             $this->listening = @stream_socket_server("tcp://0.0.0.0:$this->port", $errno, $errstr);

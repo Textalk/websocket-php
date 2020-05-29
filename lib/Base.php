@@ -236,7 +236,7 @@ class Base
                 $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
                 $this->close_status = $status;
             }
-            // Get addintional close message
+            // Get additional close message-
             if ($payload_length >= 2) {
                 $payload = substr($payload, 2);
             }
@@ -250,7 +250,7 @@ class Base
             // Close the socket.
             fclose($this->socket);
 
-            // Closing should not return message
+            // Closing should not return message.
             return [null, true];
         }
 

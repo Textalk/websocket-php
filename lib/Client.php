@@ -11,29 +11,29 @@ namespace WebSocket;
 
 class Client extends Base
 {
+    // Default options
+    protected static $default_options = [
+      'timeout'       => 5,
+      'fragment_size' => 4096,
+      'context'       => null,
+      'headers'       => null,
+      'origin'        => null, // @deprecated
+    ];
+
     protected $socket_uri;
 
     /**
      * @param string $uri     A ws/wss-URI
      * @param array  $options
      *   Associative array containing:
-     *   - context:      Set the stream context. Default: empty context
-     *   - timeout:      Set the socket timeout in seconds.  Default: 5
-     *   - headers:      Associative array of headers to set/override.
+     *   - context:       Set the stream context. Default: empty context
+     *   - timeout:       Set the socket timeout in seconds.  Default: 5
+     *   - fragment_size: Set framgemnt size.  Default: 4096
+     *   - headers:       Associative array of headers to set/override.
      */
     public function __construct($uri, $options = array())
     {
-        $this->options = $options;
-
-        if (!array_key_exists('timeout', $this->options)) {
-            $this->options['timeout'] = 5;
-        }
-
-        // the fragment size
-        if (!array_key_exists('fragment_size', $this->options)) {
-            $this->options['fragment_size'] = 4096;
-        }
-
+        $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
     }
 
@@ -117,14 +117,14 @@ class Client extends Base
         // Generate the WebSocket key.
         $key = self::generateKey();
 
-        // Default headers (using lowercase for simpler array_merge below).
+        // Default headers
         $headers = array(
-            'host'                  => $host . ":" . $port,
-            'user-agent'            => 'websocket-client-php',
-            'connection'            => 'Upgrade',
-            'upgrade'               => 'websocket',
-            'sec-websocket-key'     => $key,
-            'sec-websocket-version' => '13',
+            'Host'                  => $host . ":" . $port,
+            'User-Agent'            => 'websocket-client-php',
+            'Connection'            => 'Upgrade',
+            'Upgrade'               => 'websocket',
+            'Sec-WebSocket-Key'     => $key,
+            'Sec-WebSocket-Version' => '13',
         );
 
         // Handle basic authentication.
@@ -139,7 +139,7 @@ class Client extends Base
 
         // Add and override with headers from options.
         if (isset($this->options['headers'])) {
-            $headers = array_merge($headers, array_change_key_case($this->options['headers']));
+            $headers = array_merge($headers, $this->options['headers']);
         }
 
         $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(

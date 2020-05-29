@@ -12,6 +12,7 @@ namespace WebSocket;
 class Base
 {
     protected $socket;
+    protected $options = [];
     protected $is_closing = false;
     protected $last_opcode = null;
     protected $close_status = null;

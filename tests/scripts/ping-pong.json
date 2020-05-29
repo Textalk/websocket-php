@@ -27,7 +27,7 @@
             2
         ],
         "return-op": "chr-array",
-        "return": [138, 132]
+        "return": [138, 139]
     },
     {
         "function": "fread",
@@ -36,16 +36,16 @@
             4
         ],
         "return-op": "chr-array",
-        "return": [168, 170, 40, 134]
+        "return": [1, 1, 1, 1]
     },
     {
         "function": "fread",
         "params": [
             "@mock-stream",
-            4
+            11
         ],
         "return-op": "chr-array",
-        "return": [216, 197, 70, 225]
+        "return": [82, 100, 115, 119, 100, 115, 33, 113, 104, 111, 102]
     },
     {
         "function": "get_resource_type",
@@ -93,6 +93,6 @@
         "params": [
             "@mock-stream"
         ],
-        "return": 10
+        "return": 17
     }
 ]

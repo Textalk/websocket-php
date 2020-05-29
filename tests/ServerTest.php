@@ -162,7 +162,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('ping-pong', $this);
         $server->send('Server ping', 'ping');
         $message = $server->receive();
-        $this->assertEquals('pong', $message);
+        $this->assertEquals('Server ping', $message);
         $this->assertEquals('pong', $server->getLastOpcode());
 
         $message = $server->receive();

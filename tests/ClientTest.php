@@ -159,7 +159,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         MockSocket::initialize('ping-pong', $this);
         $client->send('Server ping', 'ping');
         $message = $client->receive();
-        $this->assertEquals('pong', $message);
+        $this->assertEquals('Server ping', $message);
         $this->assertEquals('pong', $client->getLastOpcode());
 
         $message = $client->receive();

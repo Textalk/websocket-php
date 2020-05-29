@@ -16,7 +16,6 @@ class Base
     protected $is_closing = false;
     protected $last_opcode = null;
     protected $close_status = null;
-    protected $huge_payload = null;
 
     protected static $opcodes = array(
         'continuation' => 0,
@@ -155,24 +154,21 @@ class Base
             $this->connect();
         }
 
-        $this->huge_payload = '';
-
-        $response = null;
-        while (is_null($response)) {
+        $payload = '';
+        do {
             $response = $this->receiveFragment();
-        }
+            $payload .= $response[0];
+        } while (!$response[1]);
 
-        return $response;
+        return $payload;
     }
 
     protected function receiveFragment()
     {
-
         // Just read the main fragment information first.
         $data = $this->read(2);
 
         // Is this the final fragment?  // Bit 0 in byte 0
-        /// @todo Handle huge payloads with multiple fragments.
         $final = (bool) (ord($data[0]) & 1 << 7);
 
         // Should be unused, and must be false…  // Bits 1, 2, & 3
@@ -188,7 +184,7 @@ class Base
         }
         $opcode = $opcode_ints[$opcode_int];
 
-        // record the opcode if we are not receiving a continutation fragment
+        // Record the opcode if we are not receiving a continutation fragment
         if ($opcode !== 'continuation') {
             $this->last_opcode = $opcode;
         }
@@ -235,38 +231,30 @@ class Base
 
         if ($opcode === 'close') {
             // Get the close status.
-            if ($payload_length >= 2) {
+            if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
                 $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
                 $this->close_status = $status;
+            }
+            // Get addintional close message
+            if ($payload_length >= 2) {
                 $payload = substr($payload, 2);
-
-                if (!$this->is_closing) {
-                    $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
-                }
             }
 
             if ($this->is_closing) {
                 $this->is_closing = false; // A close response, all done.
+            } else {
+                $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
             }
 
-            // And close the socket.
+            // Close the socket.
             fclose($this->socket);
+
+            // Closing should not return message
+            return [null, true];
         }
 
-        // if this is not the last fragment, then we need to save the payload
-        if (!$final) {
-            $this->huge_payload .= $payload;
-            return null;
-        }
-        // this is the last fragment, and we are processing a huge_payload
-        if ($this->huge_payload) {
-            // sp we need to retreive the whole payload
-            $payload = $this->huge_payload .= $payload;
-            $this->huge_payload = null;
-        }
-
-        return $payload;
+        return [$payload, $final];
     }
 
     /**
@@ -288,9 +276,7 @@ class Base
         $this->send($status_str . $message, 'close', true);
 
         $this->is_closing = true;
-        $response = $this->receive(); // Receiving a close frame will close the socket now.
-
-        return $response;
+        $this->receive(); // Receiving a close frame will close the socket now.
     }
 
     protected function write($data)

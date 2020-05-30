@@ -1,4 +1,4 @@
-# Websocket Client for PHP
+# Websocket Client and Server for PHP
 
 [![Build Status](https://travis-ci.org/Textalk/websocket-php.svg?branch=master)](https://travis-ci.org/Textalk/websocket-php)
 [![Coverage Status](https://coveralls.io/repos/github/Textalk/websocket-php/badge.svg?branch=master)](https://coveralls.io/github/Textalk/websocket-php)
@@ -20,7 +20,7 @@ Currently support PHP versions `^5.4` and `^7.0`.
 ## Client
 
 The client can read and write on a WebSocket stream.
-It internally supports Upgrade handshake, as well us close and ping/pong operations.
+It internally supports Upgrade handshake and implicit close and ping/pong operations.
 
 ###  Class synopsis
 
@@ -48,11 +48,9 @@ WebSocket\Client {
 This example send a single message to a server, and output the response.
 
 ```php
-use WebSocket\Client;
-
-$client = new Client("ws://echo.websocket.org/");
+$client = new WebSocket\Client("ws://echo.websocket.org/");
 $client->send("Hello WebSocket.org!");
-echo $client->receive(); // Will output 'Hello WebSocket.org!'
+echo $client->receive();
 $client->close();
 ```
 
@@ -63,9 +61,7 @@ Note that these functions **always** throw exception on any failure, including r
 By consuming exceptions, the code will re-connect the socket in next loop iteration.
 
 ```php
-use WebSocket\Client;
-
-$client = new Client("ws://echo.websocket.org/");
+$client = new WebSocket\Client("ws://echo.websocket.org/");
 while (true) {
     try {
         $message = $client->receive();
@@ -88,13 +84,11 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `headers` - Additional headers as associative array name => content.
 
 ```php
-use WebSocket\Client;
-
 $context = stream_context_create();
 stream_context_set_option($context, 'ssl', 'verify_peer', false);
 stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
 
-$client = new Client("ws://echo.websocket.org/", [
+$client = new WebSocket\Client("ws://echo.websocket.org/", [
     'timeout' => 60, // 1 minute time out
     'context' => $context,
     'headers' => [
@@ -106,8 +100,8 @@ $client = new Client("ws://echo.websocket.org/", [
 
 ## Server
 
-The library contains a rudimentary single stream/single threaded server.
-It internally supports Upgrade handshake, as well us close and ping/pong operations.
+The library contains a rudimentary single stream/single thread server.
+It internally supports Upgrade handshake and implicit close and ping/pong operations.
 
 Note that it does **not** support threading or automatic association ot continuous client requests.
 If you require this kind of server behavior, you need to build it on top of provided server implementation.
@@ -144,9 +138,7 @@ WebSocket\Server {
 This example reads a single message from a client, and respond with the same message.
 
 ```php
-use WebSocket\Server;
-
-$server = new Server();
+$server = new WebSocket\Server();
 $server->accept();
 $message = $server->receive();
 $server->send($message);
@@ -160,9 +152,7 @@ Note that these functions **always** throw exception on any failure, including r
 By consuming exceptions, the code will re-connect the socket in next loop iteration.
 
 ```php
-use WebSocket\Server;
-
-$server = new Server();
+$server = new WebSocket\Server();
 while ($server->accept()) {
     try {
         $message = $server->receive();
@@ -184,13 +174,18 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 
 ```php
-use WebSocket\Server;
-
-$server = new Server([
+$server = new WebSocket\Server([
     'timeout' => 60, // 1 minute time out
     'port' => 9000,
 ]);
 ```
+
+## Exceptions
+
+* `WebSocket\BadOpcodeException` - Thrown if provided opcode is invalid.
+* `WebSocket\BadUriException` - Thrown if provided URI is invalid.
+* `WebSocket\ConnectionException` - Thrown on any socket I/O failure.
+
 
 ## Development and contribution
 
@@ -230,7 +225,7 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF 
 NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 
-See ([Copying](COPYING)).
+See [Copying](COPYING).
 
 ### Contributors
 
@@ -245,9 +240,9 @@ Ignas Bernotas, Mark Herhold, Andreas Palm, Sören Jensen, pmaasz, Alexey Stavro
 
  * Implements ping/pong frames (@pmccarren)
  * Correct ping-pong behaviour (@Logioniz)
- * Correct close behaviour
- * Various fixes concerning connection handling
- * Overhaul of Composer, Travis and Coveralls setup, PSR code standard and unit tests
+ * Correct close behaviour (@sirn-se)
+ * Various fixes concerning connection handling (@sirn-se)
+ * Overhaul of Composer, Travis and Coveralls setup, PSR code standard and unit tests (@sirn-se)
 
 1.2.0
 

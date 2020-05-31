@@ -177,9 +177,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('close-remote', $this);
 
-        /// @todo: Payload substr in Base.php probably wrong
         $message = $client->receive();
-        $this->assertEquals('osing', $message);
+        $this->assertEquals('', $message);
 
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());

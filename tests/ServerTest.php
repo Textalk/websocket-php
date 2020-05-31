@@ -186,9 +186,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         MockSocket::initialize('close-remote', $this);
 
-        /// @todo: Payload substr in Base.php probably wrong
         $message = $server->receive();
-        $this->assertEquals('osing', $message);
+        $this->assertEquals('', $message);
 
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($server->isConnected());

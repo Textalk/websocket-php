@@ -13,7 +13,7 @@
             2
         ],
         "return-op": "chr-array",
-        "return": [136, 135]
+        "return": [136, 137]
     },
     {
         "function": "fread",
@@ -28,10 +28,10 @@
         "function": "fread",
         "params": [
             "@mock-stream",
-            7
+            9
         ],
         "return-op": "chr-array",
-        "return": [117, 35, 134, 135, 95, 33, 142]
+        "return": [117, 35, 170, 152, 89, 60, 128, 154, 81]
     },
     {
         "function": "get_resource_type",

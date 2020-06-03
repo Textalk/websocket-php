@@ -71,23 +71,13 @@ class Base
             throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
         }
 
-        // record the length of the payload
-        $payload_length = strlen($payload);
+        $payload_chunks = str_split($payload, $this->options['fragment_size']);
 
-        $fragment_cursor = 0;
-        // while we have data to send
-        while ($payload_length > $fragment_cursor) {
-            // get a fragment of the payload
-            $sub_payload = substr($payload, $fragment_cursor, $this->options['fragment_size']);
+        for ($index = 0; $index < count($payload_chunks); ++$index) {
+            $chunk = $payload_chunks[$index];
+            $final = $index == count($payload_chunks) - 1;
 
-            // advance the cursor
-            $fragment_cursor += $this->options['fragment_size'];
-
-            // is this the final fragment to send?
-            $final = $payload_length <= $fragment_cursor;
-
-            // send the fragment
-            $this->sendFragment($final, $sub_payload, $opcode, $masked);
+            $this->sendFragment($final, $chunk, $opcode, $masked);
 
             // all fragments after the first will be marked a continuation
             $opcode = 'continuation';

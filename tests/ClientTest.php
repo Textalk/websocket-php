@@ -162,6 +162,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Server ping', $message);
         $this->assertEquals('pong', $client->getLastOpcode());
 
+        $client->send('', 'ping');
+        $message = $client->receive();
+        $this->assertEquals('', $message);
+        $this->assertEquals('pong', $client->getLastOpcode());
+
         $message = $client->receive();
         $this->assertEquals('Client ping', $message);
         $this->assertTrue(MockSocket::isEmpty());

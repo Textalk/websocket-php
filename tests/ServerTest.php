@@ -165,6 +165,11 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Server ping', $message);
         $this->assertEquals('pong', $server->getLastOpcode());
 
+        $server->send('', 'ping');
+        $message = $server->receive();
+        $this->assertEquals('', $message);
+        $this->assertEquals('pong', $server->getLastOpcode());
+
         $message = $server->receive();
         $this->assertEquals('Client ping', $message);
 

@@ -19,7 +19,7 @@
         "return": {
             "timed_out": false,
             "blocked": true,
-            "eof": false,
+            "eof": true,
             "stream_type": "tcp_socket\/ssl",
             "mode": "r+",
             "unread_bytes": 2,

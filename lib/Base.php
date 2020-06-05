@@ -170,7 +170,10 @@ class Base
         $opcode_int = ord($data[0]) & 31; // Bits 4-7
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
-            throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
+            throw new ConnectionException(
+                "Bad opcode in websocket frame: $opcode_int",
+                ConnectionException::BAD_OPCODE
+            );
         }
         $opcode = $opcode_ints[$opcode_int];
 
@@ -272,11 +275,14 @@ class Base
     protected function write($data)
     {
         $written = fwrite($this->socket, $data);
+        if ($written === false) {
+            $length = strlen($data);
+            $this->throwException("Failed to write $length bytes.");
+        }
 
         if ($written < strlen($data)) {
-            throw new ConnectionException(
-                "Could only write $written out of " . strlen($data) . " bytes."
-            );
+            $length = strlen($data);
+            $this->throwException("Could only write $written out of $length bytes.");
         }
     }
 
@@ -286,24 +292,29 @@ class Base
         while (strlen($data) < $length) {
             $buffer = fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
-                $metadata = stream_get_meta_data($this->socket);
-                throw new ConnectionException(
-                    'Broken frame, read ' . strlen($data) . ' of stated '
-                    . $length . ' bytes.  Stream state: '
-                    . json_encode($metadata)
-                );
+                $read = strlen($data);
+                $this->throwException("Broken frame, read $read of stated $length bytes.");
             }
             if ($buffer === '') {
-                $metadata = stream_get_meta_data($this->socket);
-                throw new ConnectionException(
-                    'Empty read; connection dead?  Stream state: ' . json_encode($metadata)
-                );
+                $this->throwException("Empty read; connection dead?");
             }
             $data .= $buffer;
         }
         return $data;
     }
 
+    protected function throwException($message, $code = 0)
+    {
+        $meta = stream_get_meta_data($this->socket);
+        if (!empty($meta['timed_out'])) {
+            $code = ConnectionException::TIMED_OUT;
+        }
+        if (!empty($meta['eof'])) {
+            $code = ConnectionException::EOF;
+        }
+        $json_meta = json_encode($meta);
+        throw new ConnectionException("$message  Stream state: $json_meta", $code);
+    }
 
     /**
      * Helper to convert a binary to a string of '0' and '1'.

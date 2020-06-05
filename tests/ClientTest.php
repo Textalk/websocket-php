@@ -261,6 +261,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Could not open socket to "localhost:8000"
      */
     public function testFailedConnection()
@@ -272,6 +273,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Connection to 'ws://localhost/my/mock/path' failed
      */
     public function testInvalidUpgrade()
@@ -283,6 +285,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Server sent bad upgrade response
      */
     public function testInvalidKey()
@@ -308,6 +311,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1026
      * @expectedExceptionMessage Bad opcode in websocket frame: 12
      */
     public function testRecieveBadOpcode()
@@ -321,6 +325,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1025
      * @expectedExceptionMessage Could only write 18 out of 22 bytes.
      */
     public function testBrokenWrite()
@@ -334,6 +339,21 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1024
+     * @expectedExceptionMessage Failed to write 22 bytes.
+     */
+    public function testFailedWrite()
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->send('Connect');
+        MockSocket::initialize('send-failed-write', $this);
+        $client->send('Failing to write');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1025
      * @expectedExceptionMessage Broken frame, read 0 of stated 2 bytes.
      */
     public function testBrokenRead()
@@ -347,6 +367,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1024
      * @expectedExceptionMessage Empty read; connection dead?
      */
     public function testEmptyRead()

@@ -172,7 +172,7 @@ class Base
         if (!array_key_exists($opcode_int, $opcode_ints)) {
             throw new ConnectionException(
                 "Bad opcode in websocket frame: $opcode_int",
-                ConnectionException::$BAD_OPCODE
+                ConnectionException::BAD_OPCODE
             );
         }
         $opcode = $opcode_ints[$opcode_int];
@@ -307,10 +307,10 @@ class Base
     {
         $meta = stream_get_meta_data($this->socket);
         if (!empty($meta['timed_out'])) {
-            $code = ConnectionException::$TIMED_OUT;
+            $code = ConnectionException::TIMED_OUT;
         }
         if (!empty($meta['eof'])) {
-            $code = ConnectionException::$EOF;
+            $code = ConnectionException::EOF;
         }
         $json_meta = json_encode($meta);
         throw new ConnectionException("$message  Stream state: $json_meta", $code);

@@ -220,6 +220,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Could not open listening socket:
      */
     public function testFailedSocketServer()
@@ -230,6 +231,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Server failed to connect
      */
     public function testFailedConnect()
@@ -244,6 +246,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Server failed to connect
      */
     public function testFailedConnectTimeout()
@@ -258,6 +261,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage No GET in request
      */
     public function testFailedHttp()
@@ -271,6 +275,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Client had no Key in upgrade request
      */
     public function testFailedWsKey()
@@ -284,6 +289,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\BadOpcodeException
+     * @expectedExceptionCode    0
      * @expectedExceptionMessage Bad opcode 'bad'.  Try 'text' or 'binary'.
      */
     public function testSendBadOpcode()
@@ -298,6 +304,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1026
      * @expectedExceptionMessage Bad opcode in websocket frame: 12
      */
     public function testRecieveBadOpcode()
@@ -313,6 +320,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1025
      * @expectedExceptionMessage Could only write 18 out of 22 bytes.
      */
     public function testBrokenWrite()
@@ -328,6 +336,23 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1024
+     * @expectedExceptionMessage Failed to write 22 bytes.
+     */
+    public function testFailedWrite()
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        MockSocket::initialize('send-failed-write', $this);
+        $server->send('Failing to write');
+    }
+
+    /**
+     * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1025
      * @expectedExceptionMessage Broken frame, read 0 of stated 2 bytes.
      */
     public function testBrokenRead()
@@ -343,6 +368,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException        WebSocket\ConnectionException
+     * @expectedExceptionCode    1024
      * @expectedExceptionMessage Empty read; connection dead?
      */
     public function testEmptyRead()

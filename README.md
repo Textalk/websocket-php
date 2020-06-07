@@ -236,11 +236,15 @@ Ignas Bernotas, Mark Herhold, Andreas Palm, Sören Jensen, pmaasz, Alexey Stavro
 
 ## Changelog
 
+1.3.1
+
+ * Allow control messages without payload (@Logioniz)
+ * Error code in ConnectionException (@sirn-se)
+
 1.3.0
 
- * Implements ping/pong frames (@pmccarren)
- * Correct ping-pong behaviour (@Logioniz)
- * Correct close behaviour (@sirn-se)
+ * Implements ping/pong frames (@pmccarren @Logioniz)
+ * Close behaviour (@sirn-se)
  * Various fixes concerning connection handling (@sirn-se)
  * Overhaul of Composer, Travis and Coveralls setup, PSR code standard and unit tests (@sirn-se)
 

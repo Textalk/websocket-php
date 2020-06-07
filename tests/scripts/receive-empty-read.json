@@ -17,7 +17,7 @@
             "@mock-stream"
         ],
         "return": {
-            "timed_out": false,
+            "timed_out": true,
             "blocked": true,
             "eof": false,
             "stream_type": "tcp_socket\/ssl",

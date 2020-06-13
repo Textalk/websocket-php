@@ -217,9 +217,10 @@ class Base
             }
         }
 
-        // if we received a ping, send a pong
+        // if we received a ping, send a pong and wait for the next message
         if ($opcode === 'ping') {
             $this->send($payload, 'pong', true);
+            return [null, false];
         }
 
         if ($opcode === 'close') {

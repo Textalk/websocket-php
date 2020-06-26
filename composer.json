@@ -5,8 +5,7 @@
     "type": "library",
     "authors": [
         {
-            "name": "Fredrik Liljegren",
-            "email": "fredrik.liljegren@textalk.se"
+            "name": "Fredrik Liljegren"
         },
         {
             "name": "Sören Jensen",
@@ -24,7 +23,7 @@
         }
     },
     "require": {
-        "php": "^5.4|^7.0"
+        "php": "^7.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.1",

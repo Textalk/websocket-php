@@ -350,11 +350,6 @@ class ServerTest extends TestCase
         $server->receive();
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1024
-     * @expectedExceptionMessage Empty read; connection dead?
-     */
     public function testEmptyRead(): void
     {
         MockSocket::initialize('server.construct', $this);

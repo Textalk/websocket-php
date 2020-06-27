@@ -9,13 +9,18 @@
 
 namespace WebSocket;
 
-class Base
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
+class Base implements LoggerAwareInterface
 {
     protected $socket;
     protected $options = [];
     protected $is_closing = false;
     protected $last_opcode = null;
     protected $close_status = null;
+    protected $logger;
 
     protected static $opcodes = array(
         'continuation' => 0,
@@ -61,6 +66,11 @@ class Base
         return $this->options['fragment_size'];
     }
 
+    public function setLogger(LoggerInterface $logger = null)
+    {
+        $this->logger = $this->options['logger'] ?: new NullLogger();
+    }
+
     public function send($payload, $opcode = 'text', $masked = true)
     {
         if (!$this->isConnected()) {
@@ -68,7 +78,9 @@ class Base
         }
 
         if (!in_array($opcode, array_keys(self::$opcodes))) {
-            throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
+            $warning = "Bad opcode '{$opcode}'.  Try 'text' or 'binary'.";
+            $this->logger->warning($warning);
+            throw new BadOpcodeException($warning);
         }
 
         $payload_chunks = str_split($payload, $this->options['fragment_size']);
@@ -82,6 +94,8 @@ class Base
             // all fragments after the first will be marked a continuation
             $opcode = 'continuation';
         }
+
+        $this->logger->info("Sent '{$opcode}' message");
     }
 
     protected function sendFragment($final, $payload, $opcode, $masked)
@@ -150,6 +164,7 @@ class Base
             $payload .= $response[0];
         } while (!$response[1]);
 
+        $this->logger->info("Received '{$this->last_opcode}' message");
         return $payload;
     }
 
@@ -170,10 +185,9 @@ class Base
         $opcode_int = ord($data[0]) & 31; // Bits 4-7
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
-            throw new ConnectionException(
-                "Bad opcode in websocket frame: $opcode_int",
-                ConnectionException::BAD_OPCODE
-            );
+            $warning = "Bad opcode in websocket frame: {$opcode_int}";
+            $this->logger->warning($warning);
+            throw new ConnectionException($warning, ConnectionException::BAD_OPCODE);
         }
         $opcode = $opcode_ints[$opcode_int];
 
@@ -219,6 +233,7 @@ class Base
 
         // if we received a ping, send a pong
         if ($opcode === 'ping') {
+            $this->logger->debug("Received 'ping', sending 'pong'.");
             $this->send($payload, 'pong', true);
         }
 
@@ -233,6 +248,8 @@ class Base
             if ($payload_length >= 2) {
                 $payload = substr($payload, 2);
             }
+
+            $this->logger->debug("Received 'close', status: {$this->close_status}.");
 
             if ($this->is_closing) {
                 $this->is_closing = false; // A close response, all done.
@@ -267,6 +284,7 @@ class Base
             $status_str .= chr(bindec($binstr));
         }
         $this->send($status_str . $message, 'close', true);
+        $this->logger->debug("Closing with status: {$status_str}.");
 
         $this->is_closing = true;
         $this->receive(); // Receiving a close frame will close the socket now.
@@ -274,16 +292,16 @@ class Base
 
     protected function write($data)
     {
+        $length = strlen($data);
         $written = fwrite($this->socket, $data);
         if ($written === false) {
-            $length = strlen($data);
-            $this->throwException("Failed to write $length bytes.");
+            $this->throwException("Failed to write {$length} bytes.");
         }
 
         if ($written < strlen($data)) {
-            $length = strlen($data);
-            $this->throwException("Could only write $written out of $length bytes.");
+            $this->throwException("Could only write {$written} out of {$length} bytes.");
         }
+        $this->logger->debug("Wrote {$written} of {$length} bytes.");
     }
 
     protected function read($length)
@@ -293,7 +311,7 @@ class Base
             $buffer = fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
                 $read = strlen($data);
-                $this->throwException("Broken frame, read $read of stated $length bytes.");
+                $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");
             }
             if ($buffer === '') {
                 $this->throwException("Empty read; connection dead?");
@@ -313,7 +331,8 @@ class Base
             $code = ConnectionException::EOF;
         }
         $json_meta = json_encode($meta);
-        throw new ConnectionException("$message  Stream state: $json_meta", $code);
+        $this->logger->warning("{$message}", (array)$meta);
+        throw new ConnectionException("{$message}  Stream state: {$json_meta}", $code);
     }
 
     /**

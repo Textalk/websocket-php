@@ -15,7 +15,8 @@ Preferred way to install is with [Composer](https://getcomposer.org/).
 composer require textalk/websocket
 ```
 
-Currently support PHP versions `^5.4` and `^7.0`.
+Current version support PHP versions `^7.1`.
+For PHP `^5.4` and `^7.0` support use version `1.3`.
 
 ## Client
 
@@ -82,6 +83,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `context` - A stream context created using [stream_context_create](https://www.php.net/manual/en/function.stream-context-create).
 * `headers` - Additional headers as associative array name => content.
+* `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 
 ```php
 $context = stream_context_create();
@@ -172,6 +174,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `timeout` - Time out in seconds. Default 5 seconds.
 * `port` - The server port to listen to. Default 8000.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
+* `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 
 ```php
 $server = new WebSocket\Server([
@@ -188,6 +191,11 @@ $server = new WebSocket\Server([
 
 
 ## Development and contribution
+
+Requirements on pull requests;
+* All tests **MUST** pass.
+* Code coverage **MUST** remain on 100%.
+* Code **MUST** adhere to PSR-1 and PSR-12 code standards.
 
 Install or update dependencies using [Composer](https://getcomposer.org/).
 ```
@@ -235,6 +243,11 @@ Ignas Bernotas, Mark Herhold, Andreas Palm, Sören Jensen, pmaasz, Alexey Stavro
 
 
 ## Changelog
+
+1.4.0
+
+ * Dropped support of old PHP versions (@sirn-se)
+ * Added PSR-3 Logging support (@sirn-se)
 
 1.3.1
 

@@ -5,17 +5,21 @@
  * Note that this test is performed by mocking socket/stream calls.
  */
 
+declare(strict_types=1);
+
 namespace WebSocket;
 
-class ServerTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class ServerTest extends TestCase
 {
 
-    public function setUp()
+    public function setUp(): void
     {
         error_reporting(-1);
     }
 
-    public function testServerMasked()
+    public function testServerMasked(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -62,7 +66,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->close(); // Already closed
     }
 
-    public function testDestruct()
+    public function testDestruct(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -72,7 +76,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $message = $server->receive();
     }
 
-    public function testServerWithTimeout()
+    public function testServerWithTimeout(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server(['timeout' => 300]);
@@ -84,7 +88,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    public function testPayload128()
+    public function testPayload128(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -105,7 +109,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    public function testPayload65536()
+    public function testPayload65536(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -127,7 +131,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    public function testMultiFragment()
+    public function testMultiFragment(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -147,7 +151,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    public function testPingPong()
+    public function testPingPong(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -177,7 +181,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ping', $server->getLastOpcode());
     }
 
-    public function testRemoteClose()
+    public function testRemoteClose(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -200,7 +204,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('close', $server->getLastOpcode());
     }
 
-    public function testSetTimeout()
+    public function testSetTimeout(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -218,96 +222,79 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage Could not open listening socket:
-     */
-    public function testFailedSocketServer()
+    public function testFailedSocketServer(): void
     {
         MockSocket::initialize('server.construct-failed-socket-server', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not open listening socket:');
         $server = new Server(['port' => 9999]);
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage Server failed to connect
-     */
-    public function testFailedConnect()
+    public function testFailedConnect(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
 
         MockSocket::initialize('server.accept-failed-connect', $this);
         $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Server failed to connect');
         $server->send('Connect');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage Server failed to connect
-     */
-    public function testFailedConnectTimeout()
+    public function testFailedConnectTimeout(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server(['timeout' => 300]);
 
         MockSocket::initialize('server.accept-failed-connect', $this);
         $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Server failed to connect');
         $server->send('Connect');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage No GET in request
-     */
-    public function testFailedHttp()
+    public function testFailedHttp(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         MockSocket::initialize('server.accept-failed-http', $this);
         $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('No GET in request');
         $server->send('Connect');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage Client had no Key in upgrade request
-     */
-    public function testFailedWsKey()
+    public function testFailedWsKey(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         MockSocket::initialize('server.accept-failed-ws-key', $this);
         $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Client had no Key in upgrade request');
         $server->send('Connect');
     }
 
-    /**
-     * @expectedException        WebSocket\BadOpcodeException
-     * @expectedExceptionCode    0
-     * @expectedExceptionMessage Bad opcode 'bad'.  Try 'text' or 'binary'.
-     */
-    public function testSendBadOpcode()
+    public function testSendBadOpcode(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->send('Connect');
+        $this->expectException('WebSocket\BadOpcodeException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Bad opcode \'bad\'.  Try \'text\' or \'binary\'.');
         $server->send('Bad Opcode', 'bad');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1026
-     * @expectedExceptionMessage Bad opcode in websocket frame: 12
-     */
-    public function testRecieveBadOpcode()
+    public function testRecieveBadOpcode(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -315,15 +302,13 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('receive-bad-opcode', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(1026);
+        $this->expectExceptionMessage('Bad opcode in websocket frame: 12');
         $message = $server->receive();
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1025
-     * @expectedExceptionMessage Could only write 18 out of 22 bytes.
-     */
-    public function testBrokenWrite()
+    public function testBrokenWrite(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -331,15 +316,13 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('send-broken-write', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(1025);
+        $this->expectExceptionMessage('Could only write 18 out of 22 bytes.');
         $server->send('Failing to write');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1024
-     * @expectedExceptionMessage Failed to write 22 bytes.
-     */
-    public function testFailedWrite()
+    public function testFailedWrite(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -347,15 +330,13 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('send-failed-write', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(1024);
+        $this->expectExceptionMessage('Failed to write 22 bytes.');
         $server->send('Failing to write');
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1025
-     * @expectedExceptionMessage Broken frame, read 0 of stated 2 bytes.
-     */
-    public function testBrokenRead()
+    public function testBrokenRead(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -363,15 +344,13 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('receive-broken-read', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(1025);
+        $this->expectExceptionMessage('Broken frame, read 0 of stated 2 bytes.');
         $server->receive();
     }
 
-    /**
-     * @expectedException        WebSocket\ConnectionException
-     * @expectedExceptionCode    1024
-     * @expectedExceptionMessage Empty read; connection dead?
-     */
-    public function testEmptyRead()
+    public function testEmptyRead(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
@@ -379,6 +358,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('receive-empty-read', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(1024);
+        $this->expectExceptionMessage('Empty read; connection dead?');
         $server->receive();
     }
 }

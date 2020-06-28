@@ -68,7 +68,7 @@ class Base implements LoggerAwareInterface
 
     public function setLogger(LoggerInterface $logger = null)
     {
-        $this->logger = $this->options['logger'] ?: new NullLogger();
+        $this->logger = $logger ?: new NullLogger();
     }
 
     public function send($payload, $opcode = 'text', $masked = true)

@@ -277,11 +277,13 @@ class Base
         $written = fwrite($this->socket, $data);
         if ($written === false) {
             $length = strlen($data);
+            fclose($this->socket);
             $this->throwException("Failed to write $length bytes.");
         }
 
         if ($written < strlen($data)) {
             $length = strlen($data);
+            fclose($this->socket);
             $this->throwException("Could only write $written out of $length bytes.");
         }
     }

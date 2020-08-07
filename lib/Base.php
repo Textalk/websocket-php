@@ -306,13 +306,14 @@ class Base
     protected function throwException($message, $code = 0)
     {
         $meta = stream_get_meta_data($this->socket);
+        $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
             $code = ConnectionException::TIMED_OUT;
+            throw new TimeoutException("$message Stream state: $json_meta", $code);
         }
         if (!empty($meta['eof'])) {
             $code = ConnectionException::EOF;
         }
-        $json_meta = json_encode($meta);
         throw new ConnectionException("$message  Stream state: $json_meta", $code);
     }
 

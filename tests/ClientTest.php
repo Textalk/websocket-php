@@ -338,7 +338,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException        WebSocket\ConnectionException
+     * @expectedException        WebSocket\TimeoutException
      * @expectedExceptionCode    1024
      * @expectedExceptionMessage Failed to write 22 bytes.
      */
@@ -366,7 +366,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException        WebSocket\ConnectionException
+     * @expectedException        WebSocket\TimeoutException
      * @expectedExceptionCode    1024
      * @expectedExceptionMessage Empty read; connection dead?
      */

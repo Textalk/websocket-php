@@ -82,6 +82,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `context` - A stream context created using [stream_context_create](https://www.php.net/manual/en/function.stream-context-create).
 * `headers` - Additional headers as associative array name => content.
+* `persistent` - Connection is re-used between requests until time out is reached. Default false.
 
 ```php
 $context = stream_context_create();
@@ -185,6 +186,7 @@ $server = new WebSocket\Server([
 * `WebSocket\BadOpcodeException` - Thrown if provided opcode is invalid.
 * `WebSocket\BadUriException` - Thrown if provided URI is invalid.
 * `WebSocket\ConnectionException` - Thrown on any socket I/O failure.
+* `WebSocket\TimeoutExeception` - Thrown when the socket experiences a time out.
 
 
 ## Development and contribution

@@ -84,15 +84,16 @@ class Base implements LoggerAwareInterface
         }
 
         $payload_chunks = str_split($payload, $this->options['fragment_size']);
+        $frame_opcode = $opcode;
 
         for ($index = 0; $index < count($payload_chunks); ++$index) {
             $chunk = $payload_chunks[$index];
             $final = $index == count($payload_chunks) - 1;
 
-            $this->sendFragment($final, $chunk, $opcode, $masked);
+            $this->sendFragment($final, $chunk, $frame_opcode, $masked);
 
             // all fragments after the first will be marked a continuation
-            $opcode = 'continuation';
+            $frame_opcode = 'continuation';
         }
 
         $this->logger->info("Sent '{$opcode}' message");

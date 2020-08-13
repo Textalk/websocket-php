@@ -226,6 +226,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testPersistentConnection()
+    {
+        MockSocket::initialize('client.connect-persistent', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['persistent' => true]);
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
     /**
      * @expectedException        WebSocket\BadUriException
      * @expectedExceptionMessage Url should have scheme ws or wss

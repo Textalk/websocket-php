@@ -330,7 +330,7 @@ class ServerTest extends TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('send-failed-write', $this);
-        $this->expectException('WebSocket\ConnectionException');
+        $this->expectException('WebSocket\TimeoutException');
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Failed to write 22 bytes.');
         $server->send('Failing to write');
@@ -358,7 +358,7 @@ class ServerTest extends TestCase
         $server->accept();
         $server->send('Connect');
         MockSocket::initialize('receive-empty-read', $this);
-        $this->expectException('WebSocket\ConnectionException');
+        $this->expectException('WebSocket\TimeoutException');
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Empty read; connection dead?');
         $server->receive();

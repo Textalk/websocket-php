@@ -337,7 +337,7 @@ class ClientTest extends TestCase
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');
         MockSocket::initialize('send-failed-write', $this);
-        $this->expectException('WebSocket\ConnectionException');
+        $this->expectException('WebSocket\TimeoutException');
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Failed to write 22 bytes.');
         $client->send('Failing to write');
@@ -361,7 +361,7 @@ class ClientTest extends TestCase
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');
         MockSocket::initialize('receive-empty-read', $this);
-        $this->expectException('WebSocket\ConnectionException');
+        $this->expectException('WebSocket\TimeoutException');
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Empty read; connection dead?');
         $client->receive();

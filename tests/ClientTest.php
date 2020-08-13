@@ -230,6 +230,14 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testPersistentConnection(): void
+    {
+        MockSocket::initialize('client.connect-persistent', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['persistent' => true]);
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
     public function testBadScheme(): void
     {
         MockSocket::initialize('client.connect', $this);

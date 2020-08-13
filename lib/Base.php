@@ -295,10 +295,12 @@ class Base implements LoggerAwareInterface
         $length = strlen($data);
         $written = fwrite($this->socket, $data);
         if ($written === false) {
+            fclose($this->socket);
             $this->throwException("Failed to write {$length} bytes.");
         }
 
         if ($written < strlen($data)) {
+            fclose($this->socket);
             $this->throwException("Could only write {$written} out of {$length} bytes.");
         }
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
@@ -324,14 +326,16 @@ class Base implements LoggerAwareInterface
     protected function throwException($message, $code = 0)
     {
         $meta = stream_get_meta_data($this->socket);
+        $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
             $code = ConnectionException::TIMED_OUT;
+            $this->logger->warning("{$message}", (array)$meta);
+            throw new TimeoutException("{$message} Stream state: {$json_meta}", $code);
         }
         if (!empty($meta['eof'])) {
             $code = ConnectionException::EOF;
         }
-        $json_meta = json_encode($meta);
-        $this->logger->warning("{$message}", (array)$meta);
+        $this->logger->error("{$message}", (array)$meta);
         throw new ConnectionException("{$message}  Stream state: {$json_meta}", $code);
     }
 

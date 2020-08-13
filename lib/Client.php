@@ -13,6 +13,7 @@ class Client extends Base
 {
     // Default options
     protected static $default_options = [
+      'persistent'    => false,
       'timeout'       => 5,
       'fragment_size' => 4096,
       'context'       => null,
@@ -97,13 +98,16 @@ class Client extends Base
             $context = stream_context_create();
         }
 
+        $flags = STREAM_CLIENT_CONNECT;
+        $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
+
         // Open the socket.  @ is there to supress warning that we will catch in check below instead.
         $this->socket = @stream_socket_client(
             $host_uri . ':' . $port,
             $errno,
             $errstr,
             $this->options['timeout'],
-            STREAM_CLIENT_CONNECT,
+            $flags,
             $context
         );
 

@@ -12,7 +12,7 @@ cs-check: vendor/bin/phpunit
 
 coverage: vendor/bin/phpunit build
 	./vendor/bin/phpunit --coverage-clover build/logs/clover.xml
-	./vendor/bin/coveralls -v
+	./vendor/bin/php-coveralls -v
 
 composer.phar:
 	curl -s http://getcomposer.org/installer | php

@@ -112,6 +112,11 @@ class Client extends Base
         );
 
         if (!$this->isConnected()) {
+            if ($errstr === null && !function_exists('stream_socket_client')) {
+                // @codeCoverageIgnoreStart
+                $errstr = 'stream_socket_client function is disabled';
+                // @codeCoverageIgnoreEnd
+            }
             $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}).";
             $this->logger->error($error);
             throw new ConnectionException($error);

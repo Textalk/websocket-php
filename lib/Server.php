@@ -43,6 +43,11 @@ class Server extends Base
         } while ($this->listening === false && $this->port++ < 10000);
 
         if (!$this->listening) {
+            if ($errstr === null && !function_exists('stream_socket_server')) {
+                // @codeCoverageIgnoreStart
+                $errstr = 'stream_socket_server function is disabled';
+                // @codeCoverageIgnoreEnd
+            }
             $error = "Could not open listening socket: {$errstr} ({$errno})";
             $this->logger->error($error);
             throw new ConnectionException($error, $errno);

@@ -183,7 +183,7 @@ class Base implements LoggerAwareInterface
         $rsv3  = (bool) (ord($data[0]) & 1 << 4);
 
         // Parse opcode
-        $opcode_int = ord($data[0]) & 31; // Bits 4-7
+        $opcode_int = ord($data[0]) & 15; // Bits 4-7
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
             $warning = "Bad opcode in websocket frame: {$opcode_int}";

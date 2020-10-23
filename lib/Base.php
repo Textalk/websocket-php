@@ -43,7 +43,9 @@ class Base implements LoggerAwareInterface
 
     public function isConnected()
     {
-        return $this->socket && get_resource_type($this->socket) == 'stream';
+        return $this->socket &&
+            (get_resource_type($this->socket) == 'stream' ||
+             get_resource_type($this->socket) == 'persistent stream');
     }
 
     public function setTimeout($timeout)

@@ -13,10 +13,12 @@ class Client extends Base
 {
     // Default options
     protected static $default_options = [
+      'persistent'    => false,
       'timeout'       => 5,
       'fragment_size' => 4096,
       'context'       => null,
       'headers'       => null,
+      'logger'        => null,
       'origin'        => null, // @deprecated
     ];
 
@@ -35,6 +37,7 @@ class Client extends Base
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
+        $this->setLogger($this->options['logger']);
     }
 
     public function __destruct()
@@ -52,9 +55,9 @@ class Client extends Base
     {
         $url_parts = parse_url($this->socket_uri);
         if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
-            throw new BadUriException(
-                "Invalid url '$this->socket_uri' provided."
-            );
+            $error = "Invalid url '{$this->socket_uri}' provided.";
+            $this->logger->error($error);
+            throw new BadUriException($error);
         }
         $scheme    = $url_parts['scheme'];
         $host      = $url_parts['host'];
@@ -74,9 +77,9 @@ class Client extends Base
         }
 
         if (!in_array($scheme, array('ws', 'wss'))) {
-            throw new BadUriException(
-                "Url should have scheme ws or wss, not '$scheme' from URI '$this->socket_uri' ."
-            );
+            $error = "Url should have scheme ws or wss, not '{$scheme}' from URI '{$this->socket_uri}'.";
+            $this->logger->error($error);
+            throw new BadUriException($error);
         }
 
         $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
@@ -87,13 +90,16 @@ class Client extends Base
             if (@get_resource_type($this->options['context']) === 'stream-context') {
                 $context = $this->options['context'];
             } else {
-                throw new \InvalidArgumentException(
-                    "Stream context in \$options['context'] isn't a valid context"
-                );
+                $error = "Stream context in \$options['context'] isn't a valid context.";
+                $this->logger->error($error);
+                throw new \InvalidArgumentException($error);
             }
         } else {
             $context = stream_context_create();
         }
+
+        $flags = STREAM_CLIENT_CONNECT;
+        $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
 
         // Open the socket.  @ is there to supress warning that we will catch in check below instead.
         $this->socket = @stream_socket_client(
@@ -101,14 +107,14 @@ class Client extends Base
             $errno,
             $errstr,
             $this->options['timeout'],
-            STREAM_CLIENT_CONNECT,
+            $flags,
             $context
         );
 
         if (!$this->isConnected()) {
-            throw new ConnectionException(
-                "Could not open socket to \"$host:$port\": $errstr ($errno)."
-            );
+            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}).";
+            $this->logger->error($error);
+            throw new ConnectionException($error);
         }
 
         // Set timeout on the stream as well.
@@ -161,13 +167,13 @@ class Client extends Base
 
         /// @todo Handle version switching
 
+        $address = "{$scheme}://{$host}{$path_with_query}";
+
         // Validate response.
         if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
-            $address = $scheme . '://' . $host . $path_with_query;
-            throw new ConnectionException(
-                "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
-                . $response
-            );
+            $error = "Connection to '{$address}' failed: Server sent invalid upgrade response: {$response}";
+            $this->logger->error($error);
+            throw new ConnectionException($error);
         }
 
         $keyAccept = trim($matches[1]);
@@ -175,8 +181,12 @@ class Client extends Base
             = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
         if ($keyAccept !== $expectedResonse) {
-            throw new ConnectionException('Server sent bad upgrade response.');
+            $error = 'Server sent bad upgrade response.';
+            $this->logger->error($error);
+            throw new ConnectionException($error);
         }
+
+        $this->logger->info("Client connected to to {$address}");
     }
 
     /**

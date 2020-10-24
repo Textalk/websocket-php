@@ -1,18 +1,14 @@
 language: php
-dist: trusty
 
 php:
   - 7.4
   - 7.3
   - 7.2
   - 7.1
-  - 7.0
-  - 5.6
-  - 5.5
-  - 5.4
 
 before_script:
   - make install build
 
 script:
-  - make coverage cs-check
+  - make coverage
+  - make cs-check

@@ -16,6 +16,7 @@ class Server extends Base
       'timeout'       => null,
       'fragment_size' => 4096,
       'port'          => 8000,
+      'logger'        => null,
     ];
 
     protected $addr;
@@ -35,14 +36,19 @@ class Server extends Base
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->port = $this->options['port'];
+        $this->setLogger($this->options['logger']);
 
         do {
             $this->listening = @stream_socket_server("tcp://0.0.0.0:$this->port", $errno, $errstr);
         } while ($this->listening === false && $this->port++ < 10000);
 
         if (!$this->listening) {
-            throw new ConnectionException("Could not open listening socket: $errstr", $errno);
+            $error = "Could not open listening socket: {$errstr} ({$errno})";
+            $this->logger->error($error);
+            throw new ConnectionException($error, $errno);
         }
+
+        $this->logger->info("Server listening to port {$this->port}");
     }
 
     public function __destruct()
@@ -90,17 +96,22 @@ class Server extends Base
         if (empty($this->options['timeout'])) {
             $this->socket = @stream_socket_accept($this->listening);
             if (!$this->socket) {
-                throw new ConnectionException('Server failed to connect.');
+                $error = 'Server failed to connect.';
+                $this->logger->error($error);
+                throw new ConnectionException($error);
             }
         } else {
             $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
             if (!$this->socket) {
-                throw new ConnectionException('Server failed to connect.');
+                $error = 'Server failed to connect.';
+                $this->logger->error($error);
+                throw new ConnectionException($error);
             }
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
         $this->performHandshake();
+        $this->logger->info("Server connected to port {$this->port}");
     }
 
     protected function performHandshake()
@@ -113,7 +124,9 @@ class Server extends Base
         } while (!feof($this->socket) && $metadata['unread_bytes'] > 0);
 
         if (!preg_match('/GET (.*) HTTP\//mUi', $request, $matches)) {
-            throw new ConnectionException("No GET in request:\n" . $request);
+            $error = "No GET in request: {$request}";
+            $this->logger->error($error);
+            throw new ConnectionException($error);
         }
         $get_uri = trim($matches[1]);
         $uri_parts = parse_url($get_uri);
@@ -123,7 +136,9 @@ class Server extends Base
         /// @todo Get query and fragment as well.
 
         if (!preg_match('#Sec-WebSocket-Key:\s(.*)$#mUi', $request, $matches)) {
-            throw new ConnectionException("Client had no Key in upgrade request:\n" . $request);
+            $error = "Client had no Key in upgrade request: {$request}";
+            $this->logger->error($error);
+            throw new ConnectionException($error);
         }
 
         $key = trim($matches[1]);

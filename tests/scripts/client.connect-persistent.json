@@ -21,7 +21,14 @@
         "params": [
             "@mock-stream"
         ],
-        "return": "stream"
+        "return": "persistent stream"
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "persistent stream"
     },
     {
         "function": "stream_set_timeout",

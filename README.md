@@ -244,10 +244,16 @@ See [Copying](COPYING).
 Fredrik Liljegren, Armen Baghumian Sankbarani, Ruslan Bekenev,
 Joshua Thijssen, Simon Lipp, Quentin Bellus, Patrick McCarren, swmcdonnell,
 Ignas Bernotas, Mark Herhold, Andreas Palm, Sören Jensen, pmaasz, Alexey Stavrov,
-Michael Slezak.
+Michael Slezak, Pierre Seznec, rmeisler, Nickolay V. Shmyrev.
 
 
 ## Changelog
+
+1.4.1
+
+ * Ping/Pong, handled internally to avoid breaking fragmented messages (@nshmyrev, @sirn-se)
+ * Fix for persistent connections (@rmeisler)
+ * Fix opcode bitmask (@peterjah)
 
 1.4.0
 

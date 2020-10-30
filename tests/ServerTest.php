@@ -165,20 +165,11 @@ class ServerTest extends TestCase
 
         MockSocket::initialize('ping-pong', $this);
         $server->send('Server ping', 'ping');
-        $message = $server->receive();
-        $this->assertEquals('Server ping', $message);
-        $this->assertEquals('pong', $server->getLastOpcode());
-
         $server->send('', 'ping');
         $message = $server->receive();
-        $this->assertEquals('', $message);
-        $this->assertEquals('pong', $server->getLastOpcode());
-
-        $message = $server->receive();
-        $this->assertEquals('Client ping', $message);
-
+        $this->assertEquals('Receiving a message', $message);
+        $this->assertEquals('text', $server->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        $this->assertEquals('ping', $server->getLastOpcode());
     }
 
     public function testRemoteClose(): void

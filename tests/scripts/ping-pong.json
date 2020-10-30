@@ -21,6 +21,20 @@
         "return": "stream"
     },
     {
+        "function": "fwrite",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 6
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
+    },
+    {
         "function": "fread",
         "params": [
             "@mock-stream",
@@ -48,27 +62,6 @@
         "return": [82, 100, 115, 119, 100, 115, 33, 113, 104, 111, 102]
     },
     {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "stream"
-    },
-    {
-        "function": "fwrite",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": 6
-    },
-    {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "stream"
-    },
-    {
         "function": "fread",
         "params": [
             "@mock-stream",
@@ -85,13 +78,6 @@
         ],
         "return-op": "chr-array",
         "return": [1, 1, 1, 1]
-    },
-    {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "stream"
     },
     {
         "function": "fread",
@@ -133,5 +119,32 @@
             "@mock-stream"
         ],
         "return": 17
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            2
+        ],
+        "return-op": "chr-array",
+        "return": [129, 147]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            4
+        ],
+        "return-op": "chr-array",
+        "return": [33, 111, 149, 174]
+    },
+    {
+        "function": "fread",
+        "params": [
+            "@mock-stream",
+            19
+        ],
+        "return-op": "chr-array",
+        "return": [115, 10, 246, 203, 72, 25, 252, 192, 70, 79, 244, 142, 76, 10, 230, 221, 64, 8, 240]
     }
 ]

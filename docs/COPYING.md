@@ -1,3 +1,5 @@
+[Client](Client.md) • [Server](Server.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md) • License
+
 # Websocket: License
 
 Websocket PHP is free software released under the following license:

@@ -1,17 +1,11 @@
+Client • [Server](Server.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md) • [License](COPYING.md)
+
 # Websocket: Client
-
-- Client
-- [Server](Server.md)
-- [Change log](Changelog.md)
-- [Contributing](Contributing.md)
-- [License](COPYING.md)
-
-## Client
 
 The client can read and write on a WebSocket stream.
 It internally supports Upgrade handshake and implicit close and ping/pong operations.
 
-###  Class synopsis
+##  Class synopsis
 
 ```php
 WebSocket\Client {
@@ -33,7 +27,9 @@ WebSocket\Client {
 }
 ```
 
-### Example: Simple send-receive operation
+## Examples
+
+### Simple send-receive operation
 
 This example send a single message to a server, and output the response.
 
@@ -44,7 +40,7 @@ echo $client->receive();
 $client->close();
 ```
 
-### Example: Listening to a server
+### Listening to a server
 
 To continuously listen to incoming messages, you need to put the receive operation within a loop.
 Note that these functions **always** throw exception on any failure, including recoverable failures such as connection time out.
@@ -64,7 +60,7 @@ while (true) {
 $client->close();
 ```
 
-### Constructor options
+## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 

@@ -1,19 +1,18 @@
+[Client](Client.md) • [Server](Server.md) • [Changelog](Changelog.md) • Contributing • [License](COPYING.md)
+
 # Websocket: Contributing
 
-- [Client](Client.md)
-- [Server](Server.md)
-- [Changelog](Changelog.md)
-- Contributing
-- [License](COPYING.md)
+Everyone is welcome to help out!
+But to keep this project sustainable, please ensure your contribution respects the requirements below.
 
-### Contribution Requirements
+## PR Requirements
 
 Requirements on pull requests;
 * All tests **MUST** pass.
 * Code coverage **MUST** remain on 100%.
 * Code **MUST** adhere to PSR-1 and PSR-12 code standards.
 
-### Dependency management
+## Dependency management
 
 Install or update dependencies using [Composer](https://getcomposer.org/).
 
@@ -25,7 +24,7 @@ make install
 make update
 ```
 
-### Code standard
+## Code standard
 
 This project uses [PSR-1](https://www.php-fig.org/psr/psr-1/) and [PSR-12](https://www.php-fig.org/psr/psr-12/) code standards.
 ```
@@ -33,7 +32,7 @@ This project uses [PSR-1](https://www.php-fig.org/psr/psr-1/) and [PSR-12](https
 make cs-check
 ```
 
-### Unit testing
+## Unit testing
 
 Unit tests with [PHPUnit](https://phpunit.readthedocs.io/).
 ```

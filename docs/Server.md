@@ -1,12 +1,6 @@
+[Client](Client.md) • Server • [Change log](Changelog.md) • [Contributing](Contributing.md) • [License](COPYING.md)
+
 # Websocket: Server
-
-- [Client](Client.md)
-- Server
-- [Change log](Changelog.md)
-- [Contributing](Contributing.md)
-- [License](COPYING.md)
-
-## Server
 
 The library contains a rudimentary single stream/single thread server.
 It internally supports Upgrade handshake and implicit close and ping/pong operations.
@@ -14,7 +8,7 @@ It internally supports Upgrade handshake and implicit close and ping/pong operat
 Note that it does **not** support threading or automatic association ot continuous client requests.
 If you require this kind of server behavior, you need to build it on top of provided server implementation.
 
-###  Class synopsis
+##  Class synopsis
 
 ```php
 WebSocket\Server {
@@ -42,7 +36,9 @@ WebSocket\Server {
 }
 ```
 
-### Example: Simple receive-send operation
+## Examples
+
+### Simple receive-send operation
 
 This example reads a single message from a client, and respond with the same message.
 
@@ -54,7 +50,7 @@ $server->send($message);
 $server->close();
 ```
 
-### Example: Listening to clients
+### Listening to clients
 
 To continuously listen to incoming messages, you need to put the receive operation within a loop.
 Note that these functions **always** throw exception on any failure, including recoverable failures such as connection time out.
@@ -74,7 +70,7 @@ while ($server->accept()) {
 $server->close();
 ```
 
-### Constructor options
+## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 

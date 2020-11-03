@@ -2,21 +2,12 @@
 
 # Websocket: Changelog
 
-[Client](Client.md)
-| [Server](Server.md)
-| Changelog
-| [Contributing](Contributing.md)
-| [License](COPYING.md)
+## 1.4 (PHP `^7.1`)
 
-## 1.4
-
-PHP version `^7.1`
-
-### 1.4.1
-
- * Ping/Pong, handled internally to avoid breaking fragmented messages (@nshmyrev, @sirn-se)
- * Fix for persistent connections (@rmeisler)
- * Fix opcode bitmask (@peterjah)
+ * 1.4.1
+ ** Ping/Pong, handled internally to avoid breaking fragmented messages (@nshmyrev, @sirn-se)
+ ** Fix for persistent connections (@rmeisler)
+ ** Fix opcode bitmask (@peterjah)
 
 ### 1.4.0
 

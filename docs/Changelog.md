@@ -1,10 +1,12 @@
+[Client](Client.md) • [Server](Server.md) • Changelog • [Contributing](Contributing.md) • [License](COPYING.md)
+
 # Websocket: Changelog
 
-- [Client](Client.md)
-- [Server](Server.md)
-- Changelog
-- [Contributing](Contributing.md)
-- [License](COPYING.md)
+[Client](Client.md)
+| [Server](Server.md)
+| Changelog
+| [Contributing](Contributing.md)
+| [License](COPYING.md)
 
 ## 1.4
 

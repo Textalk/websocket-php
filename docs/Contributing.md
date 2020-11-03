@@ -9,7 +9,7 @@ But to keep this project sustainable, please ensure your contribution respects t
 
 Requirements on pull requests;
 * All tests **MUST** pass.
-* Code coverage **MUST** remain on 100%.
+* Code coverage **MUST** remain at 100%.
 * Code **MUST** adhere to PSR-1 and PSR-12 code standards.
 
 ## Dependency management

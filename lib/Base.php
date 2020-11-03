@@ -22,33 +22,33 @@ class Base implements LoggerAwareInterface
     protected $close_status = null;
     protected $logger;
 
-    protected static $opcodes = array(
+    protected static $opcodes = [
         'continuation' => 0,
         'text'         => 1,
         'binary'       => 2,
         'close'        => 8,
         'ping'         => 9,
         'pong'         => 10,
-    );
+    ];
 
-    public function getLastOpcode()
+    public function getLastOpcode(): ?string
     {
         return $this->last_opcode;
     }
 
-    public function getCloseStatus()
+    public function getCloseStatus(): ?int
     {
         return $this->close_status;
     }
 
-    public function isConnected()
+    public function isConnected(): bool
     {
         return $this->socket &&
             (get_resource_type($this->socket) == 'stream' ||
              get_resource_type($this->socket) == 'persistent stream');
     }
 
-    public function setTimeout($timeout)
+    public function setTimeout($timeout): void
     {
         $this->options['timeout'] = $timeout;
 
@@ -57,23 +57,23 @@ class Base implements LoggerAwareInterface
         }
     }
 
-    public function setFragmentSize($fragment_size)
+    public function setFragmentSize($fragment_size): self
     {
         $this->options['fragment_size'] = $fragment_size;
         return $this;
     }
 
-    public function getFragmentSize()
+    public function getFragmentSize(): int
     {
         return $this->options['fragment_size'];
     }
 
-    public function setLogger(LoggerInterface $logger = null)
+    public function setLogger(LoggerInterface $logger = null): void
     {
         $this->logger = $logger ?: new NullLogger();
     }
 
-    public function send($payload, $opcode = 'text', $masked = true)
+    public function send($payload, $opcode = 'text', $masked = true): void
     {
         if (!$this->isConnected()) {
             $this->connect();
@@ -101,7 +101,7 @@ class Base implements LoggerAwareInterface
         $this->logger->info("Sent '{$opcode}' message");
     }
 
-    protected function sendFragment($final, $payload, $opcode, $masked)
+    protected function sendFragment($final, $payload, $opcode, $masked): void
     {
         // Binary string for header.
         $frame_head_binstr = '';
@@ -155,7 +155,7 @@ class Base implements LoggerAwareInterface
         $this->write($frame);
     }
 
-    public function receive()
+    public function receive(): string
     {
         if (!$this->isConnected()) {
             $this->connect();
@@ -171,7 +171,7 @@ class Base implements LoggerAwareInterface
         return $payload;
     }
 
-    protected function receiveFragment()
+    protected function receiveFragment(): array
     {
         // Just read the main fragment information first.
         $data = $this->read(2);
@@ -283,10 +283,10 @@ class Base implements LoggerAwareInterface
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
      * @param string  $message A closing message, max 125 bytes.
      */
-    public function close($status = 1000, $message = 'ttfn')
+    public function close($status = 1000, $message = 'ttfn'): void
     {
         if (!$this->isConnected()) {
-            return null;
+            return;
         }
         $status_binstr = sprintf('%016b', $status);
         $status_str = '';
@@ -300,7 +300,7 @@ class Base implements LoggerAwareInterface
         $this->receive(); // Receiving a close frame will close the socket now.
     }
 
-    protected function write($data)
+    protected function write($data): void
     {
         $length = strlen($data);
         $written = fwrite($this->socket, $data);
@@ -316,7 +316,7 @@ class Base implements LoggerAwareInterface
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
     }
 
-    protected function read($length)
+    protected function read($length): string
     {
         $data = '';
         while (strlen($data) < $length) {
@@ -333,7 +333,7 @@ class Base implements LoggerAwareInterface
         return $data;
     }
 
-    protected function throwException($message, $code = 0)
+    protected function throwException($message, $code = 0): void
     {
         $meta = stream_get_meta_data($this->socket);
         $json_meta = json_encode($meta);
@@ -352,7 +352,7 @@ class Base implements LoggerAwareInterface
     /**
      * Helper to convert a binary to a string of '0' and '1'.
      */
-    protected static function sprintB($string)
+    protected static function sprintB($string): string
     {
         $return = '';
         for ($i = 0; $i < strlen($string); $i++) {

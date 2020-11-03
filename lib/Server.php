@@ -32,7 +32,7 @@ class Server extends Base
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - port:          Chose port for listening. Default 8000.
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->port = $this->options['port'];
@@ -59,22 +59,22 @@ class Server extends Base
         $this->socket = null;
     }
 
-    public function getPort()
+    public function getPort(): int
     {
         return $this->port;
     }
 
-    public function getPath()
+    public function getPath(): string
     {
         return $this->request_path;
     }
 
-    public function getRequest()
+    public function getRequest(): array
     {
         return $this->request;
     }
 
-    public function getHeader($header)
+    public function getHeader($header): ?string
     {
         foreach ($this->request as $row) {
             if (stripos($row, $header) !== false) {
@@ -85,13 +85,13 @@ class Server extends Base
         return null;
     }
 
-    public function accept()
+    public function accept(): bool
     {
         $this->socket = null;
         return (bool)$this->listening;
     }
 
-    protected function connect()
+    protected function connect(): void
     {
         if (empty($this->options['timeout'])) {
             $this->socket = @stream_socket_accept($this->listening);
@@ -114,7 +114,7 @@ class Server extends Base
         $this->logger->info("Server connected to port {$this->port}");
     }
 
-    protected function performHandshake()
+    protected function performHandshake(): void
     {
         $request = '';
         do {

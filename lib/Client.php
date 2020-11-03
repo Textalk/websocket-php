@@ -33,7 +33,7 @@ class Client extends Base
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - headers:       Associative array of headers to set/override.
      */
-    public function __construct($uri, $options = array())
+    public function __construct($uri, $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
@@ -51,7 +51,7 @@ class Client extends Base
     /**
      * Perform WebSocket handshake
      */
-    protected function connect()
+    protected function connect(): void
     {
         $url_parts = parse_url($this->socket_uri);
         if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
@@ -76,7 +76,7 @@ class Client extends Base
             $path_with_query .= '#' . $fragment;
         }
 
-        if (!in_array($scheme, array('ws', 'wss'))) {
+        if (!in_array($scheme, ['ws', 'wss'])) {
             $error = "Url should have scheme ws or wss, not '{$scheme}' from URI '{$this->socket_uri}'.";
             $this->logger->error($error);
             throw new BadUriException($error);
@@ -124,14 +124,14 @@ class Client extends Base
         $key = self::generateKey();
 
         // Default headers
-        $headers = array(
+        $headers = [
             'Host'                  => $host . ":" . $port,
             'User-Agent'            => 'websocket-client-php',
             'Connection'            => 'Upgrade',
             'Upgrade'               => 'websocket',
             'Sec-WebSocket-Key'     => $key,
             'Sec-WebSocket-Version' => '13',
-        );
+        ];
 
         // Handle basic authentication.
         if ($user || $pass) {
@@ -194,7 +194,7 @@ class Client extends Base
      *
      * @return string Random string
      */
-    protected static function generateKey()
+    protected static function generateKey(): string
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"$&/()=[]{}0123456789';
         $key = '';

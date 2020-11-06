@@ -34,13 +34,13 @@ class MockSocket
     }
 
     // Check if all expected calls are performed
-    public static function isEmpty()
+    public static function isEmpty(): bool
     {
         return empty(self::$queue);
     }
 
     // Initialize call queue
-    public static function initialize($op_file, $asserter)
+    public static function initialize($op_file, $asserter): void
     {
         $file = dirname(__DIR__) . "/scripts/{$op_file}.json";
         self::$queue = json_decode(file_get_contents($file), true);

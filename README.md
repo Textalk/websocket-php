@@ -14,7 +14,6 @@ It does not include convenience operations such as listeners and implicit error 
 - [Server](docs/Server.md)
 - [Changelog](docs/Changelog.md)
 - [Contributing](docs/Contributing.md)
-- [License](docs/COPYING.md)
 
 ## Installing
 
@@ -55,7 +54,9 @@ $server->send($message);
 $server->close();
 ```
 
-### Contributors
+### License and Contributors
+
+[ISC License](COPYING.md)
 
 Fredrik Liljegren, Armen Baghumian Sankbarani, Ruslan Bekenev,
 Joshua Thijssen, Simon Lipp, Quentin Bellus, Patrick McCarren, swmcdonnell,

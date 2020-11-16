@@ -91,4 +91,4 @@ $client = new WebSocket\Client("ws://echo.websocket.org/", [
 * `WebSocket\BadOpcodeException` - Thrown if provided opcode is invalid.
 * `WebSocket\BadUriException` - Thrown if provided URI is invalid.
 * `WebSocket\ConnectionException` - Thrown on any socket I/O failure.
-* `WebSocket\TimeoutExeception` - Thrown when the socket experiences a time out.
+* `WebSocket\TimeoutException` - Thrown when the socket experiences a time out.

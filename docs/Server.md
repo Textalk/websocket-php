@@ -90,4 +90,4 @@ $server = new WebSocket\Server([
 
 * `WebSocket\BadOpcodeException` - Thrown if provided opcode is invalid.
 * `WebSocket\ConnectionException` - Thrown on any socket I/O failure.
-* `WebSocket\TimeoutExeception` - Thrown when the socket experiences a time out.
+* `WebSocket\TimeoutException` - Thrown when the socket experiences a time out.

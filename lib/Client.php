@@ -135,7 +135,7 @@ class Client extends Base
 
         // Handle basic authentication.
         if ($user || $pass) {
-            $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass) . "\r\n";
+            $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
         }
 
         // Deprecated way of adding origin (use headers instead).

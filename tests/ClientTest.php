@@ -40,12 +40,6 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
-
-        $client->close();
-        $this->assertFalse($client->isConnected());
-        $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
 
         $this->assertTrue(MockSocket::isEmpty());
     }
@@ -179,11 +173,12 @@ class ClientTest extends TestCase
         MockSocket::initialize('close-remote', $this);
 
         $message = $client->receive();
-        $this->assertEquals('', $message);
+        $this->assertNull($message);
 
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
+        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -213,7 +208,8 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
+        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.reconnect', $this);

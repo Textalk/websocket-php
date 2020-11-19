@@ -18,7 +18,7 @@ WebSocket\Server {
 
     public accept() : bool
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : mixed
+    public receive(array $options = ['filter' => ['text', 'binary']]) : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
     public getPort() : int
@@ -26,7 +26,7 @@ WebSocket\Server {
     public getRequest() : array
     public getHeader(string $header_name) : string|null
 
-    public getLastOpcode() : string
+    public getLastOpcode(bool $frame = false) : string
     public getCloseStatus() : int
     public isConnected() : bool
     public setTimeout(int $seconds) : void
@@ -68,6 +68,17 @@ while ($server->accept()) {
     }
 }
 $server->close();
+```
+
+### Filtering received messages
+
+By default the `receive()` method return messages of 'text' and 'binary' opcode.
+The filter option allows you to specify which message types to return.
+
+```php
+$client->receive(); // return 'text' and 'binary' messages
+$client->receive(['filter' => ['text']]); // only return 'text' messages
+$client->receive(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]); // return all messages
 ```
 
 ## Constructor options

@@ -24,7 +24,6 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertTrue(MockSocket::isEmpty());
-
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->send('Connect');
@@ -60,7 +59,7 @@ class ServerTest extends TestCase
         $server->close();
         $this->assertFalse($server->isConnected());
         $this->assertEquals(1000, $server->getCloseStatus());
-        $this->assertEquals('close', $server->getLastOpcode());
+        $this->assertEquals('close', $server->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
 
         $server->close(); // Already closed
@@ -192,7 +191,8 @@ class ServerTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($server->isConnected());
         $this->assertEquals(17260, $server->getCloseStatus());
-        $this->assertEquals('close', $server->getLastOpcode());
+        $this->assertNull($server->getLastOpcode());
+        $this->assertEquals('close', $server->getLastOpcode(true));
     }
 
     public function testSetTimeout(): void

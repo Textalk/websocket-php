@@ -14,7 +14,7 @@ WebSocket\Client {
     public __destruct()
 
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive(array $options = ['filter' => ['text', 'binary']]) : ?string
+    public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
     public getLastOpcode(bool $frame = false) : string

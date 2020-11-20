@@ -76,15 +76,18 @@ By default the `receive()` method return messages of 'text' and 'binary' opcode.
 The filter option allows you to specify which message types to return.
 
 ```php
-$client->receive(); // return 'text' and 'binary' messages
-$client->receive(['filter' => ['text']]); // only return 'text' messages
-$client->receive(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]); // return all messages
+$server = new WebSocket\Server(['filter' => ['text']]);
+$server->receive(); // only return 'text' messages
+
+$server = new WebSocket\Server(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
+$server->receive(); // return all messages
 ```
 
 ## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 
+* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
 * `timeout` - Time out in seconds. Default 5 seconds.
 * `port` - The server port to listen to. Default 8000.
 * `fragment_size` - Maximum payload size. Default 4096 chars.

@@ -354,4 +354,28 @@ class ServerTest extends TestCase
         $this->expectExceptionMessage('Empty read; connection dead?');
         $server->receive();
     }
+
+    public function testFrameFragmentation(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['filter' => ['text', 'binary', 'pong', 'close']]);
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $server->receive();
+        $this->assertEquals('Server ping', $message);
+        $this->assertEquals('pong', $server->getLastOpcode());
+        $message = $server->receive();
+        $this->assertEquals('Multi fragment test', $message);
+        $this->assertEquals('text', $server->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $server->receive();
+        $this->assertEquals('Closing', $message);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($server->isConnected());
+        $this->assertEquals(17260, $server->getCloseStatus());
+        $this->assertEquals('close', $server->getLastOpcode());
+    }
 }

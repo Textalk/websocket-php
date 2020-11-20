@@ -157,10 +157,9 @@ class Base implements LoggerAwareInterface
         $this->write($frame);
     }
 
-    public function receive(array $options = []): ?string
+    public function receive(): ?string
     {
-        $options = array_merge(['filter' => ['text', 'binary']], $options);
-
+        $filter = $this->options['filter'];
         if (!$this->isConnected()) {
             $this->connect();
         }
@@ -180,10 +179,11 @@ class Base implements LoggerAwareInterface
             $this->last_frame_opcode = $payload_opcode;
 
             // Filter frames
-            if (!in_array($payload_opcode, $options['filter'])) {
+            if (!in_array($payload_opcode, $filter)) {
                 if ($payload_opcode == 'close') {
                     return null; // Always abort receive on close
                 }
+                $final = false;
                 continue; // Continue reading
             }
 
@@ -198,28 +198,23 @@ class Base implements LoggerAwareInterface
                 $this->read_buffer['payload'] .= $payload;
                 $this->read_buffer['frames']++;
             }
+        } while (!$final);
 
-            // Not the final frame, continue
-            if (!$final) {
-                continue; // Continue reading
-            }
+        // Final, return payload
+        $frames = 1;
+        if ($continuation) {
+            $payload = $this->read_buffer['payload'];
+            $frames = $this->read_buffer['frames'];
+            $this->read_buffer = null;
+        }
+        $this->logger->info("Received '{opcode}' message", [
+            'opcode' => $payload_opcode,
+            'content-length' => strlen($payload),
+            'frames' => $frames,
+        ]);
 
-            // Final, return payload
-            $frames = 1;
-            if ($continuation) {
-                $payload = $this->read_buffer['payload'];
-                $frames = $this->read_buffer['frames'];
-                $this->read_buffer = null;
-            }
-            $this->logger->info("Received '{opcode}' message", [
-                'opcode' => $payload_opcode,
-                'content-length' => strlen($payload),
-                'frames' => $frames,
-            ]);
-
-            $this->last_opcode = $payload_opcode;
-            return $payload;
-        } while ($response);
+        $this->last_opcode = $payload_opcode;
+        return $payload;
     }
 
     protected function receiveFragment(): array

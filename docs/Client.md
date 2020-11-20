@@ -66,9 +66,11 @@ By default the `receive()` method return messages of 'text' and 'binary' opcode.
 The filter option allows you to specify which message types to return.
 
 ```php
-$client->receive(); // return 'text' and 'binary' messages
-$client->receive(['filter' => ['text']]); // only return 'text' messages
-$client->receive(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]); // return all messages
+$client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text']]);
+$client->receive(); // only return 'text' messages
+
+$client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
+$client->receive(); // return all messages
 ```
 
 
@@ -76,6 +78,7 @@ $client->receive(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]); // 
 
 The `$options` parameter in constructor accepts an associative array of options.
 
+* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
 * `timeout` - Time out in seconds. Default 5 seconds.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `context` - A stream context created using [stream_context_create](https://www.php.net/manual/en/function.stream-context-create).

@@ -13,13 +13,14 @@ class Client extends Base
 {
     // Default options
     protected static $default_options = [
-      'persistent'    => false,
-      'timeout'       => 5,
-      'fragment_size' => 4096,
       'context'       => null,
+      'filter'        => ['text', 'binary'],
+      'fragment_size' => 4096,
       'headers'       => null,
       'logger'        => null,
       'origin'        => null, // @deprecated
+      'persistent'    => false,
+      'timeout'       => 5,
     ];
 
     protected $socket_uri;

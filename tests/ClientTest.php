@@ -40,12 +40,6 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
-
-        $client->close();
-        $this->assertFalse($client->isConnected());
-        $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
 
         $this->assertTrue(MockSocket::isEmpty());
     }
@@ -179,11 +173,12 @@ class ClientTest extends TestCase
         MockSocket::initialize('close-remote', $this);
 
         $message = $client->receive();
-        $this->assertEquals('', $message);
+        $this->assertNull($message);
 
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
+        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -213,7 +208,8 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
+        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.reconnect', $this);
@@ -357,5 +353,30 @@ class ClientTest extends TestCase
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Empty read; connection dead?');
         $client->receive();
+    }
+
+    public function testFrameFragmentation(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client(
+            'ws://localhost:8000/my/mock/path',
+            ['filter' => ['text', 'binary', 'pong', 'close']]
+        );
+        $client->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $client->receive();
+        $this->assertEquals('Server ping', $message);
+        $this->assertEquals('pong', $client->getLastOpcode());
+        $message = $client->receive();
+        $this->assertEquals('Multi fragment test', $message);
+        $this->assertEquals('text', $client->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $client->receive();
+        $this->assertEquals('Closing', $message);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(17260, $client->getCloseStatus());
+        $this->assertEquals('close', $client->getLastOpcode());
     }
 }

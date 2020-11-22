@@ -13,10 +13,11 @@ class Server extends Base
 {
     // Default options
     protected static $default_options = [
-      'timeout'       => null,
+      'filter'        => ['text', 'binary'],
       'fragment_size' => 4096,
-      'port'          => 8000,
       'logger'        => null,
+      'port'          => 8000,
+      'timeout'       => null,
     ];
 
     protected $addr;

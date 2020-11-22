@@ -18,7 +18,7 @@ WebSocket\Server {
 
     public accept() : bool
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : mixed
+    public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
     public getPort() : int
@@ -26,7 +26,7 @@ WebSocket\Server {
     public getRequest() : array
     public getHeader(string $header_name) : string|null
 
-    public getLastOpcode() : string
+    public getLastOpcode(bool $frame = false) : string
     public getCloseStatus() : int
     public isConnected() : bool
     public setTimeout(int $seconds) : void
@@ -70,10 +70,24 @@ while ($server->accept()) {
 $server->close();
 ```
 
+### Filtering received messages
+
+By default the `receive()` method return messages of 'text' and 'binary' opcode.
+The filter option allows you to specify which message types to return.
+
+```php
+$server = new WebSocket\Server(['filter' => ['text']]);
+$server->receive(); // only return 'text' messages
+
+$server = new WebSocket\Server(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
+$server->receive(); // return all messages
+```
+
 ## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 
+* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
 * `timeout` - Time out in seconds. Default 5 seconds.
 * `port` - The server port to listen to. Default 8000.
 * `fragment_size` - Maximum payload size. Default 4096 chars.

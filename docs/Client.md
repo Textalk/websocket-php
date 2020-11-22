@@ -14,10 +14,10 @@ WebSocket\Client {
     public __destruct()
 
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : mixed
+    public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
-    public getLastOpcode() : string
+    public getLastOpcode(bool $frame = false) : string
     public getCloseStatus() : int
     public isConnected() : bool
     public setTimeout(int $seconds) : void
@@ -60,10 +60,25 @@ while (true) {
 $client->close();
 ```
 
+### Filtering received messages
+
+By default the `receive()` method return messages of 'text' and 'binary' opcode.
+The filter option allows you to specify which message types to return.
+
+```php
+$client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text']]);
+$client->receive(); // only return 'text' messages
+
+$client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
+$client->receive(); // return all messages
+```
+
+
 ## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 
+* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
 * `timeout` - Time out in seconds. Default 5 seconds.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `context` - A stream context created using [stream_context_create](https://www.php.net/manual/en/function.stream-context-create).

@@ -19,8 +19,10 @@ class Base implements LoggerAwareInterface
     protected $options = [];
     protected $is_closing = false;
     protected $last_opcode = null;
+    protected $last_frame_opcode = null;
     protected $close_status = null;
     protected $logger;
+    private $read_buffer;
 
     protected static $opcodes = [
         'continuation' => 0,
@@ -31,9 +33,9 @@ class Base implements LoggerAwareInterface
         'pong'         => 10,
     ];
 
-    public function getLastOpcode(): ?string
+    public function getLastOpcode(bool $frame = false): ?string
     {
-        return $this->last_opcode;
+        return $frame ? $this->last_frame_opcode : $this->last_opcode;
     }
 
     public function getCloseStatus(): ?int
@@ -155,19 +157,63 @@ class Base implements LoggerAwareInterface
         $this->write($frame);
     }
 
-    public function receive(): string
+    public function receive(): ?string
     {
+        $filter = $this->options['filter'];
         if (!$this->isConnected()) {
             $this->connect();
         }
 
-        $payload = '';
         do {
             $response = $this->receiveFragment();
-            $payload .= $response[0];
-        } while (!$response[1]);
+            list ($payload, $final, $opcode) = $response;
+            $this->logger->debug("Read '{opcode}' frame", [
+                'opcode' => $opcode,
+                'final' => $final,
+                'content-length' => strlen($payload),
+            ]);
 
-        $this->logger->info("Received '{$this->last_opcode}' message");
+            // Continuation and factual opcode
+            $continuation = ($opcode == 'continuation');
+            $payload_opcode = $continuation ? $this->read_buffer['opcode'] : $opcode;
+            $this->last_frame_opcode = $payload_opcode;
+
+            // Filter frames
+            if (!in_array($payload_opcode, $filter)) {
+                if ($payload_opcode == 'close') {
+                    return null; // Always abort receive on close
+                }
+                $final = false;
+                continue; // Continue reading
+            }
+
+            // First continuation frame, create buffer
+            if (!$final && !$continuation) {
+                $this->read_buffer = ['opcode' => $opcode, 'payload' => $payload, 'frames' => 1];
+                continue; // Continue reading
+            }
+
+            // Subsequent continuation frames, add to buffer
+            if ($continuation) {
+                $this->read_buffer['payload'] .= $payload;
+                $this->read_buffer['frames']++;
+            }
+        } while (!$final);
+
+        // Final, return payload
+        $frames = 1;
+        if ($continuation) {
+            $payload = $this->read_buffer['payload'];
+            $frames = $this->read_buffer['frames'];
+            $this->read_buffer = null;
+        }
+        $this->logger->info("Received '{opcode}' message", [
+            'opcode' => $payload_opcode,
+            'content-length' => strlen($payload),
+            'frames' => $frames,
+        ]);
+
+        $this->last_opcode = $payload_opcode;
         return $payload;
     }
 
@@ -233,18 +279,13 @@ class Base implements LoggerAwareInterface
         if ($opcode === 'ping') {
             $this->logger->debug("Received 'ping', sending 'pong'.");
             $this->send($payload, 'pong', true);
-            return [null, false];
+            return [$payload, true, $opcode];
         }
 
         // if we received a pong, wait for the next message
         if ($opcode === 'pong') {
             $this->logger->debug("Received 'pong'.");
-            return [null, false];
-        }
-
-        // Record the opcode if we are not receiving a continutation fragment
-        if ($opcode !== 'continuation') {
-            $this->last_opcode = $opcode;
+            return [$payload, true, $opcode];
         }
 
         if ($opcode === 'close') {
@@ -271,10 +312,10 @@ class Base implements LoggerAwareInterface
             fclose($this->socket);
 
             // Closing should not return message.
-            return [null, true];
+            return [$payload, true, $opcode];
         }
 
-        return [$payload, $final];
+        return [$payload, $final, $opcode];
     }
 
     /**

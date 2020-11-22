@@ -2,6 +2,15 @@
 
 # Websocket: Changelog
 
+## `v1.5`
+
+ > PHP version `^7.2`
+
+### `1.5.0`
+
+ * Opcode filter for receive() method (@sirn-se)
+ * Fix for unordered framgemented messages (@sirn-se)
+
 ## `v1.4`
 
  > PHP version `^7.1`

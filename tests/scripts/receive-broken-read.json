@@ -12,6 +12,13 @@
         "return": false
     },
     {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return":true
+    },
+    {
         "function": "stream_get_meta_data",
         "params": [
             "@mock-stream"

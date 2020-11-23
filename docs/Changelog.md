@@ -6,6 +6,12 @@
 
  > PHP version `^7.1`
 
+#### `1.4.2`
+
+ * Force stream close on read error (@sirn-se)
+ * Authorization headers line feed (@sirn-se)
+ * Documentation (@matias-pool, @sirn-se)
+
 #### `1.4.1`
 
  * Ping/Pong, handled internally to avoid breaking fragmented messages (@nshmyrev, @sirn-se)

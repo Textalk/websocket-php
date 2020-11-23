@@ -323,9 +323,11 @@ class Base implements LoggerAwareInterface
             $buffer = fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
                 $read = strlen($data);
+                fclose($this->socket);
                 $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");
             }
             if ($buffer === '') {
+                fclose($this->socket);
                 $this->throwException("Empty read; connection dead?");
             }
             $data .= $buffer;

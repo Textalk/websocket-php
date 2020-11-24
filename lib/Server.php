@@ -46,7 +46,7 @@ class Server extends Base
         if (!$this->listening) {
             $error = "Could not open listening socket: {$errstr} ({$errno})";
             $this->logger->error($error);
-            throw new ConnectionException($error, $errno);
+            throw new ConnectionException($error, (int)$errno);
         }
 
         $this->logger->info("Server listening to port {$this->port}");

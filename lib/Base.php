@@ -379,17 +379,15 @@ class Base implements LoggerAwareInterface
     protected function throwException($message, $code = 0): void
     {
         $meta = stream_get_meta_data($this->socket);
-        $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
-            $code = ConnectionException::TIMED_OUT;
-            $this->logger->warning("{$message}", (array)$meta);
-            throw new TimeoutException("{$message} Stream state: {$json_meta}", $code);
+            $this->logger->error($message, $meta);
+            throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
         }
         if (!empty($meta['eof'])) {
             $code = ConnectionException::EOF;
         }
-        $this->logger->error("{$message}", (array)$meta);
-        throw new ConnectionException("{$message}  Stream state: {$json_meta}", $code);
+        $this->logger->error($message, $meta);
+        throw new ConnectionException($message, $code, $meta);
     }
 
     /**

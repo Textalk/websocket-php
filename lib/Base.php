@@ -219,19 +219,15 @@ class Base implements LoggerAwareInterface
 
     protected function receiveFragment(): array
     {
-        // Just read the main fragment information first.
+        // Read the fragment "header" first, two bytes.
         $data = $this->read(2);
+        list ($byte_1, $byte_2) = array_values(unpack('C*', $data));
 
-        // Is this the final fragment?  // Bit 0 in byte 0
-        $final = (bool) (ord($data[0]) & 1 << 7);
-
-        // Should be unused, and must be false…  // Bits 1, 2, & 3
-        $rsv1  = (bool) (ord($data[0]) & 1 << 6);
-        $rsv2  = (bool) (ord($data[0]) & 1 << 5);
-        $rsv3  = (bool) (ord($data[0]) & 1 << 4);
+        $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
+        $rsv = $byte_1 & 0b01110000; // Unused bits, ignore
 
         // Parse opcode
-        $opcode_int = ord($data[0]) & 15; // Bits 4-7
+        $opcode_int = $byte_1 & 0b00001111;
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
             $warning = "Bad opcode in websocket frame: {$opcode_int}";
@@ -240,20 +236,22 @@ class Base implements LoggerAwareInterface
         }
         $opcode = $opcode_ints[$opcode_int];
 
-        // Masking?
-        $mask = (bool) (ord($data[1]) >> 7);  // Bit 0 in byte 1
+        // Masking bit
+        $mask = (bool)($byte_2 & 0b10000000);
 
         $payload = '';
 
         // Payload length
-        $payload_length = (int) ord($data[1]) & 127; // Bits 1-7 in byte 1
+        $payload_length = $byte_2 & 0b01111111;
+
         if ($payload_length > 125) {
             if ($payload_length === 126) {
                 $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
+                $payload_length = current(unpack('n', $data));
             } else {
                 $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
+                $payload_length = current(unpack('J', $data));
             }
-            $payload_length = bindec(self::sprintB($data));
         }
 
         // Get masking key.
@@ -292,7 +290,7 @@ class Base implements LoggerAwareInterface
             // Get the close status.
             if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
-                $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
+                $status = current(unpack('n', $payload));
                 $this->close_status = $status;
             }
             // Get additional close message-
@@ -388,17 +386,5 @@ class Base implements LoggerAwareInterface
         }
         $this->logger->error($message, $meta);
         throw new ConnectionException($message, $code, $meta);
-    }
-
-    /**
-     * Helper to convert a binary to a string of '0' and '1'.
-     */
-    protected static function sprintB($string): string
-    {
-        $return = '';
-        for ($i = 0; $i < strlen($string); $i++) {
-            $return .= sprintf("%08b", ord($string[$i]));
-        }
-        return $return;
     }
 }

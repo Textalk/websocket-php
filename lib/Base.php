@@ -105,38 +105,24 @@ class Base implements LoggerAwareInterface
 
     protected function sendFragment($final, $payload, $opcode, $masked): void
     {
-        // Binary string for header.
-        $frame_head_binstr = '';
+        $data = '';
 
-        // Write FIN, final fragment bit.
-        $frame_head_binstr .= (bool) $final ? '1' : '0';
+        $byte_1 = $final ? 0b10000000 : 0b00000000; // Final fragment marker.
+        $byte_1 |= self::$opcodes[$opcode]; // Set opcode.
+        $data .= pack('C', $byte_1);
 
-        // RSV 1, 2, & 3 false and unused.
-        $frame_head_binstr .= '000';
-
-        // Opcode rest of the byte.
-        $frame_head_binstr .= sprintf('%04b', self::$opcodes[$opcode]);
-
-        // Use masking?
-        $frame_head_binstr .= $masked ? '1' : '0';
+        $byte_2 = $masked ? 0b10000000 : 0b00000000; // Masking bit marker.
 
         // 7 bits of payload length...
         $payload_length = strlen($payload);
         if ($payload_length > 65535) {
-            $frame_head_binstr .= decbin(127);
-            $frame_head_binstr .= sprintf('%064b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111111);
+            $data .= pack('J', $payload_length);
         } elseif ($payload_length > 125) {
-            $frame_head_binstr .= decbin(126);
-            $frame_head_binstr .= sprintf('%016b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111110);
+            $data .= pack('n', $payload_length);
         } else {
-            $frame_head_binstr .= sprintf('%07b', $payload_length);
-        }
-
-        $frame = '';
-
-        // Write frame head to frame.
-        foreach (str_split($frame_head_binstr, 8) as $binstr) {
-            $frame .= chr(bindec($binstr));
+            $data .= pack('C', $byte_2 | $payload_length);
         }
 
         // Handle masking
@@ -146,15 +132,15 @@ class Base implements LoggerAwareInterface
             for ($i = 0; $i < 4; $i++) {
                 $mask .= chr(rand(0, 255));
             }
-            $frame .= $mask;
+            $data .= $mask;
         }
 
         // Append payload to frame:
         for ($i = 0; $i < $payload_length; $i++) {
-            $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
+            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
         }
 
-        $this->write($frame);
+        $this->write($data);
     }
 
     public function receive(): ?string

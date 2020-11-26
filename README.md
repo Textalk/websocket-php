@@ -12,6 +12,7 @@ It does not include convenience operations such as listeners and implicit error 
 
 - [Client](docs/Client.md)
 - [Server](docs/Server.md)
+- [Examples](docs/Examples.md)
 - [Changelog](docs/Changelog.md)
 - [Contributing](docs/Contributing.md)
 

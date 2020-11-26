@@ -7,7 +7,8 @@
  * Console options:
  *  --port <int> : The port to listen to, default 8000
  *  --timeout <int> : Timeout in seconds, default 200 seconds
- *  --debug : Output log data (if logger is available) */
+ *  --debug : Output log data (if logger is available)
+ */
 
 namespace WebSocket;
 
@@ -52,7 +53,7 @@ while ($server->accept()) {
                     $server->send(implode("\r\n", $server->getRequest()));
                     break;
                 case 'ping':
-                    $server->send('ping', 'ping', true);
+                    $server->send($message, 'ping');
                     break;
                 case 'auth':
                     $auth = $server->getHeader('Authorization');

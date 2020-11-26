@@ -24,7 +24,7 @@ $options = array_merge([
     'uri'           => 'ws://localhost:8000',
     'timeout'       => rand(1, 60),
     'fragment_size' => rand(1, 4096) * 8,
-], getopt('', ['uri:', 'timeout:', 'fragment_size:', 'mode:', 'debug']));
+], getopt('', ['uri:', 'timeout:', 'fragment_size:', 'debug']));
 
 // If debug mode and logger is available
 if (isset($options['debug']) && class_exists('WebSocket\EchoLog')) {
@@ -47,7 +47,6 @@ while (true) {
         try {
             while (true) {
                 // Random actions
-
                 switch (rand(1, 10)) {
                     case 1:
                         $client->send('Text message', 'text');

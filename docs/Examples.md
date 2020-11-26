@@ -39,7 +39,7 @@ info     | Received 'close' message []
 
 ## The `send` client
 
-Source: [examples/send.php](examples/send.php)
+Source: [examples/send.php](../examples/send.php)
 
 A simple, single send/receive client.
 
@@ -53,7 +53,7 @@ php examples/send.php --opcode text --debug "A text message" // Use runtime debu
 
 ## The `echoserver` server
 
-Source: [examples/echoserver.php](examples/echoserver.php)
+Source: [examples/echoserver.php](../examples/echoserver.php)
 
 A simple server that responds to recevied commands.
 
@@ -73,7 +73,7 @@ These strings can be sent as message to trigger server to perform actions;
 
 ## The `random` client
 
-Source: [examples/random_client.php](examples/random_client.php)
+Source: [examples/random_client.php](../examples/random_client.php)
 
 The random client will use random options and continuously send/receive random messages.
 
@@ -86,7 +86,7 @@ php examples/random_client.php --debug //  Use runtime debugging
 
 ## The `random` server
 
-Source: [examples/random_server.php](examples/random_server.php)
+Source: [examples/random_server.php](../examples/random_server.php)
 
 The random server will use random options and continuously send/receive random messages.
 

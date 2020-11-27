@@ -17,15 +17,14 @@ require __DIR__ . '/../vendor/autoload.php';
 
 error_reporting(-1);
 
-function randStr(int $maxlength = 4096)
-{
+$randStr = function (int $maxlength = 4096) {
     $string = '';
     $length = rand(1, $maxlength);
     for ($i = 0; $i < $length; $i++) {
         $string .= chr(rand(33, 126));
     }
     return $string;
-}
+};
 
 echo "> Random client\n";
 
@@ -60,23 +59,23 @@ while (true) {
                 switch (rand(1, 10)) {
                     case 1:
                         echo "> Sending text\n";
-                        $client->send('Text message ' . randStr(), 'text');
+                        $client->send("Text message {$randStr()}", 'text');
                         break;
                     case 2:
                         echo "> Sending binary\n";
-                        $client->send('Binary message ' . randStr(), 'binary');
+                        $client->send("Binary message {$randStr()}", 'binary');
                         break;
                     case 3:
                         echo "> Sending close\n";
-                        $client->close(rand(1000, 2000), 'Close message ' . randStr(8));
+                        $client->close(rand(1000, 2000), "Close message {$randStr(8)}");
                         break;
                     case 4:
                         echo "> Sending ping\n";
-                        $client->send('Ping message ' . randStr(8), 'ping');
+                        $client->send("Ping message  {$randStr(8)}", 'ping');
                         break;
                     case 5:
                         echo "> Sending pong\n";
-                        $client->send('Pong message ' . randStr(8), 'pong');
+                        $client->send("Pong message  {$randStr(8)}", 'pong');
                         break;
                     default:
                         echo "> Receiving\n";

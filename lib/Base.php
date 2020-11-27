@@ -105,38 +105,24 @@ class Base implements LoggerAwareInterface
 
     protected function sendFragment($final, $payload, $opcode, $masked): void
     {
-        // Binary string for header.
-        $frame_head_binstr = '';
+        $data = '';
 
-        // Write FIN, final fragment bit.
-        $frame_head_binstr .= (bool) $final ? '1' : '0';
+        $byte_1 = $final ? 0b10000000 : 0b00000000; // Final fragment marker.
+        $byte_1 |= self::$opcodes[$opcode]; // Set opcode.
+        $data .= pack('C', $byte_1);
 
-        // RSV 1, 2, & 3 false and unused.
-        $frame_head_binstr .= '000';
-
-        // Opcode rest of the byte.
-        $frame_head_binstr .= sprintf('%04b', self::$opcodes[$opcode]);
-
-        // Use masking?
-        $frame_head_binstr .= $masked ? '1' : '0';
+        $byte_2 = $masked ? 0b10000000 : 0b00000000; // Masking bit marker.
 
         // 7 bits of payload length...
         $payload_length = strlen($payload);
         if ($payload_length > 65535) {
-            $frame_head_binstr .= decbin(127);
-            $frame_head_binstr .= sprintf('%064b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111111);
+            $data .= pack('J', $payload_length);
         } elseif ($payload_length > 125) {
-            $frame_head_binstr .= decbin(126);
-            $frame_head_binstr .= sprintf('%016b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111110);
+            $data .= pack('n', $payload_length);
         } else {
-            $frame_head_binstr .= sprintf('%07b', $payload_length);
-        }
-
-        $frame = '';
-
-        // Write frame head to frame.
-        foreach (str_split($frame_head_binstr, 8) as $binstr) {
-            $frame .= chr(bindec($binstr));
+            $data .= pack('C', $byte_2 | $payload_length);
         }
 
         // Handle masking
@@ -146,15 +132,15 @@ class Base implements LoggerAwareInterface
             for ($i = 0; $i < 4; $i++) {
                 $mask .= chr(rand(0, 255));
             }
-            $frame .= $mask;
+            $data .= $mask;
         }
 
         // Append payload to frame:
         for ($i = 0; $i < $payload_length; $i++) {
-            $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
+            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
         }
 
-        $this->write($frame);
+        $this->write($data);
     }
 
     public function receive(): ?string
@@ -219,19 +205,15 @@ class Base implements LoggerAwareInterface
 
     protected function receiveFragment(): array
     {
-        // Just read the main fragment information first.
+        // Read the fragment "header" first, two bytes.
         $data = $this->read(2);
+        list ($byte_1, $byte_2) = array_values(unpack('C*', $data));
 
-        // Is this the final fragment?  // Bit 0 in byte 0
-        $final = (bool) (ord($data[0]) & 1 << 7);
-
-        // Should be unused, and must be false…  // Bits 1, 2, & 3
-        $rsv1  = (bool) (ord($data[0]) & 1 << 6);
-        $rsv2  = (bool) (ord($data[0]) & 1 << 5);
-        $rsv3  = (bool) (ord($data[0]) & 1 << 4);
+        $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
+        $rsv = $byte_1 & 0b01110000; // Unused bits, ignore
 
         // Parse opcode
-        $opcode_int = ord($data[0]) & 15; // Bits 4-7
+        $opcode_int = $byte_1 & 0b00001111;
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
             $warning = "Bad opcode in websocket frame: {$opcode_int}";
@@ -240,20 +222,22 @@ class Base implements LoggerAwareInterface
         }
         $opcode = $opcode_ints[$opcode_int];
 
-        // Masking?
-        $mask = (bool) (ord($data[1]) >> 7);  // Bit 0 in byte 1
+        // Masking bit
+        $mask = (bool)($byte_2 & 0b10000000);
 
         $payload = '';
 
         // Payload length
-        $payload_length = (int) ord($data[1]) & 127; // Bits 1-7 in byte 1
+        $payload_length = $byte_2 & 0b01111111;
+
         if ($payload_length > 125) {
             if ($payload_length === 126) {
                 $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
+                $payload_length = current(unpack('n', $data));
             } else {
                 $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
+                $payload_length = current(unpack('J', $data));
             }
-            $payload_length = bindec(self::sprintB($data));
         }
 
         // Get masking key.
@@ -292,7 +276,7 @@ class Base implements LoggerAwareInterface
             // Get the close status.
             if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
-                $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
+                $status = current(unpack('n', $payload));
                 $this->close_status = $status;
             }
             // Get additional close message-
@@ -379,28 +363,14 @@ class Base implements LoggerAwareInterface
     protected function throwException($message, $code = 0): void
     {
         $meta = stream_get_meta_data($this->socket);
-        $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
-            $code = ConnectionException::TIMED_OUT;
-            $this->logger->warning("{$message}", (array)$meta);
-            throw new TimeoutException("{$message} Stream state: {$json_meta}", $code);
+            $this->logger->error($message, $meta);
+            throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
         }
         if (!empty($meta['eof'])) {
             $code = ConnectionException::EOF;
         }
-        $this->logger->error("{$message}", (array)$meta);
-        throw new ConnectionException("{$message}  Stream state: {$json_meta}", $code);
-    }
-
-    /**
-     * Helper to convert a binary to a string of '0' and '1'.
-     */
-    protected static function sprintB($string): string
-    {
-        $return = '';
-        for ($i = 0; $i < strlen($string); $i++) {
-            $return .= sprintf("%08b", ord($string[$i]));
-        }
-        return $return;
+        $this->logger->error($message, $meta);
+        throw new ConnectionException($message, $code, $meta);
     }
 }

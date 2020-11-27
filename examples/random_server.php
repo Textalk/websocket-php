@@ -17,6 +17,16 @@ require __DIR__ . '/../vendor/autoload.php';
 
 error_reporting(-1);
 
+function randStr(int $maxlength = 4096)
+{
+    $string = '';
+    $length = rand(1, $maxlength);
+    for ($i = 0; $i < $length; $i++) {
+        $string .= chr(rand(33, 126));
+    }
+    return $string;
+}
+
 echo "> Random server\n";
 
 // Server options specified or random
@@ -49,23 +59,29 @@ while (true) {
             // Random actions
             switch (rand(1, 10)) {
                 case 1:
-                    $server->send('Text message', 'text');
+                    echo "> Sending text\n";
+                    $server->send('Text message ' . randStr(), 'text');
                     break;
                 case 2:
-                    $server->send('Binary message', 'binary');
+                    echo "> Sending binary\n";
+                    $server->send('Binary message ' . randStr(), 'binary');
                     break;
                 case 3:
-                    $server->close(rand(1000, 2000), 'Close message');
+                    echo "> Sending close\n";
+                    $server->close(rand(1000, 2000), 'Close message ' . randStr(8));
                     break;
                 case 4:
-                    $server->send('Ping message', 'ping');
+                    echo "> Sending ping\n";
+                    $server->send('Ping message ' . randStr(8), 'ping');
                     break;
                 case 5:
-                    $server->send('Pong message', 'pong');
+                    echo "> Sending pong\n";
+                    $server->send('Pong message ' . randStr(8), 'pong');
                     break;
                 default:
+                    echo "> Receiving\n";
                     $received = $server->receive();
-                    echo "> Receiced {server->getLastOpcode()}: {$received}\n";
+                    echo "> Received {$server->getLastOpcode()}: {$received}\n";
             }
             sleep(rand(1, 5));
         }

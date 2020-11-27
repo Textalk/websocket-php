@@ -337,7 +337,7 @@ class Base implements LoggerAwareInterface
 
     protected function throwException($message, $code = 0): void
     {
-        $meta = stream_get_meta_data($this->socket);
+        $meta = $this->isConnected() ? stream_get_meta_data($this->socket) : [];
         $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
             $code = ConnectionException::TIMED_OUT;

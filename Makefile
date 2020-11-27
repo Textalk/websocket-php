@@ -9,7 +9,7 @@ test: composer.lock
 	./vendor/bin/phpunit
 
 cs-check: composer.lock
-	./vendor/bin/phpcs --standard=codestandard.xml lib tests
+	./vendor/bin/phpcs --standard=codestandard.xml lib tests examples
 
 coverage: composer.lock build
 	./vendor/bin/phpunit --coverage-clover build/logs/clover.xml

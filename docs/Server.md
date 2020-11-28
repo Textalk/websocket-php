@@ -17,6 +17,10 @@ WebSocket\Server {
     public __destruct()
 
     public accept() : bool
+    public text(string $payload) : void
+    public binary(string $payload) : void
+    public ping(string $payload = '') : void
+    public pong(string $payload = '') : void
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
     public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
@@ -46,7 +50,7 @@ This example reads a single message from a client, and respond with the same mes
 $server = new WebSocket\Server();
 $server->accept();
 $message = $server->receive();
-$server->send($message);
+$server->text($message);
 $server->close();
 ```
 
@@ -83,15 +87,33 @@ $server = new WebSocket\Server(['filter' => ['text', 'binary', 'ping', 'pong', '
 $server->receive(); // return all messages
 ```
 
+### Sending messages
+
+There are convenience methods to send messages with different opcodes.
+```php
+$server = new WebSocket\Server();
+
+// Convenience methods
+$server->text('A plain text message'); // Send an opcode=text message
+$server->binary($binary_string); // Send an opcode=binary message
+$server->ping(); // Send an opcode=ping frame
+$server->pong(); // Send an unsolicited opcode=pong frame
+
+// Generic send method
+$server->send($payload); // Sent as masked opcode=text
+$server->send($payload, 'binary'); // Sent as masked opcode=binary
+$server->send($payload, 'binary', false); // Sent as unmasked opcode=binary
+```
+
 ## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 
 * `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
-* `timeout` - Time out in seconds. Default 5 seconds.
-* `port` - The server port to listen to. Default 8000.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
+* `port` - The server port to listen to. Default 8000.
+* `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php
 $server = new WebSocket\Server([

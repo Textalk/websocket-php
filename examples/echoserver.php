@@ -50,10 +50,10 @@ while ($server->accept()) {
                     echo "> Close status: {$server->getCloseStatus()}\n";
                     exit;
                 case 'headers':
-                    $server-text(implode("\r\n", $server->getRequest()));
+                    $server->text(implode("\r\n", $server->getRequest()));
                     break;
                 case 'ping':
-                    $server-ping($message);
+                    $server->ping($message);
                     break;
                 case 'auth':
                     $auth = $server->getHeader('Authorization');

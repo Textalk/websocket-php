@@ -66,3 +66,8 @@ function get_resource_type()
     $args = func_get_args();
     return MockSocket::handle('get_resource_type', $args);
 }
+function stream_socket_get_name()
+{
+    $args = func_get_args();
+    return MockSocket::handle('stream_socket_get_name', $args);
+}

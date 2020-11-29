@@ -36,34 +36,41 @@ $server = new Server($options);
 
 echo "> Listening to port {$server->getPort()}\n";
 
-while ($server->accept()) {
+// Force quit to close server
+while (true) {
     try {
-        while (true) {
-            $message = $server->receive();
-            $opcode = $server->getLastOpcode();
-            echo "> Got '{$message}' [opcode: {$opcode}]\n";
-
-            switch ($message) {
-                case 'exit':
-                    echo "> Client told me to quit.  Bye bye.\n";
-                    $server->close();
-                    echo "> Close status: {$server->getCloseStatus()}\n";
-                    exit;
-                case 'headers':
-                    $server->text(implode("\r\n", $server->getRequest()));
-                    break;
-                case 'ping':
-                    $server->ping($message);
-                    break;
-                case 'auth':
-                    $auth = $server->getHeader('Authorization');
-                    $server->text("{$auth} - {$message}");
-                    break;
-                default:
-                    $server->send($message, $opcode);
+        while ($server->accept()) {
+            echo "> Accepted on port {$server->getPort()}\n";
+            while (true) {
+                $message = $server->receive();
+                $opcode = $server->getLastOpcode();
+                if ($opcode == 'close') {
+                    echo "> Closing connection\n";
+                    continue 2;
+                }
+                echo "> Got '{$message}' [opcode: {$opcode}]\n";
+                switch ($message) {
+                    case 'exit':
+                        echo "> Client told me to quit.  Bye bye.\n";
+                        $server->close();
+                        echo "> Close status: {$server->getCloseStatus()}\n";
+                        exit;
+                    case 'headers':
+                        $server->text(implode("\r\n", $server->getRequest()));
+                        break;
+                    case 'ping':
+                        $server->ping($message);
+                        break;
+                    case 'auth':
+                        $auth = $server->getHeader('Authorization');
+                        $server->text("{$auth} - {$message}");
+                        break;
+                    default:
+                        $server->send($message, $opcode);
+                }
             }
         }
-    } catch (WebSocket\ConnectionException $e) {
-        echo "\n", microtime(true), " Connection died: $e\n";
+    } catch (ConnectionException $e) {
+        echo "> ERROR: {$e->getMessage()}\n";
     }
 }

@@ -97,22 +97,21 @@ class Server extends Base
         if (empty($this->options['timeout'])) {
             $this->socket = @stream_socket_accept($this->listening);
             if (!$this->socket) {
-                $error = 'Server failed to connect.';
-                $this->logger->error($error);
-                throw new ConnectionException($error);
+                $this->throwException('Server failed to connect.');
             }
         } else {
             $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
             if (!$this->socket) {
-                $error = 'Server failed to connect.';
-                $this->logger->error($error);
-                throw new ConnectionException($error);
+                $this->throwException('Server failed to connect.');
             }
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
+        $this->logger->info("Server connected to port {port}", [
+            'port' => $this->port,
+            'pier' => stream_socket_get_name($this->socket, true),
+        ]);
         $this->performHandshake();
-        $this->logger->info("Server connected to port {$this->port}");
     }
 
     protected function performHandshake(): void

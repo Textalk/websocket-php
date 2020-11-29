@@ -100,7 +100,11 @@ class Base implements LoggerAwareInterface
             $frame_opcode = 'continuation';
         }
 
-        $this->logger->info("Sent '{$opcode}' message");
+        $this->logger->info("Sent '{$opcode}' message", [
+            'opcode' => $opcode,
+            'content-length' => strlen($payload),
+            'frames' => count($payload_chunks),
+        ]);
     }
 
     /**
@@ -175,8 +179,12 @@ class Base implements LoggerAwareInterface
         for ($i = 0; $i < $payload_length; $i++) {
             $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
         }
-
         $this->write($data);
+        $this->logger->debug("Sent '{$opcode}' frame", [
+            'opcode' => $opcode,
+            'final' => $final,
+            'content-length' => strlen($payload),
+        ]);
     }
 
     public function receive(): ?string
@@ -189,11 +197,6 @@ class Base implements LoggerAwareInterface
         do {
             $response = $this->receiveFragment();
             list ($payload, $final, $opcode) = $response;
-            $this->logger->debug("Read '{opcode}' frame", [
-                'opcode' => $opcode,
-                'final' => $final,
-                'content-length' => strlen($payload),
-            ]);
 
             // Continuation and factual opcode
             $continuation = ($opcode == 'continuation');
@@ -295,6 +298,12 @@ class Base implements LoggerAwareInterface
             }
         }
 
+        $this->logger->debug("Read '{opcode}' frame", [
+            'opcode' => $opcode,
+            'final' => $final,
+            'content-length' => strlen($payload),
+        ]);
+
         // if we received a ping, send a pong and wait for the next message
         if ($opcode === 'ping') {
             $this->logger->debug("Received 'ping', sending 'pong'.");
@@ -309,13 +318,15 @@ class Base implements LoggerAwareInterface
         }
 
         if ($opcode === 'close') {
+            $status_bin = '';
+            $status = '';
             // Get the close status.
             if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
                 $status = current(unpack('n', $payload));
                 $this->close_status = $status;
             }
-            // Get additional close message-
+            // Get additional close message
             if ($payload_length >= 2) {
                 $payload = substr($payload, 2);
             }
@@ -392,6 +403,8 @@ class Base implements LoggerAwareInterface
                 $this->throwException("Empty read; connection dead?");
             }
             $data .= $buffer;
+            $read = strlen($data);
+            $this->logger->debug("Read {$read} of {$length} bytes.");
         }
         return $data;
     }

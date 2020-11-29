@@ -36,9 +36,12 @@ try {
     // Create client, send and recevie
     $client = new Client($options['uri'], $options);
     $client->send($message, $options['opcode']);
-    $message = $client->receive();
-    $opcode = $client->getLastOpcode();
-    echo "> Got '{$message}' [opcode: {$opcode}]\n";
+    echo "> Sent '{$message}' [opcode: {$options['opcode']}]\n";
+    if (in_array($options['opcode'], ['text', 'binary'])) {
+        $message = $client->receive();
+        $opcode = $client->getLastOpcode();
+        echo "> Got '{$message}' [opcode: {$opcode}]\n";
+    }
     $client->close();
     echo "> Closing client\n";
 } catch (\Throwable $e) {

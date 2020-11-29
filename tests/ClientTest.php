@@ -379,4 +379,16 @@ class ClientTest extends TestCase
         $this->assertEquals(17260, $client->getCloseStatus());
         $this->assertEquals('close', $client->getLastOpcode());
     }
+
+    public function testConvenicanceMethods(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->text('Connect');
+        MockSocket::initialize('send-convenicance', $this);
+        $client->binary(base64_encode('Binary content'));
+        $client->ping();
+        $client->pong();
+        $this->assertTrue(MockSocket::isEmpty());
+    }
 }

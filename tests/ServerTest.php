@@ -378,4 +378,18 @@ class ServerTest extends TestCase
         $this->assertEquals(17260, $server->getCloseStatus());
         $this->assertEquals('close', $server->getLastOpcode());
     }
+
+    public function testConvenicanceMethods(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->text('Connect');
+        MockSocket::initialize('send-convenicance', $this);
+        $server->binary(base64_encode('Binary content'));
+        $server->ping();
+        $server->pong();
+        $this->assertTrue(MockSocket::isEmpty());
+    }
 }

@@ -33,7 +33,7 @@ It internally supports Upgrade handshake and implicit close and ping/pong operat
 
 ```php
 $client = new WebSocket\Client("ws://echo.websocket.org/");
-$client->send("Hello WebSocket.org!");
+$client->text("Hello WebSocket.org!");
 echo $client->receive();
 $client->close();
 ```
@@ -50,7 +50,7 @@ If you require this kind of server behavior, you need to build it on top of prov
 $server = new WebSocket\Server();
 $server->accept();
 $message = $server->receive();
-$server->send($message);
+$server->text($message);
 $server->close();
 ```
 

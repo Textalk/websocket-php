@@ -59,11 +59,11 @@ while (true) {
                 switch (rand(1, 10)) {
                     case 1:
                         echo "> Sending text\n";
-                        $client->send("Text message {$randStr()}", 'text');
+                        $client->text("Text message {$randStr()}");
                         break;
                     case 2:
                         echo "> Sending binary\n";
-                        $client->send("Binary message {$randStr()}", 'binary');
+                        $client->binary("Binary message {$randStr()}");
                         break;
                     case 3:
                         echo "> Sending close\n";
@@ -71,11 +71,11 @@ while (true) {
                         break;
                     case 4:
                         echo "> Sending ping\n";
-                        $client->send("Ping message  {$randStr(8)}", 'ping');
+                        $client->ping("Ping message  {$randStr(8)}");
                         break;
                     case 5:
                         echo "> Sending pong\n";
-                        $client->send("Pong message  {$randStr(8)}", 'pong');
+                        $client->pong("Pong message  {$randStr(8)}");
                         break;
                     default:
                         echo "> Receiving\n";

@@ -13,6 +13,10 @@ WebSocket\Client {
     public __construct(string $uri, array $options = [])
     public __destruct()
 
+    public text(string $payload) : void
+    public binary(string $payload) : void
+    public ping(string $payload = '') : void
+    public pong(string $payload = '') : void
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
     public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
@@ -35,7 +39,7 @@ This example send a single message to a server, and output the response.
 
 ```php
 $client = new WebSocket\Client("ws://echo.websocket.org/");
-$client->send("Hello WebSocket.org!");
+$client->text("Hello WebSocket.org!");
 echo $client->receive();
 $client->close();
 ```
@@ -67,24 +71,41 @@ The filter option allows you to specify which message types to return.
 
 ```php
 $client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text']]);
-$client->receive(); // only return 'text' messages
+$client->receive(); // Only return 'text' messages
 
 $client = new WebSocket\Client("ws://echo.websocket.org/", ['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
-$client->receive(); // return all messages
+$client->receive(); // Return all messages
 ```
 
+### Sending messages
+
+There are convenience methods to send messages with different opcodes.
+```php
+$client = new WebSocket\Client("ws://echo.websocket.org/");
+
+// Convenience methods
+$client->text('A plain text message'); // Send an opcode=text message
+$client->binary($binary_string); // Send an opcode=binary message
+$client->ping(); // Send an opcode=ping frame
+$client->pong(); // Send an unsolicited opcode=pong frame
+
+// Generic send method
+$client->send($payload); // Sent as masked opcode=text
+$client->send($payload, 'binary'); // Sent as masked opcode=binary
+$client->send($payload, 'binary', false); // Sent as unmasked opcode=binary
+```
 
 ## Constructor options
 
 The `$options` parameter in constructor accepts an associative array of options.
 
-* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
-* `timeout` - Time out in seconds. Default 5 seconds.
-* `fragment_size` - Maximum payload size. Default 4096 chars.
 * `context` - A stream context created using [stream_context_create](https://www.php.net/manual/en/function.stream-context-create).
+* `filter` - Array of opcodes to return on receive, default `['text', 'binary']`
+* `fragment_size` - Maximum payload size. Default 4096 chars.
 * `headers` - Additional headers as associative array name => content.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 * `persistent` - Connection is re-used between requests until time out is reached. Default false.
+* `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php
 $context = stream_context_create();

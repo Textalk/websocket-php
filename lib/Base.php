@@ -103,6 +103,42 @@ class Base implements LoggerAwareInterface
         $this->logger->info("Sent '{$opcode}' message");
     }
 
+    /**
+     * Convenience method to send text message
+     * @param string $payload Content as string
+     */
+    public function text(string $payload): void
+    {
+        $this->send($payload);
+    }
+
+    /**
+     * Convenience method to send binary message
+     * @param string $payload Content as binary string
+     */
+    public function binary(string $payload): void
+    {
+        $this->send($payload, 'binary');
+    }
+
+    /**
+     * Convenience method to send ping
+     * @param string $payload Optional text as string
+     */
+    public function ping(string $payload = ''): void
+    {
+        $this->send($payload, 'ping');
+    }
+
+    /**
+     * Convenience method to send unsolicited pong
+     * @param string $payload Optional text as string
+     */
+    public function pong(string $payload = ''): void
+    {
+        $this->send($payload, 'pong');
+    }
+
     protected function sendFragment($final, $payload, $opcode, $masked): void
     {
         $data = '';

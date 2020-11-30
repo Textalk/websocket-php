@@ -6,11 +6,12 @@
 
  > PHP version `^7.2`
 
-### `1.5.0`
+#### `1.5.0`
 
  * Convenience send methods; text(), binary(), ping(), pong() (@sirn-se)
  * Opcode filter for receive() method (@sirn-se)
- * Fix for unordered framgemented messages (@sirn-se)
+ * getName(), getRemoteName(), __toString() methods to identify instance (@sirn-se)
+ * Fix for unordered fragmented messages (@sirn-se)
  * Various code re-write (@sirn-se)
 
 ## `v1.4`

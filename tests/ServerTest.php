@@ -383,6 +383,9 @@ class ServerTest extends TestCase
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
+        $this->assertNull($server->getName());
+        $this->assertNull($server->getRemote());
+        $this->assertEquals('WebSocket\Server(closed)', "{$server}");
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->text('Connect');
@@ -390,6 +393,9 @@ class ServerTest extends TestCase
         $server->binary(base64_encode('Binary content'));
         $server->ping();
         $server->pong();
+        $this->assertEquals('127.0.0.1:12345', $server->getName());
+        $this->assertEquals('127.0.0.1:8000', $server->getRemote());
+        $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
         $this->assertTrue(MockSocket::isEmpty());
     }
 }

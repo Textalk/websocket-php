@@ -143,6 +143,37 @@ class Base implements LoggerAwareInterface
         $this->send($payload, 'pong');
     }
 
+    /**
+     * Get name of local socket, or null if not connected
+     * @return string|null
+     */
+    public function getName(): ?string
+    {
+        return $this->isConnected() ? stream_socket_get_name($this->socket) : null;
+    }
+
+    /**
+     * Get name of remote socket, or null if not connected
+     * @return string|null
+     */
+    public function getRemote(bool $pier = false): ?string
+    {
+        return $this->isConnected() ? stream_socket_get_name($this->socket, true) : null;
+    }
+
+    /**
+     * Get string representation of instance
+     * @return string String representation
+     */
+    public function __toString(): string
+    {
+        return sprintf(
+            "%s(%s)",
+            get_class($this),
+            $this->getName() ?: 'closed'
+        );
+    }
+
     protected function sendFragment($final, $payload, $opcode, $masked): void
     {
         $data = '';

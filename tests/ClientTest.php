@@ -384,11 +384,16 @@ class ClientTest extends TestCase
     {
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->assertNull($client->getName());
+        $this->assertNull($client->getRemote());
+        $this->assertEquals('WebSocket\Client(closed)', "{$client}");
         $client->text('Connect');
         MockSocket::initialize('send-convenicance', $this);
         $client->binary(base64_encode('Binary content'));
         $client->ping();
         $client->pong();
-        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertEquals('127.0.0.1:12345', $client->getName());
+        $this->assertEquals('127.0.0.1:8000', $client->getRemote());
+        $this->assertEquals('WebSocket\Client(127.0.0.1:12345)', "{$client}");
     }
 }

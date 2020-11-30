@@ -15,6 +15,7 @@ WebSocket\Server {
 
     public __construct(array $options = [])
     public __destruct()
+    public __toString() : string
 
     public accept() : bool
     public text(string $payload) : void
@@ -30,6 +31,8 @@ WebSocket\Server {
     public getRequest() : array
     public getHeader(string $header_name) : string|null
 
+    public getName() : string|null
+    public getRemoteName() : string|null
     public getLastOpcode(bool $frame = false) : string
     public getCloseStatus() : int
     public isConnected() : bool

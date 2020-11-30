@@ -20,7 +20,7 @@ class MockSocket
         if ($function == 'get_resource_type' && is_null($current)) {
             return null; // Catch destructors
         }
-        self::$asserter->assertEquals($function, $current['function']);
+        self::$asserter->assertEquals($current['function'], $function);
         foreach ($current['params'] as $index => $param) {
             self::$asserter->assertEquals($param, $params[$index], json_encode([$current, $params]));
         }

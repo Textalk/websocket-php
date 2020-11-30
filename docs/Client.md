@@ -12,6 +12,7 @@ WebSocket\Client {
 
     public __construct(string $uri, array $options = [])
     public __destruct()
+    public __toString() : string
 
     public text(string $payload) : void
     public binary(string $payload) : void
@@ -21,6 +22,8 @@ WebSocket\Client {
     public receive() : ?string
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
+    public getName() : string|null
+    public getRemoteName() : string|null
     public getLastOpcode(bool $frame = false) : string
     public getCloseStatus() : int
     public isConnected() : bool

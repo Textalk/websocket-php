@@ -1,4 +1,4 @@
-Client • [Server](Server.md) • [Examples](Examples.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md)
+Client • [Server](Server.md) • [Message](Message.md) • [Examples](Examples.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md)
 
 # Websocket: Client
 
@@ -105,6 +105,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `headers` - Additional headers as associative array name => content.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 * `persistent` - Connection is re-used between requests until time out is reached. Default false.
+* `return_obj` - Return a Message instance on receive, default false
 * `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php

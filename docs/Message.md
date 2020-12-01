@@ -16,7 +16,7 @@ Additionally;
 * WebSocket\Message\Message - abstract base class for all messages above
 * WebSocket\Message\Factory - Factory class to create Msssage instances
 
-##  Message class synopsis
+##  Message abstract class synopsis
 
 ```php
 WebSocket\Message\Message {
@@ -35,13 +35,15 @@ WebSocket\Message\Message {
 ##  Factory class synopsis
 
 ```php
-WebSocket\Message\Message {
+WebSocket\Message\Factory {
 
     public create(string $opcode, string $payload = '') : Message
 }
 ```
 
 ## Example
+
+Receving a Message and echo some methods.
 
 ```php
 $client = new WebSocket\Client('ws://echo.websocket.org/', ['return_obj' => true]);

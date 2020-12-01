@@ -379,6 +379,33 @@ class ServerTest extends TestCase
         $this->assertEquals('close', $server->getLastOpcode());
     }
 
+    public function testMessageFragmentation(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['filter' => ['text', 'binary', 'pong', 'close'], 'return_obj' => true]);
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Pong', $message);
+        $this->assertEquals('Server ping', $message->getContent());
+        $this->assertEquals('pong', $message->getOpcode());
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Text', $message);
+        $this->assertEquals('Multi fragment test', $message->getContent());
+        $this->assertEquals('text', $message->getOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Close', $message);
+        $this->assertEquals('Closing', $message->getContent());
+        $this->assertEquals('close', $message->getOpcode());
+    }
+
     public function testConvenicanceMethods(): void
     {
         MockSocket::initialize('server.construct', $this);

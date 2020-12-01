@@ -12,6 +12,7 @@ namespace WebSocket;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use WebSocket\Message\Factory;
 
 class Base implements LoggerAwareInterface
 {
@@ -218,7 +219,7 @@ class Base implements LoggerAwareInterface
         ]);
     }
 
-    public function receive(): ?string
+    public function receive()
     {
         $filter = $this->options['filter'];
         if (!$this->isConnected()) {
@@ -270,7 +271,10 @@ class Base implements LoggerAwareInterface
         ]);
 
         $this->last_opcode = $payload_opcode;
-        return $payload;
+        $factory = new Factory();
+        return $this->options['return_obj']
+            ? $factory->create($payload_opcode, $payload)
+            : $payload;
     }
 
     protected function receiveFragment(): array

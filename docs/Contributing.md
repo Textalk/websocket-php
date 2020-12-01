@@ -1,4 +1,4 @@
-[Client](Client.md) • [Server](Server.md) • [Examples](Examples.md) • [Changelog](Changelog.md) • Contributing
+[Client](Client.md) • [Server](Server.md) • [Message](Message.md) • [Examples](Examples.md) • [Changelog](Changelog.md) • Contributing
 
 # Websocket: Contributing
 

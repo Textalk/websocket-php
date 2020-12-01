@@ -17,6 +17,7 @@ class Server extends Base
       'fragment_size' => 4096,
       'logger'        => null,
       'port'          => 8000,
+      'return_obj'    => false,
       'timeout'       => null,
     ];
 

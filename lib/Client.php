@@ -20,6 +20,7 @@ class Client extends Base
       'logger'        => null,
       'origin'        => null, // @deprecated
       'persistent'    => false,
+      'return_obj'    => false,
       'timeout'       => 5,
     ];
 

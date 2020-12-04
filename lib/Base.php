@@ -249,6 +249,8 @@ class Base implements LoggerAwareInterface
 
         if ($opcode === 'close') {
             // Get the close status.
+            $status_bin = '';
+            $status = '';
             if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
                 $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
@@ -305,12 +307,9 @@ class Base implements LoggerAwareInterface
         $length = strlen($data);
         $written = fwrite($this->socket, $data);
         if ($written === false) {
-            fclose($this->socket);
             $this->throwException("Failed to write {$length} bytes.");
         }
-
         if ($written < strlen($data)) {
-            fclose($this->socket);
             $this->throwException("Could only write {$written} out of {$length} bytes.");
         }
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
@@ -323,11 +322,9 @@ class Base implements LoggerAwareInterface
             $buffer = fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
                 $read = strlen($data);
-                fclose($this->socket);
                 $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");
             }
             if ($buffer === '') {
-                fclose($this->socket);
                 $this->throwException("Empty read; connection dead?");
             }
             $data .= $buffer;
@@ -339,6 +336,7 @@ class Base implements LoggerAwareInterface
     {
         $meta = $this->isConnected() ? stream_get_meta_data($this->socket) : [];
         $json_meta = json_encode($meta);
+        fclose($this->socket);
         if (!empty($meta['timed_out'])) {
             $code = ConnectionException::TIMED_OUT;
             $this->logger->warning("{$message}", (array)$meta);

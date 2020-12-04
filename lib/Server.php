@@ -110,8 +110,8 @@ class Server extends Base
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
+        $this->logger->info("Client has connected to port {$this->port}");
         $this->performHandshake();
-        $this->logger->info("Server connected to port {$this->port}");
     }
 
     protected function performHandshake(): void
@@ -153,5 +153,6 @@ class Server extends Base
                 . "\r\n";
 
         $this->write($header);
+        $this->logger->debug("Handshake on {$get_uri}");
     }
 }

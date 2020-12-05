@@ -1,0 +1,17 @@
+[
+    {
+        "function": "stream_socket_accept",
+        "params": [],
+        "error": {
+            "msg": "An error message"
+        },
+        "return": false
+    },
+    {
+        "function": "fclose",
+        "params": [
+             false
+        ],
+        "return": true
+    }
+]

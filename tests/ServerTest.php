@@ -235,6 +235,19 @@ class ServerTest extends TestCase
         $server->send('Connect');
     }
 
+    public function testFailedConnectMessage(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-failed-connect-message', $this);
+        $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Server failed to accept; An error message');
+        $server->send('Connect');
+    }
+
     public function testFailedConnectTimeout(): void
     {
         MockSocket::initialize('server.construct', $this);

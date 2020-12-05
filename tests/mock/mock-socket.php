@@ -71,3 +71,6 @@ function stream_socket_get_name()
     $args = func_get_args();
     return MockSocket::handle('stream_socket_get_name', $args);
 }
+
+$options = getopt('', ['debug']);
+MockSocket::debug(isset($options['debug']));

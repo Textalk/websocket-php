@@ -8,7 +8,7 @@ namespace WebSocket;
 
 class MockSocket
 {
-
+    private static $log = false;
     private static $queue = [];
     private static $stored = [];
     private static $asserter;
@@ -17,12 +17,19 @@ class MockSocket
     public static function handle($function, $params = [])
     {
         $current = array_shift(self::$queue);
+        if (self::$log) {
+            echo "# {$function} > " . json_encode($current) . "\n";
+        }
         if ($function == 'get_resource_type' && is_null($current)) {
             return null; // Catch destructors
         }
         self::$asserter->assertEquals($current['function'], $function);
         foreach ($current['params'] as $index => $param) {
             self::$asserter->assertEquals($param, $params[$index], json_encode([$current, $params]));
+        }
+        if (isset($current['error'])) {
+            $map = array_merge(['msg' => 'Error', 'type' => E_USER_NOTICE], (array)$current['error']);
+            trigger_error($map['msg'], $map['type']);
         }
         if (isset($current['return-op'])) {
             return self::op($current['return-op'], $params, $current['return']);
@@ -42,6 +49,9 @@ class MockSocket
     // Initialize call queue
     public static function initialize($op_file, $asserter): void
     {
+        if (self::$log) {
+            echo "\n# script: {$op_file}\n";
+        }
         $file = dirname(__DIR__) . "/scripts/{$op_file}.json";
         self::$queue = json_decode(file_get_contents($file), true);
         self::$asserter = $asserter;
@@ -71,5 +81,11 @@ class MockSocket
                 return str_replace('{key}', $encoded, $data);
         }
         return $data;
+    }
+
+    public static function debug(bool $debug): void
+    {
+        var_dump($debug);
+        self::$log = $debug;
     }
 }

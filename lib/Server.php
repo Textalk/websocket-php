@@ -9,8 +9,6 @@
 
 namespace WebSocket;
 
-use Closure;
-
 class Server extends Base
 {
     // Default options
@@ -55,7 +53,7 @@ class Server extends Base
                 $this->logger->warning("Failed server socket on {$socket_name}: {$error->getMessage()}");
                 $error_msg = $error->getMessage();
             });
-        } while (!$socket && $this->port++ < 8000);
+        } while (!$socket && $this->port++ < 10000);
 
         if (!$socket) {
             $error = "Could not open server socket; {$error_msg}";

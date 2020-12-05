@@ -12,13 +12,6 @@
         "return": false
     },
     {
-        "function": "fclose",
-        "params": [
-            "@mock-stream"
-        ],
-        "return":true
-    },
-    {
         "function": "get_resource_type",
         "params": [
             "@mock-stream"
@@ -39,5 +32,12 @@
             "unread_bytes": 2,
             "seekable": false
         }
+    },
+    {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return":true
     }
 ]

@@ -18,6 +18,11 @@
 
  > PHP version `^7.1`
 
+#### `1.4.3`
+
+ * Solve stream closure/get meta conflict (@sirn-se)
+ * Examples and documentation overhaul (@sirn-se)
+
 #### `1.4.2`
 
  * Force stream close on read error (@sirn-se)

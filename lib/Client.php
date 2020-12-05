@@ -188,7 +188,7 @@ class Client extends Base
             throw new ConnectionException($error);
         }
 
-        $this->logger->info("Client connected to to {$address}");
+        $this->logger->info("Client connected to {$address}");
     }
 
     /**

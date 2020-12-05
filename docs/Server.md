@@ -1,4 +1,4 @@
-[Client](Client.md) • Server • [Examples](Examples.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md)
+[Client](Client.md) • Server • [Message](Message.md) • [Examples](Examples.md) • [Changelog](Changelog.md) • [Contributing](Contributing.md)
 
 # Websocket: Server
 
@@ -116,6 +116,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 * `port` - The server port to listen to. Default 8000.
+* `return_obj` - Return a Message instance on receive, default false
 * `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php

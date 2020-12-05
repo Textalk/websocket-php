@@ -1,4 +1,4 @@
-[Client](Client.md) • [Server](Server.md) • [Examples](Examples.md) • Changelog • [Contributing](Contributing.md)
+[Client](Client.md) • [Server](Server.md) • [Message](Message.md) • [Examples](Examples.md) • Changelog • [Contributing](Contributing.md)
 
 # Websocket: Changelog
 
@@ -9,6 +9,7 @@
 #### `1.5.0`
 
  * Convenience send methods; text(), binary(), ping(), pong() (@sirn-se)
+ * Optional Message instance as receive() method return (@sirn-se)
  * Opcode filter for receive() method (@sirn-se)
  * getName(), getRemoteName(), __toString() methods to identify instance (@sirn-se)
  * Fix for unordered fragmented messages (@sirn-se)
@@ -17,6 +18,11 @@
 ## `v1.4`
 
  > PHP version `^7.1`
+
+#### `1.4.3`
+
+ * Solve stream closure/get meta conflict (@sirn-se)
+ * Examples and documentation overhaul (@sirn-se)
 
 #### `1.4.2`
 

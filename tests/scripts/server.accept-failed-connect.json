@@ -3,5 +3,12 @@
         "function": "stream_socket_accept",
         "params": [],
         "return": false
+    },
+    {
+        "function": "fclose",
+        "params": [
+             false
+        ],
+        "return": true
     }
 ]

@@ -41,6 +41,10 @@ while ($server->accept()) {
         while (true) {
             $message = $server->receive();
             $opcode = $server->getLastOpcode();
+            if ($opcode == 'close') {
+                echo "> Closed connection\n";
+                continue;
+            }
             echo "> Got '{$message}' [opcode: {$opcode}]\n";
 
             switch ($message) {

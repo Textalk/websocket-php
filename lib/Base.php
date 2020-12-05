@@ -9,6 +9,8 @@
 
 namespace WebSocket;
 
+use Closure;
+use ErrorException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -46,9 +48,8 @@ class Base implements LoggerAwareInterface
 
     public function isConnected(): bool
     {
-        return $this->socket &&
-            (get_resource_type($this->socket) == 'stream' ||
-             get_resource_type($this->socket) == 'persistent stream');
+        return $this->socket
+               && in_array(get_resource_type($this->socket), ['stream', 'persistent stream']);
     }
 
     public function setTimeout($timeout): void
@@ -443,9 +444,11 @@ class Base implements LoggerAwareInterface
 
     protected function throwException($message, $code = 0): void
     {
-        $meta = $this->isConnected() ? stream_get_meta_data($this->socket) : [];
-        $json_meta = json_encode($meta);
-        fclose($this->socket);
+        $meta = ['closed' => true];
+        if ($this->isConnected()) {
+            $meta = stream_get_meta_data($this->socket);
+            fclose($this->socket);
+        }
         if (!empty($meta['timed_out'])) {
             $this->logger->error($message, $meta);
             throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
@@ -455,5 +458,20 @@ class Base implements LoggerAwareInterface
         }
         $this->logger->error($message, $meta);
         throw new ConnectionException($message, $code, $meta);
+    }
+
+    // Catch warnings and other errors not considered fatal by php
+    protected function catchError(Closure $callback, Closure $on_error = null)
+    {
+        $error = null;
+        set_error_handler(function ($severity, $message, $file, $line) use (&$error) {
+            $error = new ErrorException($message, 0, $severity, $file, $line);
+        }, E_ALL);
+        $return = $callback();
+        restore_error_handler();
+        if ($error && is_callable($on_error)) {
+            $on_error($return, $error);
+        }
+        return $return;
     }
 }

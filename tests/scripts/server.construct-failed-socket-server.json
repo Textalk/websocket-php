@@ -2,18 +2,14 @@
     {
         "function": "stream_socket_server",
         "params": [
-            "tcp://0.0.0.0:9999",
-            null,
-            null
+            "tcp://0.0.0.0:9999"
         ],
         "return": false
     },
     {
         "function": "stream_socket_server",
         "params": [
-            "tcp://0.0.0.0:10000",
-            null,
-            null
+            "tcp://0.0.0.0:10000"
         ],
         "return": false
     }

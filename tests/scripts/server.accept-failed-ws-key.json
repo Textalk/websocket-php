@@ -7,6 +7,13 @@
         "return": "@mock-stream"
     },
     {
+        "function": "stream_set_timeout",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
         "function": "stream_socket_get_name",
         "params": [
             "@mock-stream"

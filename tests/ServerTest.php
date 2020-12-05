@@ -218,7 +218,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct-failed-socket-server', $this);
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('Could not open listening socket:');
+        $this->expectExceptionMessage('Could not open server socket;');
         $server = new Server(['port' => 9999]);
     }
 
@@ -231,7 +231,7 @@ class ServerTest extends TestCase
         $server->accept();
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('Server failed to connect');
+        $this->expectExceptionMessage('Server failed to accept');
         $server->send('Connect');
     }
 
@@ -244,7 +244,7 @@ class ServerTest extends TestCase
         $server->accept();
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('Server failed to connect');
+        $this->expectExceptionMessage('Server failed to accept');
         $server->send('Connect');
     }
 

@@ -9,6 +9,8 @@
 
 namespace WebSocket;
 
+use Closure;
+
 class Server extends Base
 {
     // Default options
@@ -37,20 +39,32 @@ class Server extends Base
     public function __construct(array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
+        if (is_null($this->options['timeout'])) {
+            $this->options['timeout'] = ini_get('default_socket_timeout');
+        }
         $this->port = $this->options['port'];
         $this->setLogger($this->options['logger']);
+        $error_msg = '';
 
         do {
-            $this->listening = @stream_socket_server("tcp://0.0.0.0:$this->port", $errno, $errstr);
-        } while ($this->listening === false && $this->port++ < 10000);
+            $socket_name = "tcp://0.0.0.0:{$this->port}";
+            $socket = $this->catchError(function () use ($socket_name) {
+                $this->logger->debug("Attempt server socket on {$socket_name}");
+                return stream_socket_server($socket_name);
+            }, function ($socket, $error) use ($socket_name, &$error_msg) {
+                $this->logger->warning("Failed server socket on {$socket_name}: {$error->getMessage()}");
+                $error_msg = $error->getMessage();
+            });
+        } while (!$socket && $this->port++ < 8000);
 
-        if (!$this->listening) {
-            $error = "Could not open listening socket: {$errstr} ({$errno})";
+        if (!$socket) {
+            $error = "Could not open server socket; {$error_msg}";
             $this->logger->error($error);
-            throw new ConnectionException($error, (int)$errno);
+            throw new ConnectionException($error, 0);
         }
 
-        $this->logger->info("Server listening to port {$this->port}");
+        $this->listening = $socket;
+        $this->logger->info("Server socket on {$socket_name}");
     }
 
     public function __destruct()
@@ -95,20 +109,19 @@ class Server extends Base
 
     protected function connect(): void
     {
-        if (empty($this->options['timeout'])) {
-            $this->socket = @stream_socket_accept($this->listening);
-            if (!$this->socket) {
-                $this->throwException('Server failed to connect.');
+        $this->socket = $this->catchError(function () {
+            return stream_socket_accept($this->listening, $this->options['timeout']);
+        }, function ($stream, $error) {
+            if (!$stream) {
+                $this->throwException("Server failed to accept; {$error->getMessage()}");
             }
-        } else {
-            $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
-            if (!$this->socket) {
-                $this->throwException('Server failed to connect.');
-            }
-            stream_set_timeout($this->socket, $this->options['timeout']);
+        });
+        if (!$this->socket) {
+            $this->throwException('Server failed to accept');
         }
+        stream_set_timeout($this->socket, $this->options['timeout']);
 
-        $this->logger->info("Client has connected to port {port}", [
+        $this->logger->info("Accepted connected to port {port}", [
             'port' => $this->port,
             'pier' => stream_socket_get_name($this->socket, true),
         ]);

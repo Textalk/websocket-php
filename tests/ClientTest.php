@@ -178,7 +178,6 @@ class ClientTest extends TestCase
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());
         $this->assertNull($client->getLastOpcode());
-        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -209,7 +208,6 @@ class ClientTest extends TestCase
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
         $this->assertNull($client->getLastOpcode());
-        $this->assertEquals('close', $client->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.reconnect', $this);
@@ -413,7 +411,7 @@ class ClientTest extends TestCase
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $this->assertNull($client->getName());
-        $this->assertNull($client->getRemote());
+        $this->assertNull($client->getPier());
         $this->assertEquals('WebSocket\Client(closed)', "{$client}");
         $client->text('Connect');
         MockSocket::initialize('send-convenicance', $this);
@@ -421,7 +419,7 @@ class ClientTest extends TestCase
         $client->ping();
         $client->pong();
         $this->assertEquals('127.0.0.1:12345', $client->getName());
-        $this->assertEquals('127.0.0.1:8000', $client->getRemote());
+        $this->assertEquals('127.0.0.1:8000', $client->getPier());
         $this->assertEquals('WebSocket\Client(127.0.0.1:12345)', "{$client}");
     }
 }

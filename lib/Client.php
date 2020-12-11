@@ -35,7 +35,7 @@ class Client extends Base
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - headers:       Associative array of headers to set/override.
      */
-    public function __construct($uri, $options = [])
+    public function __construct(string $uri, array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
@@ -198,11 +198,9 @@ class Client extends Base
      */
     protected static function generateKey(): string
     {
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"$&/()=[]{}0123456789';
         $key = '';
-        $chars_length = strlen($chars);
         for ($i = 0; $i < 16; $i++) {
-            $key .= $chars[mt_rand(0, $chars_length - 1)];
+            $key .= chr(rand(33, 126));
         }
         return base64_encode($key);
     }

@@ -59,7 +59,6 @@ class ServerTest extends TestCase
         $server->close();
         $this->assertFalse($server->isConnected());
         $this->assertEquals(1000, $server->getCloseStatus());
-        $this->assertEquals('close', $server->getLastOpcode(true));
         $this->assertTrue(MockSocket::isEmpty());
 
         $server->close(); // Already closed
@@ -192,7 +191,6 @@ class ServerTest extends TestCase
         $this->assertFalse($server->isConnected());
         $this->assertEquals(17260, $server->getCloseStatus());
         $this->assertNull($server->getLastOpcode());
-        $this->assertEquals('close', $server->getLastOpcode(true));
     }
 
     public function testSetTimeout(): void
@@ -411,7 +409,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertNull($server->getName());
-        $this->assertNull($server->getRemote());
+        $this->assertNull($server->getPier());
         $this->assertEquals('WebSocket\Server(closed)', "{$server}");
         MockSocket::initialize('server.accept', $this);
         $server->accept();
@@ -421,7 +419,7 @@ class ServerTest extends TestCase
         $server->ping();
         $server->pong();
         $this->assertEquals('127.0.0.1:12345', $server->getName());
-        $this->assertEquals('127.0.0.1:8000', $server->getRemote());
+        $this->assertEquals('127.0.0.1:8000', $server->getPier());
         $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
         $this->assertTrue(MockSocket::isEmpty());
     }

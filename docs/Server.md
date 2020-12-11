@@ -32,8 +32,8 @@ WebSocket\Server {
     public getHeader(string $header_name) : string|null
 
     public getName() : string|null
-    public getRemoteName() : string|null
-    public getLastOpcode(bool $frame = false) : string
+    public getPier() : string|null
+    public getLastOpcode() : string
     public getCloseStatus() : int
     public isConnected() : bool
     public setTimeout(int $seconds) : void

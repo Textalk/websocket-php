@@ -9,9 +9,7 @@
 
 namespace WebSocket;
 
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
+use Psr\Log\{LoggerAwareInterface, LoggerInterface, NullLogger};
 use WebSocket\Message\Factory;
 
 class Base implements LoggerAwareInterface
@@ -20,7 +18,6 @@ class Base implements LoggerAwareInterface
     protected $options = [];
     protected $is_closing = false;
     protected $last_opcode = null;
-    protected $last_frame_opcode = null;
     protected $close_status = null;
     protected $logger;
     private $read_buffer;
@@ -34,9 +31,9 @@ class Base implements LoggerAwareInterface
         'pong'         => 10,
     ];
 
-    public function getLastOpcode(bool $frame = false): ?string
+    public function getLastOpcode(): ?string
     {
-        return $frame ? $this->last_frame_opcode : $this->last_opcode;
+        return $this->last_opcode;
     }
 
     public function getCloseStatus(): ?int
@@ -51,7 +48,7 @@ class Base implements LoggerAwareInterface
              get_resource_type($this->socket) == 'persistent stream');
     }
 
-    public function setTimeout($timeout): void
+    public function setTimeout(int $timeout): void
     {
         $this->options['timeout'] = $timeout;
 
@@ -60,7 +57,7 @@ class Base implements LoggerAwareInterface
         }
     }
 
-    public function setFragmentSize($fragment_size): self
+    public function setFragmentSize(int $fragment_size): self
     {
         $this->options['fragment_size'] = $fragment_size;
         return $this;
@@ -76,7 +73,7 @@ class Base implements LoggerAwareInterface
         $this->logger = $logger ?: new NullLogger();
     }
 
-    public function send($payload, $opcode = 'text', $masked = true): void
+    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
     {
         if (!$this->isConnected()) {
             $this->connect();
@@ -157,7 +154,7 @@ class Base implements LoggerAwareInterface
      * Get name of remote socket, or null if not connected
      * @return string|null
      */
-    public function getRemote(bool $pier = false): ?string
+    public function getPier(): ?string
     {
         return $this->isConnected() ? stream_socket_get_name($this->socket, true) : null;
     }
@@ -175,7 +172,12 @@ class Base implements LoggerAwareInterface
         );
     }
 
-    protected function sendFragment($final, $payload, $opcode, $masked): void
+    /**
+     * Receive one message.
+     * Will continue reading until read message match filter settings.
+     * Return Message instance or string according to settings.
+     */
+    protected function sendFragment(bool $final, string $payload, string $opcode, bool $masked): void
     {
         $data = '';
 
@@ -233,7 +235,6 @@ class Base implements LoggerAwareInterface
             // Continuation and factual opcode
             $continuation = ($opcode == 'continuation');
             $payload_opcode = $continuation ? $this->read_buffer['opcode'] : $opcode;
-            $this->last_frame_opcode = $payload_opcode;
 
             // Filter frames
             if (!in_array($payload_opcode, $filter)) {
@@ -392,7 +393,7 @@ class Base implements LoggerAwareInterface
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
      * @param string  $message A closing message, max 125 bytes.
      */
-    public function close($status = 1000, $message = 'ttfn'): void
+    public function close(int $status = 1000, string $message = 'ttfn'): void
     {
         if (!$this->isConnected()) {
             return;
@@ -409,7 +410,7 @@ class Base implements LoggerAwareInterface
         $this->receive(); // Receiving a close frame will close the socket now.
     }
 
-    protected function write($data): void
+    protected function write(string $data): void
     {
         $length = strlen($data);
         $written = fwrite($this->socket, $data);
@@ -422,7 +423,7 @@ class Base implements LoggerAwareInterface
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
     }
 
-    protected function read($length): string
+    protected function read(string $length): string
     {
         $data = '';
         while (strlen($data) < $length) {
@@ -441,11 +442,15 @@ class Base implements LoggerAwareInterface
         return $data;
     }
 
-    protected function throwException($message, $code = 0): void
+    protected function throwException(string $message, int $code = 0): void
     {
-        $meta = $this->isConnected() ? stream_get_meta_data($this->socket) : [];
+        $meta = ['closed' => true];
+        if ($this->isConnected()) {
+            $meta = stream_get_meta_data($this->socket);
+            fclose($this->socket);
+            $this->socket = null;
+        }
         $json_meta = json_encode($meta);
-        fclose($this->socket);
         if (!empty($meta['timed_out'])) {
             $this->logger->error($message, $meta);
             throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);

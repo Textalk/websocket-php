@@ -11,7 +11,7 @@
  * Convenience send methods; text(), binary(), ping(), pong() (@sirn-se)
  * Optional Message instance as receive() method return (@sirn-se)
  * Opcode filter for receive() method (@sirn-se)
- * Fix for unordered framgemented messages (@sirn-se)
+ * Fix for unordered framgmented messages (@sirn-se)
  * Various code re-write (@sirn-se)
 
 ## `v1.4`

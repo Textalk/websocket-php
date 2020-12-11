@@ -32,7 +32,12 @@ if (isset($options['debug']) && class_exists('WebSocket\EchoLog')) {
 }
 
 // Setting timeout to 200 seconds to make time for all tests and manual runs.
-$server = new Server($options);
+try {
+    $server = new Server($options);
+} catch (ConnectionException $e) {
+    echo "> ERROR: {$e->getMessage()}\n";
+    die();
+}
 
 echo "> Listening to port {$server->getPort()}\n";
 
@@ -44,7 +49,7 @@ while (true) {
             while (true) {
                 $message = $server->receive();
                 $opcode = $server->getLastOpcode();
-                if ($opcode == 'close') {
+                if (is_null($message)) {
                     echo "> Closing connection\n";
                     continue 2;
                 }

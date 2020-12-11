@@ -38,6 +38,9 @@ class Client extends Base
     public function __construct(string $uri, array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
+        if (is_null($this->options['timeout'])) {
+            $this->options['timeout'] = ini_get('default_socket_timeout');
+        }
         $this->socket_uri = $uri;
         $this->setLogger($this->options['logger']);
     }
@@ -103,9 +106,15 @@ class Client extends Base
         $flags = STREAM_CLIENT_CONNECT;
         $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
 
-        // Open the socket.  @ is there to supress warning that we will catch in check below instead.
-        $this->socket = @stream_socket_client(
-            $host_uri . ':' . $port,
+        $error = $errno = $errstr = null;
+        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
+            $this->logger->warning($message, ['severity' => $severity]);
+            $error = $message;
+        }, E_ALL);
+
+        // Open the socket.
+        $this->socket = stream_socket_client(
+            "{$host_uri}:{$port}",
             $errno,
             $errstr,
             $this->options['timeout'],
@@ -113,8 +122,10 @@ class Client extends Base
             $context
         );
 
+        restore_error_handler();
+
         if (!$this->isConnected()) {
-            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}).";
+            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }

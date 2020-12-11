@@ -22,6 +22,7 @@ echo "> Random server\n";
 $options = array_merge([
     'port'          => 8000,
     'timeout'       => 200,
+    'filter'        => ['text', 'binary', 'ping', 'pong'],
 ], getopt('', ['port:', 'timeout:', 'debug']));
 
 // If debug mode and logger is available
@@ -54,6 +55,11 @@ while (true) {
                     continue 2;
                 }
                 echo "> Got '{$message}' [opcode: {$opcode}]\n";
+                if (in_array($opcode, ['ping', 'pong'])) {
+                    $server->send($message);
+                    continue;
+                }
+                // Allow certain string to trigger server action
                 switch ($message) {
                     case 'exit':
                         echo "> Client told me to quit.  Bye bye.\n";
@@ -71,7 +77,7 @@ while (true) {
                         $server->text("{$auth} - {$message}");
                         break;
                     default:
-                        $server->send($message, $opcode);
+                        $server->text($message);
                 }
             }
         }

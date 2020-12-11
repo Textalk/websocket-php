@@ -63,4 +63,4 @@ $server->close();
 Fredrik Liljegren, Armen Baghumian Sankbarani, Ruslan Bekenev,
 Joshua Thijssen, Simon Lipp, Quentin Bellus, Patrick McCarren, swmcdonnell,
 Ignas Bernotas, Mark Herhold, Andreas Palm, Sören Jensen, pmaasz, Alexey Stavrov,
-Michael Slezak, Pierre Seznec, rmeisler, Nickolay V. Shmyrev.
+Michael Slezak, Pierre Seznec, rmeisler, Nickolay V. Shmyrev, Christoph Kempen.

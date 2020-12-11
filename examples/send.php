@@ -40,7 +40,9 @@ try {
     if (in_array($options['opcode'], ['text', 'binary'])) {
         $message = $client->receive();
         $opcode = $client->getLastOpcode();
-        echo "> Got '{$message}' [opcode: {$opcode}]\n";
+        if (!is_null($message)) {
+            echo "> Got '{$message}' [opcode: {$opcode}]\n";
+        }
     }
     $client->close();
     echo "> Closing client\n";

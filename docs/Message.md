@@ -26,6 +26,7 @@ WebSocket\Message\Message {
 
     public getOpcode() : string
     public getLength() : int
+    public getTimestamp() : DateTime
     public getContent() : string
     public setContent(string $payload = '') : void
     public hasContent() : bool
@@ -54,5 +55,6 @@ echo $message->getOpcode(); // -> "text"
 echo $message->getLength(); // -> 20
 echo $message->getContent(); // -> "Hello WebSocket.org!"
 echo $message->hasContent(); // -> true
+echo $message->getTimestamp()->format('H:i:s'); // -> 19:37:18
 $client->close();
 ```

@@ -38,9 +38,6 @@ class Client extends Base
     public function __construct(string $uri, array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
-        if (is_null($this->options['timeout'])) {
-            $this->options['timeout'] = ini_get('default_socket_timeout');
-        }
         $this->socket_uri = $uri;
         $this->setLogger($this->options['logger']);
     }

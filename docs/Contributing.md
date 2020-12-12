@@ -34,7 +34,11 @@ make cs-check
 
 ## Unit testing
 
-Unit tests with [PHPUnit](https://phpunit.readthedocs.io/).
+Unit tests with [PHPUnit](https://phpunit.readthedocs.io/), coverage with [Coveralls](https://github.com/php-coveralls/php-coveralls)
 ```
 # Run unit tests
 make test
+
+# Create coverage
+make coverage
+```

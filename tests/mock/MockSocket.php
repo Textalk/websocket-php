@@ -24,6 +24,10 @@ class MockSocket
         foreach ($current['params'] as $index => $param) {
             self::$asserter->assertEquals($param, $params[$index], json_encode([$current, $params]));
         }
+        if (isset($current['error'])) {
+            $map = array_merge(['msg' => 'Error', 'type' => E_USER_NOTICE], (array)$current['error']);
+            trigger_error($map['msg'], $map['type']);
+        }
         if (isset($current['return-op'])) {
             return self::op($current['return-op'], $params, $current['return']);
         }

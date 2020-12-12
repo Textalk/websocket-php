@@ -19,7 +19,7 @@ WebSocket\Client {
     public ping(string $payload = '') : void
     public pong(string $payload = '') : void
     public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : ?string
+    public receive() : mixed
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
     public getName() : string|null

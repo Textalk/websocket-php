@@ -261,6 +261,16 @@ class ClientTest extends TestCase
         $client->send('Connect');
     }
 
+    public function testFailedConnectionWithError(): void
+    {
+        MockSocket::initialize('client.connect-error', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not open socket to "localhost:8000"');
+        $client->send('Connect');
+    }
+
     public function testInvalidUpgrade(): void
     {
         MockSocket::initialize('client.connect-invalid-upgrade', $this);

@@ -44,6 +44,7 @@ class MessageTest extends TestCase
         $this->assertEquals('text', $message->getOpcode());
         $this->assertEquals(12, $message->getLength());
         $this->assertTrue($message->hasContent());
+        $this->assertInstanceOf('DateTime', $message->getTimestamp());
         $message->setContent('');
         $this->assertEquals(0, $message->getLength());
         $this->assertFalse($message->hasContent());

@@ -220,12 +220,34 @@ class ServerTest extends TestCase
         $server = new Server(['port' => 9999]);
     }
 
+    public function testFailedSocketServerWithError(): void
+    {
+        MockSocket::initialize('server.construct-error-socket-server', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not open listening socket:');
+        $server = new Server(['port' => 9999]);
+    }
+
     public function testFailedConnect(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
 
         MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Server failed to connect');
+        $server->send('Connect');
+    }
+
+    public function testFailedConnectWithError(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-error-connect', $this);
         $server->accept();
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);

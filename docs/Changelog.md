@@ -11,8 +11,9 @@
  * Convenience send methods; text(), binary(), ping(), pong() (@sirn-se)
  * Optional Message instance as receive() method return (@sirn-se)
  * Opcode filter for receive() method (@sirn-se)
- * PHP `8.0` support (@webpatser)
- * Fix for unordered framgmented messages (@sirn-se)
+ * Added PHP `8.0` support (@webpatser)
+ * Dropped PHP `7.1` support (@sirn-se)
+ * Fix for unordered fragmented messages (@sirn-se)
  * Improved error handling on stream calls (@sirn-se)
  * Various code re-write (@sirn-se)
 

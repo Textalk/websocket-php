@@ -2,14 +2,18 @@
 
 namespace WebSocket\Message;
 
+use DateTime;
+
 abstract class Message
 {
     protected $opcode;
     protected $payload;
+    protected $timestamp;
 
     public function __construct(string $payload = '')
     {
         $this->payload = $payload;
+        $this->timestamp = new DateTime();
     }
 
     public function getOpcode(): string
@@ -20,6 +24,11 @@ abstract class Message
     public function getLength(): int
     {
         return strlen($this->payload);
+    }
+
+    public function getTimestamp(): DateTime
+    {
+        return $this->timestamp;
     }
 
     public function getContent(): string

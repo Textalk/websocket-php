@@ -116,13 +116,16 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `fragment_size` - Maximum payload size. Default 4096 chars.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 * `port` - The server port to listen to. Default 8000.
-* `return_obj` - Return a Message instance on receive, default false
+* `return_obj` - Return a [Message](Message.md) instance on receive, default false
 * `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php
 $server = new WebSocket\Server([
+    'filter' => ['text', 'binary', 'ping'], // Specify message types for receive() to return
+    'logger' => $my_psr3_logger, // Attach a PSR3 compatible logger
+    'port' => 9000, // Listening port
+    'return_obj' => true, // Return Message insatnce rather than just text
     'timeout' => 60, // 1 minute time out
-    'port' => 9000,
 ]);
 ```
 

@@ -108,7 +108,7 @@ The `$options` parameter in constructor accepts an associative array of options.
 * `headers` - Additional headers as associative array name => content.
 * `logger` - A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger.
 * `persistent` - Connection is re-used between requests until time out is reached. Default false.
-* `return_obj` - Return a Message instance on receive, default false
+* `return_obj` - Return a [Message](Message.md) instance on receive, default false
 * `timeout` - Time out in seconds. Default 5 seconds.
 
 ```php
@@ -117,12 +117,15 @@ stream_context_set_option($context, 'ssl', 'verify_peer', false);
 stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
 
 $client = new WebSocket\Client("ws://echo.websocket.org/", [
-    'timeout' => 60, // 1 minute time out
-    'context' => $context,
-    'headers' => [
+    'context' => $context, // Attach stream context created above
+    'filter' => ['text', 'binary', 'ping'], // Specify message types for receive() to return
+    'headers' => [ // Additional headers, used to specify subprotocol
         'Sec-WebSocket-Protocol' => 'soap',
         'origin' => 'localhost',
     ],
+    'logger' => $my_psr3_logger, // Attach a PSR3 compatible logger
+    'return_obj' => true, // Return Message insatnce rather than just text
+    'timeout' => 60, // 1 minute time out
 ]);
 ```
 

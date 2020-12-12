@@ -8,7 +8,7 @@
         ],
         "error": {
             "msg": "A PHP error",
-            "type": 2
+            "type": 512
         },
         "return": false
     },
@@ -21,7 +21,7 @@
         ],
         "error": {
             "msg": "A PHP error",
-            "type": 8
+            "type": 512
         },
         "return": false
     }

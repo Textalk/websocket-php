@@ -16,7 +16,7 @@
         ],
         "error": {
             "msg": "A PHP error",
-            "type": 2
+            "type": 512
         },
         "return": false
     }

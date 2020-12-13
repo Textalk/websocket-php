@@ -13,10 +13,12 @@ class Server extends Base
 {
     // Default options
     protected static $default_options = [
-      'timeout'       => null,
+      'filter'        => ['text', 'binary'],
       'fragment_size' => 4096,
-      'port'          => 8000,
       'logger'        => null,
+      'port'          => 8000,
+      'return_obj'    => false,
+      'timeout'       => null,
     ];
 
     protected $addr;
@@ -38,14 +40,22 @@ class Server extends Base
         $this->port = $this->options['port'];
         $this->setLogger($this->options['logger']);
 
+        $error = $errno = $errstr = null;
+        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
+            $this->logger->warning($message, ['severity' => $severity]);
+            $error = $message;
+        }, E_ALL);
+
         do {
-            $this->listening = @stream_socket_server("tcp://0.0.0.0:$this->port", $errno, $errstr);
+            $this->listening = stream_socket_server("tcp://0.0.0.0:$this->port", $errno, $errstr);
         } while ($this->listening === false && $this->port++ < 10000);
 
+        restore_error_handler();
+
         if (!$this->listening) {
-            $error = "Could not open listening socket: {$errstr} ({$errno})";
+            $error = "Could not open listening socket: {$errstr} ({$errno}) {$error}";
             $this->logger->error($error);
-            throw new ConnectionException($error, $errno);
+            throw new ConnectionException($error, (int)$errno);
         }
 
         $this->logger->info("Server listening to port {$this->port}");
@@ -93,24 +103,32 @@ class Server extends Base
 
     protected function connect(): void
     {
-        if (empty($this->options['timeout'])) {
-            $this->socket = @stream_socket_accept($this->listening);
-            if (!$this->socket) {
-                $error = 'Server failed to connect.';
-                $this->logger->error($error);
-                throw new ConnectionException($error);
-            }
+
+        $error = null;
+        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
+            $this->logger->warning($message, ['severity' => $severity]);
+            $error = $message;
+        }, E_ALL);
+
+        if (isset($this->options['timeout'])) {
+            $this->socket = stream_socket_accept($this->listening, $this->options['timeout']);
         } else {
-            $this->socket = @stream_socket_accept($this->listening, $this->options['timeout']);
-            if (!$this->socket) {
-                $error = 'Server failed to connect.';
-                $this->logger->error($error);
-                throw new ConnectionException($error);
-            }
+            $this->socket = stream_socket_accept($this->listening);
+        }
+
+        restore_error_handler();
+
+        if (!$this->socket) {
+            $this->throwException("Server failed to connect. {$error}");
+        }
+        if (isset($this->options['timeout'])) {
             stream_set_timeout($this->socket, $this->options['timeout']);
         }
 
-        $this->logger->info("Client has connected to port {$this->port}");
+        $this->logger->info("Client has connected to port {port}", [
+            'port' => $this->port,
+            'pier' => stream_socket_get_name($this->socket, true),
+        ]);
         $this->performHandshake();
     }
 

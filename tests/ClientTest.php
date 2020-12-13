@@ -40,12 +40,6 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
-
-        $client->close();
-        $this->assertFalse($client->isConnected());
-        $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
 
         $this->assertTrue(MockSocket::isEmpty());
     }
@@ -179,11 +173,11 @@ class ClientTest extends TestCase
         MockSocket::initialize('close-remote', $this);
 
         $message = $client->receive();
-        $this->assertEquals('', $message);
+        $this->assertNull($message);
 
         $this->assertFalse($client->isConnected());
         $this->assertEquals(17260, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
     }
 
@@ -213,7 +207,7 @@ class ClientTest extends TestCase
         $client->close();
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
-        $this->assertEquals('close', $client->getLastOpcode());
+        $this->assertNull($client->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
 
         MockSocket::initialize('client.reconnect', $this);
@@ -260,6 +254,16 @@ class ClientTest extends TestCase
     public function testFailedConnection(): void
     {
         MockSocket::initialize('client.connect-failed', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not open socket to "localhost:8000"');
+        $client->send('Connect');
+    }
+
+    public function testFailedConnectionWithError(): void
+    {
+        MockSocket::initialize('client.connect-error', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
@@ -357,5 +361,75 @@ class ClientTest extends TestCase
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Empty read; connection dead?');
         $client->receive();
+    }
+
+    public function testFrameFragmentation(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client(
+            'ws://localhost:8000/my/mock/path',
+            ['filter' => ['text', 'binary', 'pong', 'close']]
+        );
+        $client->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $client->receive();
+        $this->assertEquals('Server ping', $message);
+        $this->assertEquals('pong', $client->getLastOpcode());
+        $message = $client->receive();
+        $this->assertEquals('Multi fragment test', $message);
+        $this->assertEquals('text', $client->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $client->receive();
+        $this->assertEquals('Closing', $message);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(17260, $client->getCloseStatus());
+        $this->assertEquals('close', $client->getLastOpcode());
+    }
+
+    public function testMessageFragmentation(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client(
+            'ws://localhost:8000/my/mock/path',
+            ['filter' => ['text', 'binary', 'pong', 'close'], 'return_obj' => true]
+        );
+        $client->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $client->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Pong', $message);
+        $this->assertEquals('Server ping', $message->getContent());
+        $this->assertEquals('pong', $message->getOpcode());
+        $message = $client->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Text', $message);
+        $this->assertEquals('Multi fragment test', $message->getContent());
+        $this->assertEquals('text', $message->getOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $client->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Close', $message);
+        $this->assertEquals('Closing', $message->getContent());
+        $this->assertEquals('close', $message->getOpcode());
+    }
+
+    public function testConvenicanceMethods(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->assertNull($client->getName());
+        $this->assertNull($client->getPier());
+        $this->assertEquals('WebSocket\Client(closed)', "{$client}");
+        $client->text('Connect');
+        MockSocket::initialize('send-convenicance', $this);
+        $client->binary(base64_encode('Binary content'));
+        $client->ping();
+        $client->pong();
+        $this->assertEquals('127.0.0.1:12345', $client->getName());
+        $this->assertEquals('127.0.0.1:8000', $client->getPier());
+        $this->assertEquals('WebSocket\Client(127.0.0.1:12345)', "{$client}");
     }
 }

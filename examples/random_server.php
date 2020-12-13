@@ -42,7 +42,7 @@ if (isset($options['debug']) && class_exists('WebSocket\EchoLog')) {
     echo "> Using logger\n";
 }
 
-// Main loop
+// Force quit to close server
 while (true) {
     try {
         // Setup server
@@ -55,34 +55,36 @@ while (true) {
         echo "> Creating server {$info}\n";
 
         while ($server->accept()) {
-            // Random actions
-            switch (rand(1, 10)) {
-                case 1:
-                    echo "> Sending text\n";
-                    $server->send("Text message {$randStr()}", 'text');
-                    break;
-                case 2:
-                    echo "> Sending binary\n";
-                    $server->send("Binary message {$randStr()}", 'binary');
-                    break;
-                case 3:
-                    echo "> Sending close\n";
-                    $server->close(rand(1000, 2000), "Close message {$randStr(8)}");
-                    break;
-                case 4:
-                    echo "> Sending ping\n";
-                    $server->send("Ping message  {$randStr(8)}", 'ping');
-                    break;
-                case 5:
-                    echo "> Sending pong\n";
-                    $server->send("Pong message  {$randStr(8)}", 'pong');
-                    break;
-                default:
-                    echo "> Receiving\n";
-                    $received = $server->receive();
-                    echo "> Received {$server->getLastOpcode()}: {$received}\n";
+            while (true) {
+                // Random actions
+                switch (rand(1, 10)) {
+                    case 1:
+                        echo "> Sending text\n";
+                        $server->text("Text message {$randStr()}");
+                        break;
+                    case 2:
+                        echo "> Sending binary\n";
+                        $server->binary("Binary message {$randStr()}");
+                        break;
+                    case 3:
+                        echo "> Sending close\n";
+                        $server->close(rand(1000, 2000), "Close message {$randStr(8)}");
+                        break;
+                    case 4:
+                        echo "> Sending ping\n";
+                        $server->ping("Ping message {$randStr(8)}");
+                        break;
+                    case 5:
+                        echo "> Sending pong\n";
+                        $server->pong("Pong message {$randStr(8)}");
+                        break;
+                    default:
+                        echo "> Receiving\n";
+                        $received = $server->receive();
+                        echo "> Received {$server->getLastOpcode()}: {$received}\n";
+                }
+                sleep(rand(1, 5));
             }
-            sleep(rand(1, 5));
         }
     } catch (\Throwable $e) {
         echo "ERROR: {$e->getMessage()} [{$e->getCode()}]\n";

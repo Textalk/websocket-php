@@ -9,9 +9,8 @@
 
 namespace WebSocket;
 
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
+use Psr\Log\{LoggerAwareInterface, LoggerInterface, NullLogger};
+use WebSocket\Message\Factory;
 
 class Base implements LoggerAwareInterface
 {
@@ -21,6 +20,7 @@ class Base implements LoggerAwareInterface
     protected $last_opcode = null;
     protected $close_status = null;
     protected $logger;
+    private $read_buffer;
 
     protected static $opcodes = [
         'continuation' => 0,
@@ -48,7 +48,7 @@ class Base implements LoggerAwareInterface
              get_resource_type($this->socket) == 'persistent stream');
     }
 
-    public function setTimeout($timeout): void
+    public function setTimeout(int $timeout): void
     {
         $this->options['timeout'] = $timeout;
 
@@ -57,7 +57,7 @@ class Base implements LoggerAwareInterface
         }
     }
 
-    public function setFragmentSize($fragment_size): self
+    public function setFragmentSize(int $fragment_size): self
     {
         $this->options['fragment_size'] = $fragment_size;
         return $this;
@@ -73,7 +73,7 @@ class Base implements LoggerAwareInterface
         $this->logger = $logger ?: new NullLogger();
     }
 
-    public function send($payload, $opcode = 'text', $masked = true): void
+    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
     {
         if (!$this->isConnected()) {
             $this->connect();
@@ -98,43 +98,105 @@ class Base implements LoggerAwareInterface
             $frame_opcode = 'continuation';
         }
 
-        $this->logger->info("Sent '{$opcode}' message");
+        $this->logger->info("Sent '{$opcode}' message", [
+            'opcode' => $opcode,
+            'content-length' => strlen($payload),
+            'frames' => count($payload_chunks),
+        ]);
     }
 
-    protected function sendFragment($final, $payload, $opcode, $masked): void
+    /**
+     * Convenience method to send text message
+     * @param string $payload Content as string
+     */
+    public function text(string $payload): void
     {
-        // Binary string for header.
-        $frame_head_binstr = '';
+        $this->send($payload);
+    }
 
-        // Write FIN, final fragment bit.
-        $frame_head_binstr .= (bool) $final ? '1' : '0';
+    /**
+     * Convenience method to send binary message
+     * @param string $payload Content as binary string
+     */
+    public function binary(string $payload): void
+    {
+        $this->send($payload, 'binary');
+    }
 
-        // RSV 1, 2, & 3 false and unused.
-        $frame_head_binstr .= '000';
+    /**
+     * Convenience method to send ping
+     * @param string $payload Optional text as string
+     */
+    public function ping(string $payload = ''): void
+    {
+        $this->send($payload, 'ping');
+    }
 
-        // Opcode rest of the byte.
-        $frame_head_binstr .= sprintf('%04b', self::$opcodes[$opcode]);
+    /**
+     * Convenience method to send unsolicited pong
+     * @param string $payload Optional text as string
+     */
+    public function pong(string $payload = ''): void
+    {
+        $this->send($payload, 'pong');
+    }
 
-        // Use masking?
-        $frame_head_binstr .= $masked ? '1' : '0';
+    /**
+     * Get name of local socket, or null if not connected
+     * @return string|null
+     */
+    public function getName(): ?string
+    {
+        return $this->isConnected() ? stream_socket_get_name($this->socket) : null;
+    }
+
+    /**
+     * Get name of remote socket, or null if not connected
+     * @return string|null
+     */
+    public function getPier(): ?string
+    {
+        return $this->isConnected() ? stream_socket_get_name($this->socket, true) : null;
+    }
+
+    /**
+     * Get string representation of instance
+     * @return string String representation
+     */
+    public function __toString(): string
+    {
+        return sprintf(
+            "%s(%s)",
+            get_class($this),
+            $this->getName() ?: 'closed'
+        );
+    }
+
+    /**
+     * Receive one message.
+     * Will continue reading until read message match filter settings.
+     * Return Message instance or string according to settings.
+     */
+    protected function sendFragment(bool $final, string $payload, string $opcode, bool $masked): void
+    {
+        $data = '';
+
+        $byte_1 = $final ? 0b10000000 : 0b00000000; // Final fragment marker.
+        $byte_1 |= self::$opcodes[$opcode]; // Set opcode.
+        $data .= pack('C', $byte_1);
+
+        $byte_2 = $masked ? 0b10000000 : 0b00000000; // Masking bit marker.
 
         // 7 bits of payload length...
         $payload_length = strlen($payload);
         if ($payload_length > 65535) {
-            $frame_head_binstr .= decbin(127);
-            $frame_head_binstr .= sprintf('%064b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111111);
+            $data .= pack('J', $payload_length);
         } elseif ($payload_length > 125) {
-            $frame_head_binstr .= decbin(126);
-            $frame_head_binstr .= sprintf('%016b', $payload_length);
+            $data .= pack('C', $byte_2 | 0b01111110);
+            $data .= pack('n', $payload_length);
         } else {
-            $frame_head_binstr .= sprintf('%07b', $payload_length);
-        }
-
-        $frame = '';
-
-        // Write frame head to frame.
-        foreach (str_split($frame_head_binstr, 8) as $binstr) {
-            $frame .= chr(bindec($binstr));
+            $data .= pack('C', $byte_2 | $payload_length);
         }
 
         // Handle masking
@@ -144,48 +206,89 @@ class Base implements LoggerAwareInterface
             for ($i = 0; $i < 4; $i++) {
                 $mask .= chr(rand(0, 255));
             }
-            $frame .= $mask;
+            $data .= $mask;
         }
 
         // Append payload to frame:
         for ($i = 0; $i < $payload_length; $i++) {
-            $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
+            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
         }
-
-        $this->write($frame);
+        $this->write($data);
+        $this->logger->debug("Sent '{$opcode}' frame", [
+            'opcode' => $opcode,
+            'final' => $final,
+            'content-length' => strlen($payload),
+        ]);
     }
 
-    public function receive(): string
+    public function receive()
     {
+        $filter = $this->options['filter'];
         if (!$this->isConnected()) {
             $this->connect();
         }
 
-        $payload = '';
         do {
             $response = $this->receiveFragment();
-            $payload .= $response[0];
-        } while (!$response[1]);
+            list ($payload, $final, $opcode) = $response;
 
-        $this->logger->info("Received '{$this->last_opcode}' message");
-        return $payload;
+            // Continuation and factual opcode
+            $continuation = ($opcode == 'continuation');
+            $payload_opcode = $continuation ? $this->read_buffer['opcode'] : $opcode;
+
+            // Filter frames
+            if (!in_array($payload_opcode, $filter)) {
+                if ($payload_opcode == 'close') {
+                    return null; // Always abort receive on close
+                }
+                $final = false;
+                continue; // Continue reading
+            }
+
+            // First continuation frame, create buffer
+            if (!$final && !$continuation) {
+                $this->read_buffer = ['opcode' => $opcode, 'payload' => $payload, 'frames' => 1];
+                continue; // Continue reading
+            }
+
+            // Subsequent continuation frames, add to buffer
+            if ($continuation) {
+                $this->read_buffer['payload'] .= $payload;
+                $this->read_buffer['frames']++;
+            }
+        } while (!$final);
+
+        // Final, return payload
+        $frames = 1;
+        if ($continuation) {
+            $payload = $this->read_buffer['payload'];
+            $frames = $this->read_buffer['frames'];
+            $this->read_buffer = null;
+        }
+        $this->logger->info("Received '{opcode}' message", [
+            'opcode' => $payload_opcode,
+            'content-length' => strlen($payload),
+            'frames' => $frames,
+        ]);
+
+        $this->last_opcode = $payload_opcode;
+        $factory = new Factory();
+        return $this->options['return_obj']
+            ? $factory->create($payload_opcode, $payload)
+            : $payload;
     }
 
     protected function receiveFragment(): array
     {
-        // Just read the main fragment information first.
+        // Read the fragment "header" first, two bytes.
         $data = $this->read(2);
+        list ($byte_1, $byte_2) = array_values(unpack('C*', $data));
 
-        // Is this the final fragment?  // Bit 0 in byte 0
-        $final = (bool) (ord($data[0]) & 1 << 7);
-
-        // Should be unused, and must be false…  // Bits 1, 2, & 3
-        $rsv1  = (bool) (ord($data[0]) & 1 << 6);
-        $rsv2  = (bool) (ord($data[0]) & 1 << 5);
-        $rsv3  = (bool) (ord($data[0]) & 1 << 4);
+        $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
+        $rsv = $byte_1 & 0b01110000; // Unused bits, ignore
 
         // Parse opcode
-        $opcode_int = ord($data[0]) & 15; // Bits 4-7
+        $opcode_int = $byte_1 & 0b00001111;
         $opcode_ints = array_flip(self::$opcodes);
         if (!array_key_exists($opcode_int, $opcode_ints)) {
             $warning = "Bad opcode in websocket frame: {$opcode_int}";
@@ -194,20 +297,22 @@ class Base implements LoggerAwareInterface
         }
         $opcode = $opcode_ints[$opcode_int];
 
-        // Masking?
-        $mask = (bool) (ord($data[1]) >> 7);  // Bit 0 in byte 1
+        // Masking bit
+        $mask = (bool)($byte_2 & 0b10000000);
 
         $payload = '';
 
         // Payload length
-        $payload_length = (int) ord($data[1]) & 127; // Bits 1-7 in byte 1
+        $payload_length = $byte_2 & 0b01111111;
+
         if ($payload_length > 125) {
             if ($payload_length === 126) {
                 $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
+                $payload_length = current(unpack('n', $data));
             } else {
                 $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
+                $payload_length = current(unpack('J', $data));
             }
-            $payload_length = bindec(self::sprintB($data));
         }
 
         // Get masking key.
@@ -229,34 +334,37 @@ class Base implements LoggerAwareInterface
             }
         }
 
+        $this->logger->debug("Read '{opcode}' frame", [
+            'opcode' => $opcode,
+            'final' => $final,
+            'content-length' => strlen($payload),
+        ]);
+
         // if we received a ping, send a pong and wait for the next message
         if ($opcode === 'ping') {
             $this->logger->debug("Received 'ping', sending 'pong'.");
             $this->send($payload, 'pong', true);
-            return [null, false];
+            return [$payload, true, $opcode];
         }
 
         // if we received a pong, wait for the next message
         if ($opcode === 'pong') {
             $this->logger->debug("Received 'pong'.");
-            return [null, false];
-        }
-
-        // Record the opcode if we are not receiving a continutation fragment
-        if ($opcode !== 'continuation') {
-            $this->last_opcode = $opcode;
+            return [$payload, true, $opcode];
         }
 
         if ($opcode === 'close') {
+            $status_bin = '';
+            $status = '';
             // Get the close status.
             $status_bin = '';
             $status = '';
             if ($payload_length > 0) {
                 $status_bin = $payload[0] . $payload[1];
-                $status = bindec(sprintf("%08b%08b", ord($payload[0]), ord($payload[1])));
+                $status = current(unpack('n', $payload));
                 $this->close_status = $status;
             }
-            // Get additional close message-
+            // Get additional close message
             if ($payload_length >= 2) {
                 $payload = substr($payload, 2);
             }
@@ -273,10 +381,10 @@ class Base implements LoggerAwareInterface
             fclose($this->socket);
 
             // Closing should not return message.
-            return [null, true];
+            return [$payload, true, $opcode];
         }
 
-        return [$payload, $final];
+        return [$payload, $final, $opcode];
     }
 
     /**
@@ -285,7 +393,7 @@ class Base implements LoggerAwareInterface
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
      * @param string  $message A closing message, max 125 bytes.
      */
-    public function close($status = 1000, $message = 'ttfn'): void
+    public function close(int $status = 1000, string $message = 'ttfn'): void
     {
         if (!$this->isConnected()) {
             return;
@@ -302,7 +410,7 @@ class Base implements LoggerAwareInterface
         $this->receive(); // Receiving a close frame will close the socket now.
     }
 
-    protected function write($data): void
+    protected function write(string $data): void
     {
         $length = strlen($data);
         $written = fwrite($this->socket, $data);
@@ -315,7 +423,7 @@ class Base implements LoggerAwareInterface
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
     }
 
-    protected function read($length): string
+    protected function read(string $length): string
     {
         $data = '';
         while (strlen($data) < $length) {
@@ -328,36 +436,29 @@ class Base implements LoggerAwareInterface
                 $this->throwException("Empty read; connection dead?");
             }
             $data .= $buffer;
+            $read = strlen($data);
+            $this->logger->debug("Read {$read} of {$length} bytes.");
         }
         return $data;
     }
 
-    protected function throwException($message, $code = 0): void
+    protected function throwException(string $message, int $code = 0): void
     {
-        $meta = $this->isConnected() ? stream_get_meta_data($this->socket) : [];
+        $meta = ['closed' => true];
+        if ($this->isConnected()) {
+            $meta = stream_get_meta_data($this->socket);
+            fclose($this->socket);
+            $this->socket = null;
+        }
         $json_meta = json_encode($meta);
-        fclose($this->socket);
         if (!empty($meta['timed_out'])) {
-            $code = ConnectionException::TIMED_OUT;
-            $this->logger->warning("{$message}", (array)$meta);
-            throw new TimeoutException("{$message} Stream state: {$json_meta}", $code);
+            $this->logger->error($message, $meta);
+            throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
         }
         if (!empty($meta['eof'])) {
             $code = ConnectionException::EOF;
         }
-        $this->logger->error("{$message}", (array)$meta);
-        throw new ConnectionException("{$message}  Stream state: {$json_meta}", $code);
-    }
-
-    /**
-     * Helper to convert a binary to a string of '0' and '1'.
-     */
-    protected static function sprintB($string): string
-    {
-        $return = '';
-        for ($i = 0; $i < strlen($string); $i++) {
-            $return .= sprintf("%08b", ord($string[$i]));
-        }
-        return $return;
+        $this->logger->error($message, $meta);
+        throw new ConnectionException($message, $code, $meta);
     }
 }

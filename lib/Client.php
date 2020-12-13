@@ -13,13 +13,15 @@ class Client extends Base
 {
     // Default options
     protected static $default_options = [
-      'persistent'    => false,
-      'timeout'       => 5,
-      'fragment_size' => 4096,
       'context'       => null,
+      'filter'        => ['text', 'binary'],
+      'fragment_size' => 4096,
       'headers'       => null,
       'logger'        => null,
       'origin'        => null, // @deprecated
+      'persistent'    => false,
+      'return_obj'    => false,
+      'timeout'       => 5,
     ];
 
     protected $socket_uri;
@@ -33,7 +35,7 @@ class Client extends Base
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - headers:       Associative array of headers to set/override.
      */
-    public function __construct($uri, $options = [])
+    public function __construct(string $uri, array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
@@ -101,9 +103,15 @@ class Client extends Base
         $flags = STREAM_CLIENT_CONNECT;
         $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
 
-        // Open the socket.  @ is there to supress warning that we will catch in check below instead.
-        $this->socket = @stream_socket_client(
-            $host_uri . ':' . $port,
+        $error = $errno = $errstr = null;
+        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
+            $this->logger->warning($message, ['severity' => $severity]);
+            $error = $message;
+        }, E_ALL);
+
+        // Open the socket.
+        $this->socket = stream_socket_client(
+            "{$host_uri}:{$port}",
             $errno,
             $errstr,
             $this->options['timeout'],
@@ -111,8 +119,10 @@ class Client extends Base
             $context
         );
 
+        restore_error_handler();
+
         if (!$this->isConnected()) {
-            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}).";
+            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }
@@ -196,11 +206,9 @@ class Client extends Base
      */
     protected static function generateKey(): string
     {
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"$&/()=[]{}0123456789';
         $key = '';
-        $chars_length = strlen($chars);
         for ($i = 0; $i < 16; $i++) {
-            $key .= $chars[mt_rand(0, $chars_length - 1)];
+            $key .= chr(rand(33, 126));
         }
         return base64_encode($key);
     }

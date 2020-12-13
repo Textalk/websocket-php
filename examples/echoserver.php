@@ -22,6 +22,7 @@ echo "> Random server\n";
 $options = array_merge([
     'port'          => 8000,
     'timeout'       => 200,
+    'filter'        => ['text', 'binary', 'ping', 'pong'],
 ], getopt('', ['port:', 'timeout:', 'debug']));
 
 // If debug mode and logger is available
@@ -32,42 +33,55 @@ if (isset($options['debug']) && class_exists('WebSocket\EchoLog')) {
 }
 
 // Setting timeout to 200 seconds to make time for all tests and manual runs.
-$server = new Server($options);
+try {
+    $server = new Server($options);
+} catch (ConnectionException $e) {
+    echo "> ERROR: {$e->getMessage()}\n";
+    die();
+}
 
 echo "> Listening to port {$server->getPort()}\n";
 
-while ($server->accept()) {
+// Force quit to close server
+while (true) {
     try {
-        while (true) {
-            $message = $server->receive();
-            $opcode = $server->getLastOpcode();
-            if ($opcode == 'close') {
-                echo "> Closed connection\n";
-                continue;
-            }
-            echo "> Got '{$message}' [opcode: {$opcode}]\n";
-
-            switch ($message) {
-                case 'exit':
-                    echo "> Client told me to quit.  Bye bye.\n";
-                    $server->close();
-                    echo "> Close status: {$server->getCloseStatus()}\n";
-                    exit;
-                case 'headers':
-                    $server->send(implode("\r\n", $server->getRequest()));
-                    break;
-                case 'ping':
-                    $server->send($message, 'ping');
-                    break;
-                case 'auth':
-                    $auth = $server->getHeader('Authorization');
-                    $server->send("{$auth} - {$message}", $opcode);
-                    break;
-                default:
-                    $server->send($message, $opcode);
+        while ($server->accept()) {
+            echo "> Accepted on port {$server->getPort()}\n";
+            while (true) {
+                $message = $server->receive();
+                $opcode = $server->getLastOpcode();
+                if (is_null($message)) {
+                    echo "> Closing connection\n";
+                    continue 2;
+                }
+                echo "> Got '{$message}' [opcode: {$opcode}]\n";
+                if (in_array($opcode, ['ping', 'pong'])) {
+                    $server->send($message);
+                    continue;
+                }
+                // Allow certain string to trigger server action
+                switch ($message) {
+                    case 'exit':
+                        echo "> Client told me to quit.  Bye bye.\n";
+                        $server->close();
+                        echo "> Close status: {$server->getCloseStatus()}\n";
+                        exit;
+                    case 'headers':
+                        $server->text(implode("\r\n", $server->getRequest()));
+                        break;
+                    case 'ping':
+                        $server->ping($message);
+                        break;
+                    case 'auth':
+                        $auth = $server->getHeader('Authorization');
+                        $server->text("{$auth} - {$message}");
+                        break;
+                    default:
+                        $server->text($message);
+                }
             }
         }
-    } catch (WebSocket\ConnectionException $e) {
-        echo "\n", microtime(true), " Connection died: $e\n";
+    } catch (ConnectionException $e) {
+        echo "> ERROR: {$e->getMessage()}\n";
     }
 }

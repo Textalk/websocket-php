@@ -30,7 +30,7 @@ composer require textalk/websocket
 
 ## Client
 
-The [client](docs/Server.md) can read and write on a WebSocket stream.
+The [client](docs/Client.md) can read and write on a WebSocket stream.
 It internally supports Upgrade handshake and implicit close and ping/pong operations.
 
 ```php

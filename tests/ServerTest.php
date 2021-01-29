@@ -24,7 +24,6 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertTrue(MockSocket::isEmpty());
-
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->send('Connect');
@@ -60,7 +59,6 @@ class ServerTest extends TestCase
         $server->close();
         $this->assertFalse($server->isConnected());
         $this->assertEquals(1000, $server->getCloseStatus());
-        $this->assertEquals('close', $server->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
 
         $server->close(); // Already closed
@@ -165,20 +163,11 @@ class ServerTest extends TestCase
 
         MockSocket::initialize('ping-pong', $this);
         $server->send('Server ping', 'ping');
-        $message = $server->receive();
-        $this->assertEquals('Server ping', $message);
-        $this->assertEquals('pong', $server->getLastOpcode());
-
         $server->send('', 'ping');
         $message = $server->receive();
-        $this->assertEquals('', $message);
-        $this->assertEquals('pong', $server->getLastOpcode());
-
-        $message = $server->receive();
-        $this->assertEquals('Client ping', $message);
-
+        $this->assertEquals('Receiving a message', $message);
+        $this->assertEquals('text', $server->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        $this->assertEquals('ping', $server->getLastOpcode());
     }
 
     public function testRemoteClose(): void
@@ -201,7 +190,7 @@ class ServerTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertFalse($server->isConnected());
         $this->assertEquals(17260, $server->getCloseStatus());
-        $this->assertEquals('close', $server->getLastOpcode());
+        $this->assertNull($server->getLastOpcode());
     }
 
     public function testSetTimeout(): void
@@ -231,12 +220,34 @@ class ServerTest extends TestCase
         $server = new Server(['port' => 9999]);
     }
 
+    public function testFailedSocketServerWithError(): void
+    {
+        MockSocket::initialize('server.construct-error-socket-server', $this);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not open listening socket:');
+        $server = new Server(['port' => 9999]);
+    }
+
     public function testFailedConnect(): void
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
 
         MockSocket::initialize('server.accept-failed-connect', $this);
+        $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Server failed to connect');
+        $server->send('Connect');
+    }
+
+    public function testFailedConnectWithError(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+
+        MockSocket::initialize('server.accept-error-connect', $this);
         $server->accept();
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
@@ -362,5 +373,76 @@ class ServerTest extends TestCase
         $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Empty read; connection dead?');
         $server->receive();
+    }
+
+    public function testFrameFragmentation(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['filter' => ['text', 'binary', 'pong', 'close']]);
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $server->receive();
+        $this->assertEquals('Server ping', $message);
+        $this->assertEquals('pong', $server->getLastOpcode());
+        $message = $server->receive();
+        $this->assertEquals('Multi fragment test', $message);
+        $this->assertEquals('text', $server->getLastOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $server->receive();
+        $this->assertEquals('Closing', $message);
+        $this->assertTrue(MockSocket::isEmpty());
+        $this->assertFalse($server->isConnected());
+        $this->assertEquals(17260, $server->getCloseStatus());
+        $this->assertEquals('close', $server->getLastOpcode());
+    }
+
+    public function testMessageFragmentation(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server(['filter' => ['text', 'binary', 'pong', 'close'], 'return_obj' => true]);
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        MockSocket::initialize('receive-fragmentation', $this);
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Pong', $message);
+        $this->assertEquals('Server ping', $message->getContent());
+        $this->assertEquals('pong', $message->getOpcode());
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Text', $message);
+        $this->assertEquals('Multi fragment test', $message->getContent());
+        $this->assertEquals('text', $message->getOpcode());
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('close-remote', $this);
+        $message = $server->receive();
+        $this->assertInstanceOf('WebSocket\Message\Message', $message);
+        $this->assertInstanceOf('WebSocket\Message\Close', $message);
+        $this->assertEquals('Closing', $message->getContent());
+        $this->assertEquals('close', $message->getOpcode());
+    }
+
+    public function testConvenicanceMethods(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertNull($server->getName());
+        $this->assertNull($server->getPier());
+        $this->assertEquals('WebSocket\Server(closed)', "{$server}");
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->text('Connect');
+        MockSocket::initialize('send-convenicance', $this);
+        $server->binary(base64_encode('Binary content'));
+        $server->ping();
+        $server->pong();
+        $this->assertEquals('127.0.0.1:12345', $server->getName());
+        $this->assertEquals('127.0.0.1:8000', $server->getPier());
+        $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
+        $this->assertTrue(MockSocket::isEmpty());
     }
 }

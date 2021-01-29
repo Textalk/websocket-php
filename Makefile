@@ -1,21 +1,25 @@
 install: composer.phar
 	./composer.phar install
 
-update:
+update: composer.phar
+	./composer.phar self-update
 	./composer.phar update
 
-test: vendor/bin/phpunit build
+test: composer.lock
 	./vendor/bin/phpunit
 
-cs-check: vendor/bin/phpunit
-	./vendor/bin/phpcs --standard=codestandard.xml lib tests
+cs-check: composer.lock
+	./vendor/bin/phpcs --standard=codestandard.xml lib tests examples
 
-coverage: vendor/bin/phpunit build
-	./vendor/bin/phpunit --coverage-clover build/logs/clover.xml
+coverage: composer.lock build
+	XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover build/logs/clover.xml
 	./vendor/bin/php-coveralls -v
 
 composer.phar:
 	curl -s http://getcomposer.org/installer | php
+
+composer.lock: composer.phar
+	./composer.phar --no-interaction install
 
 vendor/bin/phpunit: install
 

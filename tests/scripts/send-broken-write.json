@@ -14,9 +14,11 @@
         "return": 18
     },
     {
-        "function": "fclose",
-        "params": [],
-        "return": true
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "stream"
     },
     {
         "function": "stream_get_meta_data",
@@ -32,5 +34,10 @@
             "unread_bytes": 2,
             "seekable": false
         }
+    },
+    {
+        "function": "fclose",
+        "params": [],
+        "return": true
     }
 ]

@@ -13,13 +13,15 @@ class Client extends Base
 {
     // Default options
     protected static $default_options = [
-      'persistent'    => false,
-      'timeout'       => 5,
-      'fragment_size' => 4096,
       'context'       => null,
+      'filter'        => ['text', 'binary'],
+      'fragment_size' => 4096,
       'headers'       => null,
       'logger'        => null,
       'origin'        => null, // @deprecated
+      'persistent'    => false,
+      'return_obj'    => false,
+      'timeout'       => 5,
     ];
 
     protected $socket_uri;
@@ -33,7 +35,7 @@ class Client extends Base
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - headers:       Associative array of headers to set/override.
      */
-    public function __construct($uri, $options = array())
+    public function __construct(string $uri, array $options = [])
     {
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
@@ -51,7 +53,7 @@ class Client extends Base
     /**
      * Perform WebSocket handshake
      */
-    protected function connect()
+    protected function connect(): void
     {
         $url_parts = parse_url($this->socket_uri);
         if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
@@ -76,7 +78,7 @@ class Client extends Base
             $path_with_query .= '#' . $fragment;
         }
 
-        if (!in_array($scheme, array('ws', 'wss'))) {
+        if (!in_array($scheme, ['ws', 'wss'])) {
             $error = "Url should have scheme ws or wss, not '{$scheme}' from URI '{$this->socket_uri}'.";
             $this->logger->error($error);
             throw new BadUriException($error);
@@ -101,9 +103,15 @@ class Client extends Base
         $flags = STREAM_CLIENT_CONNECT;
         $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
 
-        // Open the socket.  @ is there to supress warning that we will catch in check below instead.
-        $this->socket = @stream_socket_client(
-            $host_uri . ':' . $port,
+        $error = $errno = $errstr = null;
+        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
+            $this->logger->warning($message, ['severity' => $severity]);
+            $error = $message;
+        }, E_ALL);
+
+        // Open the socket.
+        $this->socket = stream_socket_client(
+            "{$host_uri}:{$port}",
             $errno,
             $errstr,
             $this->options['timeout'],
@@ -111,8 +119,10 @@ class Client extends Base
             $context
         );
 
+        restore_error_handler();
+
         if (!$this->isConnected()) {
-            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}).";
+            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }
@@ -124,18 +134,18 @@ class Client extends Base
         $key = self::generateKey();
 
         // Default headers
-        $headers = array(
+        $headers = [
             'Host'                  => $host . ":" . $port,
             'User-Agent'            => 'websocket-client-php',
             'Connection'            => 'Upgrade',
             'Upgrade'               => 'websocket',
             'Sec-WebSocket-Key'     => $key,
             'Sec-WebSocket-Version' => '13',
-        );
+        ];
 
         // Handle basic authentication.
         if ($user || $pass) {
-            $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass) . "\r\n";
+            $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
         }
 
         // Deprecated way of adding origin (use headers instead).
@@ -186,7 +196,7 @@ class Client extends Base
             throw new ConnectionException($error);
         }
 
-        $this->logger->info("Client connected to to {$address}");
+        $this->logger->info("Client connected to {$address}");
     }
 
     /**
@@ -194,13 +204,11 @@ class Client extends Base
      *
      * @return string Random string
      */
-    protected static function generateKey()
+    protected static function generateKey(): string
     {
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"$&/()=[]{}0123456789';
         $key = '';
-        $chars_length = strlen($chars);
         for ($i = 0; $i < 16; $i++) {
-            $key .= $chars[mt_rand(0, $chars_length - 1)];
+            $key .= chr(rand(33, 126));
         }
         return base64_encode($key);
     }

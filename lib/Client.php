@@ -44,7 +44,7 @@ class Client extends Base
 
     public function __destruct()
     {
-        if ($this->isConnected()) {
+        if ($this->isConnected() && get_resource_type($this->socket) !== 'persistent stream') {
             fclose($this->socket);
         }
         $this->socket = null;
@@ -100,8 +100,9 @@ class Client extends Base
             $context = stream_context_create();
         }
 
+        $persistent = $this->options['persistent'] === true;
         $flags = STREAM_CLIENT_CONNECT;
-        $flags = ($this->options['persistent'] === true) ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
+        $flags = $persistent ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
 
         $error = $errno = $errstr = null;
         set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
@@ -127,73 +128,75 @@ class Client extends Base
             throw new ConnectionException($error);
         }
 
-        // Set timeout on the stream as well.
-        stream_set_timeout($this->socket, $this->options['timeout']);
+        if (!$persistent || ftell($this->socket) == 0) {
+            // Set timeout on the stream as well.
+            stream_set_timeout($this->socket, $this->options['timeout']);
 
-        // Generate the WebSocket key.
-        $key = self::generateKey();
+            // Generate the WebSocket key.
+            $key = self::generateKey();
 
-        // Default headers
-        $headers = [
-            'Host'                  => $host . ":" . $port,
-            'User-Agent'            => 'websocket-client-php',
-            'Connection'            => 'Upgrade',
-            'Upgrade'               => 'websocket',
-            'Sec-WebSocket-Key'     => $key,
-            'Sec-WebSocket-Version' => '13',
-        ];
+            // Default headers
+            $headers = [
+                'Host'                  => $host . ":" . $port,
+                'User-Agent'            => 'websocket-client-php',
+                'Connection'            => 'Upgrade',
+                'Upgrade'               => 'websocket',
+                'Sec-WebSocket-Key'     => $key,
+                'Sec-WebSocket-Version' => '13',
+            ];
 
-        // Handle basic authentication.
-        if ($user || $pass) {
-            $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
-        }
+            // Handle basic authentication.
+            if ($user || $pass) {
+                $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
+            }
 
-        // Deprecated way of adding origin (use headers instead).
-        if (isset($this->options['origin'])) {
-            $headers['origin'] = $this->options['origin'];
-        }
+            // Deprecated way of adding origin (use headers instead).
+            if (isset($this->options['origin'])) {
+                $headers['origin'] = $this->options['origin'];
+            }
 
-        // Add and override with headers from options.
-        if (isset($this->options['headers'])) {
-            $headers = array_merge($headers, $this->options['headers']);
-        }
+            // Add and override with headers from options.
+            if (isset($this->options['headers'])) {
+                $headers = array_merge($headers, $this->options['headers']);
+            }
 
-        $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(
-            "\r\n",
-            array_map(
-                function ($key, $value) {
-                    return "$key: $value";
-                },
-                array_keys($headers),
-                $headers
-            )
-        ) . "\r\n\r\n";
+            $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(
+                "\r\n",
+                array_map(
+                    function ($key, $value) {
+                        return "$key: $value";
+                    },
+                    array_keys($headers),
+                    $headers
+                )
+            ) . "\r\n\r\n";
 
-        // Send headers.
-        $this->write($header);
+            // Send headers.
+            $this->write($header);
 
-        // Get server response header (terminated with double CR+LF).
-        $response = stream_get_line($this->socket, 1024, "\r\n\r\n");
+            // Get server response header (terminated with double CR+LF).
+            $response = stream_get_line($this->socket, 1024, "\r\n\r\n");
 
-        /// @todo Handle version switching
+            /// @todo Handle version switching
 
-        $address = "{$scheme}://{$host}{$path_with_query}";
+            $address = "{$scheme}://{$host}{$path_with_query}";
 
-        // Validate response.
-        if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
-            $error = "Connection to '{$address}' failed: Server sent invalid upgrade response: {$response}";
-            $this->logger->error($error);
-            throw new ConnectionException($error);
-        }
+            // Validate response.
+            if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
+                $error = "Connection to '{$address}' failed: Server sent invalid upgrade response: {$response}";
+                $this->logger->error($error);
+                throw new ConnectionException($error);
+            }
 
-        $keyAccept = trim($matches[1]);
-        $expectedResonse
-            = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+            $keyAccept = trim($matches[1]);
+            $expectedResonse
+                = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
-        if ($keyAccept !== $expectedResonse) {
-            $error = 'Server sent bad upgrade response.';
-            $this->logger->error($error);
-            throw new ConnectionException($error);
+            if ($keyAccept !== $expectedResonse) {
+                $error = 'Server sent bad upgrade response.';
+                $this->logger->error($error);
+                throw new ConnectionException($error);
+            }
         }
 
         $this->logger->info("Client connected to {$address}");

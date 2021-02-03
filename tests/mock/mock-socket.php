@@ -36,6 +36,11 @@ function feof()
     $args = func_get_args();
     return MockSocket::handle('feof', $args);
 }
+function ftell()
+{
+    $args = func_get_args();
+    return MockSocket::handle('ftell', $args);
+}
 function fclose()
 {
     $args = func_get_args();

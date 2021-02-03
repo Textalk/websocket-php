@@ -410,10 +410,21 @@ class Base implements LoggerAwareInterface
         $this->receive(); // Receiving a close frame will close the socket now.
     }
 
+    /**
+     * Disconnect from client/server.
+     */
+    public function disconnect(): void
+    {
+        if ($this->isConnected()) {
+            fclose($this->socket);
+            $this->socket = null;
+        }
+    }
+
     protected function write(string $data): void
     {
         $length = strlen($data);
-        $written = fwrite($this->socket, $data);
+        $written = @fwrite($this->socket, $data);
         if ($written === false) {
             $this->throwException("Failed to write {$length} bytes.");
         }
@@ -427,7 +438,7 @@ class Base implements LoggerAwareInterface
     {
         $data = '';
         while (strlen($data) < $length) {
-            $buffer = fread($this->socket, $length - strlen($data));
+            $buffer = @fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
                 $read = strlen($data);
                 $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");

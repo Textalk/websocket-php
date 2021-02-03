@@ -31,6 +31,13 @@
         "return": "persistent stream"
     },
     {
+        "function": "ftell",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": 0
+    },
+    {
         "function": "stream_set_timeout",
         "params": [
             "@mock-stream",
@@ -62,6 +69,27 @@
             "@mock-stream"
         ],
         "return": 13
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "persistent stream"
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "persistent stream"
+    },
+    {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return":true
     }
 ]
 

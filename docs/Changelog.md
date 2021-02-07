@@ -6,6 +6,10 @@
 
  > PHP version `^7.2`
 
+### `1.5.1`
+
+ * Fix for persistent connections (@rmeisler)
+
 ### `1.5.0`
 
  * Convenience send methods; text(), binary(), ping(), pong() (@sirn-se)

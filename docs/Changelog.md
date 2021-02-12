@@ -6,6 +6,10 @@
 
  > PHP version `^7.2`
 
+### `1.5.2`
+
+ * Fix for getName() method (@sirn-se)
+
 ### `1.5.1`
 
  * Fix for persistent connections (@rmeisler)

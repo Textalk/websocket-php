@@ -147,7 +147,7 @@ class Base implements LoggerAwareInterface
      */
     public function getName(): ?string
     {
-        return $this->isConnected() ? stream_socket_get_name($this->socket) : null;
+        return $this->isConnected() ? stream_socket_get_name($this->socket, false) : null;
     }
 
     /**

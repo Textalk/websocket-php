@@ -26,6 +26,7 @@ class Server extends Base
     protected $listening;
     protected $request;
     protected $request_path;
+    protected $connection;
 
     /**
      * @param array $options
@@ -63,10 +64,12 @@ class Server extends Base
 
     public function __destruct()
     {
-        if ($this->isConnected()) {
-            fclose($this->socket);
+        if ($this->connection && $this->connection->isConnected()) {
+            $this->connection->close();
         }
+
         $this->socket = null;
+        $this->connection = null;
     }
 
     public function getPort(): int
@@ -98,6 +101,7 @@ class Server extends Base
     public function accept(): bool
     {
         $this->socket = null;
+        $this->connection = null;
         return (bool)$this->listening;
     }
 
@@ -121,13 +125,16 @@ class Server extends Base
         if (!$this->socket) {
             $this->throwException("Server failed to connect. {$error}");
         }
+
+        $this->connection = new Connection($this->socket);
+
         if (isset($this->options['timeout'])) {
-            stream_set_timeout($this->socket, $this->options['timeout']);
+            $this->connection->setTimeout($this->options['timeout']);
         }
 
         $this->logger->info("Client has connected to port {port}", [
             'port' => $this->port,
-            'pier' => stream_socket_get_name($this->socket, true),
+            'pier' => $this->connection->getPier(),
         ]);
         $this->performHandshake();
     }
@@ -136,10 +143,10 @@ class Server extends Base
     {
         $request = '';
         do {
-            $buffer = stream_get_line($this->socket, 1024, "\r\n");
+            $buffer = $this->connection->getLine(1024, "\r\n");
             $request .= $buffer . "\n";
-            $metadata = stream_get_meta_data($this->socket);
-        } while (!feof($this->socket) && $metadata['unread_bytes'] > 0);
+            $metadata = $this->connection->getMeta();
+        } while (!$this->connection->eof() && $metadata['unread_bytes'] > 0);
 
         if (!preg_match('/GET (.*) HTTP\//mUi', $request, $matches)) {
             $error = "No GET in request: {$request}";

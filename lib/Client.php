@@ -25,6 +25,7 @@ class Client extends Base
     ];
 
     protected $socket_uri;
+    protected $connection;
 
     /**
      * @param string $uri     A ws/wss-URI
@@ -44,10 +45,15 @@ class Client extends Base
 
     public function __destruct()
     {
-        if ($this->isConnected() && get_resource_type($this->socket) !== 'persistent stream') {
-            fclose($this->socket);
+        if (
+            $this->connection
+            && $this->connection->isConnected()
+            && $this->connection->getType() !== 'persistent stream'
+        ) {
+            $this->connection->close();
         }
         $this->socket = null;
+        $this->connection = null;
     }
 
     /**
@@ -122,15 +128,17 @@ class Client extends Base
 
         restore_error_handler();
 
-        if (!$this->isConnected()) {
+        $this->connection = new Connection($this->socket);
+
+        if (!$this->connection->isConnected()) {
             $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }
 
-        if (!$persistent || ftell($this->socket) == 0) {
+        if (!$persistent || $this->connection->tell() == 0) {
             // Set timeout on the stream as well.
-            stream_set_timeout($this->socket, $this->options['timeout']);
+            $this->connection->setTimeout($this->options['timeout']);
 
             // Generate the WebSocket key.
             $key = self::generateKey();
@@ -175,7 +183,7 @@ class Client extends Base
             $this->write($header);
 
             // Get server response header (terminated with double CR+LF).
-            $response = stream_get_line($this->socket, 1024, "\r\n\r\n");
+            $response = $this->connection->getLine(1024, "\r\n\r\n");
 
             /// @todo Handle version switching
 

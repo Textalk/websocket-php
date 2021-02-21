@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
+ * Copyright (C) 2014-2021 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -25,7 +25,6 @@ class Client extends Base
     ];
 
     protected $socket_uri;
-    protected $connection;
 
     /**
      * @param string $uri     A ws/wss-URI
@@ -41,19 +40,6 @@ class Client extends Base
         $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
         $this->setLogger($this->options['logger']);
-    }
-
-    public function __destruct()
-    {
-        if (
-            $this->connection
-            && $this->connection->isConnected()
-            && $this->connection->getType() !== 'persistent stream'
-        ) {
-            $this->connection->close();
-        }
-        $this->socket = null;
-        $this->connection = null;
     }
 
     /**
@@ -117,7 +103,7 @@ class Client extends Base
         }, E_ALL);
 
         // Open the socket.
-        $this->socket = stream_socket_client(
+        $socket = stream_socket_client(
             "{$host_uri}:{$port}",
             $errno,
             $errstr,
@@ -128,7 +114,8 @@ class Client extends Base
 
         restore_error_handler();
 
-        $this->connection = new Connection($this->socket);
+        $this->connection = new Connection($socket, $this->options);
+        $this->connection->setLogger($this->logger);
 
         if (!$this->connection->isConnected()) {
             $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
@@ -180,7 +167,7 @@ class Client extends Base
             ) . "\r\n\r\n";
 
             // Send headers.
-            $this->write($header);
+            $this->connection->write($header);
 
             // Get server response header (terminated with double CR+LF).
             $response = $this->connection->getLine(1024, "\r\n\r\n");

@@ -71,13 +71,6 @@
         "return": "persistent stream"
     },
     {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "persistent stream"
-    },
-    {
         "function": "fclose",
         "params": [
             "@mock-stream"

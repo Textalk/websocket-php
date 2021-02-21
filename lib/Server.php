@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
+ * Copyright (C) 2014-2021 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -26,7 +26,6 @@ class Server extends Base
     protected $listening;
     protected $request;
     protected $request_path;
-    protected $connection;
 
     /**
      * @param array $options
@@ -65,10 +64,8 @@ class Server extends Base
     public function __destruct()
     {
         if ($this->connection && $this->connection->isConnected()) {
-            $this->connection->close();
+            $this->connection->disconnect();
         }
-
-        $this->socket = null;
         $this->connection = null;
     }
 
@@ -100,7 +97,6 @@ class Server extends Base
 
     public function accept(): bool
     {
-        $this->socket = null;
         $this->connection = null;
         return (bool)$this->listening;
     }
@@ -115,18 +111,19 @@ class Server extends Base
         }, E_ALL);
 
         if (isset($this->options['timeout'])) {
-            $this->socket = stream_socket_accept($this->listening, $this->options['timeout']);
+            $socket = stream_socket_accept($this->listening, $this->options['timeout']);
         } else {
-            $this->socket = stream_socket_accept($this->listening);
+            $socket = stream_socket_accept($this->listening);
         }
 
         restore_error_handler();
 
-        if (!$this->socket) {
-            $this->throwException("Server failed to connect. {$error}");
+        if (!$socket) {
+            throw new ConnectionException("Server failed to connect. {$error}");
         }
 
-        $this->connection = new Connection($this->socket);
+        $this->connection = new Connection($socket, $this->options);
+        $this->connection->setLogger($this->logger);
 
         if (isset($this->options['timeout'])) {
             $this->connection->setTimeout($this->options['timeout']);
@@ -177,7 +174,7 @@ class Server extends Base
                 . "Sec-WebSocket-Accept: $response_key\r\n"
                 . "\r\n";
 
-        $this->write($header);
+        $this->connection->write($header);
         $this->logger->debug("Handshake on {$get_uri}");
     }
 }

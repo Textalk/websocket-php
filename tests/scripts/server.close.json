@@ -5,7 +5,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": true
+        "return": "stream"
     },
     {
         "function": "get_resource_type",

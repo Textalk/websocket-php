@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014-2020 Textalk/Abicart and contributors.
+ * Copyright (C) 2014-2021 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -15,6 +15,7 @@ use WebSocket\Message\Factory;
 class Base implements LoggerAwareInterface
 {
     protected $socket;
+    protected $connection;
     protected $options = [];
     protected $is_closing = false;
     protected $last_opcode = null;
@@ -43,17 +44,14 @@ class Base implements LoggerAwareInterface
 
     public function isConnected(): bool
     {
-        return $this->socket &&
-            (get_resource_type($this->socket) == 'stream' ||
-             get_resource_type($this->socket) == 'persistent stream');
+        return $this->connection && $this->connection->isConnected();
     }
 
     public function setTimeout(int $timeout): void
     {
         $this->options['timeout'] = $timeout;
-
         if ($this->isConnected()) {
-            stream_set_timeout($this->socket, $timeout);
+            $this->connection->setTimeout($timeout);
         }
     }
 
@@ -78,6 +76,7 @@ class Base implements LoggerAwareInterface
         if (!$this->isConnected()) {
             $this->connect();
         }
+        //$this->connection->send($payload, $opcode, $masked);
 
         if (!in_array($opcode, array_keys(self::$opcodes))) {
             $warning = "Bad opcode '{$opcode}'.  Try 'text' or 'binary'.";
@@ -92,7 +91,7 @@ class Base implements LoggerAwareInterface
             $chunk = $payload_chunks[$index];
             $final = $index == count($payload_chunks) - 1;
 
-            $this->sendFragment($final, $chunk, $frame_opcode, $masked);
+            $this->connection->pushFrame([$final, $chunk, $frame_opcode, $masked]);
 
             // all fragments after the first will be marked a continuation
             $frame_opcode = 'continuation';
@@ -147,7 +146,7 @@ class Base implements LoggerAwareInterface
      */
     public function getName(): ?string
     {
-        return $this->isConnected() ? stream_socket_get_name($this->socket, false) : null;
+        return $this->isConnected() ? $this->connection->getName() : null;
     }
 
     /**
@@ -156,7 +155,7 @@ class Base implements LoggerAwareInterface
      */
     public function getPier(): ?string
     {
-        return $this->isConnected() ? stream_socket_get_name($this->socket, true) : null;
+        return $this->isConnected() ? $this->connection->getPier() : null;
     }
 
     /**
@@ -172,55 +171,6 @@ class Base implements LoggerAwareInterface
         );
     }
 
-    /**
-     * Receive one message.
-     * Will continue reading until read message match filter settings.
-     * Return Message instance or string according to settings.
-     */
-    protected function sendFragment(bool $final, string $payload, string $opcode, bool $masked): void
-    {
-        $data = '';
-
-        $byte_1 = $final ? 0b10000000 : 0b00000000; // Final fragment marker.
-        $byte_1 |= self::$opcodes[$opcode]; // Set opcode.
-        $data .= pack('C', $byte_1);
-
-        $byte_2 = $masked ? 0b10000000 : 0b00000000; // Masking bit marker.
-
-        // 7 bits of payload length...
-        $payload_length = strlen($payload);
-        if ($payload_length > 65535) {
-            $data .= pack('C', $byte_2 | 0b01111111);
-            $data .= pack('J', $payload_length);
-        } elseif ($payload_length > 125) {
-            $data .= pack('C', $byte_2 | 0b01111110);
-            $data .= pack('n', $payload_length);
-        } else {
-            $data .= pack('C', $byte_2 | $payload_length);
-        }
-
-        // Handle masking
-        if ($masked) {
-            // generate a random mask:
-            $mask = '';
-            for ($i = 0; $i < 4; $i++) {
-                $mask .= chr(rand(0, 255));
-            }
-            $data .= $mask;
-        }
-
-        // Append payload to frame:
-        for ($i = 0; $i < $payload_length; $i++) {
-            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
-        }
-        $this->write($data);
-        $this->logger->debug("Sent '{$opcode}' frame", [
-            'opcode' => $opcode,
-            'final' => $final,
-            'content-length' => strlen($payload),
-        ]);
-    }
-
     public function receive()
     {
         $filter = $this->options['filter'];
@@ -229,8 +179,10 @@ class Base implements LoggerAwareInterface
         }
 
         do {
+            //$response = $this->connection->pullFrame();
             $response = $this->receiveFragment();
             list ($payload, $final, $opcode) = $response;
+            //$this->connection->autoRespond($response, $this->is_closing);
 
             // Continuation and factual opcode
             $continuation = ($opcode == 'continuation');
@@ -280,59 +232,13 @@ class Base implements LoggerAwareInterface
 
     protected function receiveFragment(): array
     {
-        // Read the fragment "header" first, two bytes.
-        $data = $this->read(2);
-        list ($byte_1, $byte_2) = array_values(unpack('C*', $data));
+        $frame = $this->connection->pullFrame();
+        list ($final, $payload, $opcode, $masked) = $frame;
+        $payload_length = strlen($payload);
 
-        $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
-        $rsv = $byte_1 & 0b01110000; // Unused bits, ignore
-
-        // Parse opcode
-        $opcode_int = $byte_1 & 0b00001111;
-        $opcode_ints = array_flip(self::$opcodes);
-        if (!array_key_exists($opcode_int, $opcode_ints)) {
-            $warning = "Bad opcode in websocket frame: {$opcode_int}";
-            $this->logger->warning($warning);
-            throw new ConnectionException($warning, ConnectionException::BAD_OPCODE);
-        }
-        $opcode = $opcode_ints[$opcode_int];
-
-        // Masking bit
-        $mask = (bool)($byte_2 & 0b10000000);
-
-        $payload = '';
-
-        // Payload length
-        $payload_length = $byte_2 & 0b01111111;
-
-        if ($payload_length > 125) {
-            if ($payload_length === 126) {
-                $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
-                $payload_length = current(unpack('n', $data));
-            } else {
-                $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
-                $payload_length = current(unpack('J', $data));
-            }
-        }
-
-        // Get masking key.
-        if ($mask) {
-            $masking_key = $this->read(4);
-        }
-
-        // Get the actual payload, if any (might not be for e.g. close frames.
-        if ($payload_length > 0) {
-            $data = $this->read($payload_length);
-
-            if ($mask) {
-                // Unmask payload.
-                for ($i = 0; $i < $payload_length; $i++) {
-                    $payload .= ($data[$i] ^ $masking_key[$i % 4]);
-                }
-            } else {
-                $payload = $data;
-            }
-        }
+//        $this->close_status = $this->connection->autoRespond($frame, $this->is_closing);
+//        $this->is_closing = false;
+//        return $frame;
 
         $this->logger->debug("Read '{opcode}' frame", [
             'opcode' => $opcode,
@@ -340,51 +246,47 @@ class Base implements LoggerAwareInterface
             'content-length' => strlen($payload),
         ]);
 
-        // if we received a ping, send a pong and wait for the next message
-        if ($opcode === 'ping') {
-            $this->logger->debug("Received 'ping', sending 'pong'.");
-            $this->send($payload, 'pong', true);
-            return [$payload, true, $opcode];
+        switch ($opcode) {
+            case 'ping':
+                // If we received a ping, respond with a pong
+                $this->logger->debug("Received 'ping', sending 'pong'.");
+                $this->connection->pushFrame([true, $payload, 'pong', $masked]);
+                return [$payload, true, $opcode];
+            case 'close':
+                // If we received close, possibly acknowledge and close connection
+                $status_bin = '';
+                $status = '';
+                // Get the close status.
+                $status_bin = '';
+                $status = '';
+                if ($payload_length > 0) {
+                    $status_bin = $payload[0] . $payload[1];
+                    $status = current(unpack('n', $payload));
+                    $this->close_status = $status;
+                }
+                // Get additional close message
+                if ($payload_length >= 2) {
+                    $payload = substr($payload, 2);
+                }
+
+                $this->logger->debug("[connection] Received 'close', status: {$this->close_status}.");
+
+                if ($this->is_closing) {
+                    $this->is_closing = false; // A close response, all done.
+                } else {
+                    $ack =  "{$status_bin}Close acknowledged: {$status}";
+                    $this->connection->pushFrame([true, $ack, 'close', $masked]);
+                }
+
+                // Close the socket.
+                $this->connection->disconnect();
+                $this->connection = null;
+
+                // Closing should not return message.
+                return [$payload, true, $opcode];
+            default:
+                return [$payload, $final, $opcode];
         }
-
-        // if we received a pong, wait for the next message
-        if ($opcode === 'pong') {
-            $this->logger->debug("Received 'pong'.");
-            return [$payload, true, $opcode];
-        }
-
-        if ($opcode === 'close') {
-            $status_bin = '';
-            $status = '';
-            // Get the close status.
-            $status_bin = '';
-            $status = '';
-            if ($payload_length > 0) {
-                $status_bin = $payload[0] . $payload[1];
-                $status = current(unpack('n', $payload));
-                $this->close_status = $status;
-            }
-            // Get additional close message
-            if ($payload_length >= 2) {
-                $payload = substr($payload, 2);
-            }
-
-            $this->logger->debug("Received 'close', status: {$this->close_status}.");
-
-            if ($this->is_closing) {
-                $this->is_closing = false; // A close response, all done.
-            } else {
-                $this->send($status_bin . 'Close acknowledged: ' . $status, 'close', true); // Respond.
-            }
-
-            // Close the socket.
-            fclose($this->socket);
-
-            // Closing should not return message.
-            return [$payload, true, $opcode];
-        }
-
-        return [$payload, $final, $opcode];
     }
 
     /**
@@ -398,12 +300,19 @@ class Base implements LoggerAwareInterface
         if (!$this->isConnected()) {
             return;
         }
+        //$this->connection->close($status, $message, $this);
+
+
         $status_binstr = sprintf('%016b', $status);
         $status_str = '';
         foreach (str_split($status_binstr, 8) as $binstr) {
             $status_str .= chr(bindec($binstr));
         }
-        $this->send($status_str . $message, 'close', true);
+if (!$this->isConnected()) {
+            $this->connect();
+        }
+        $this->connection->pushFrame([true, $status_str . $message, 'close', true]);
+//        $this->send($status_str . $message, 'close', true);
         $this->logger->debug("Closing with status: {$status_str}.");
 
         $this->is_closing = true;
@@ -416,60 +325,8 @@ class Base implements LoggerAwareInterface
     public function disconnect(): void
     {
         if ($this->isConnected()) {
-            fclose($this->socket);
-            $this->socket = null;
+            $this->connection->disconnect();
         }
-    }
-
-    protected function write(string $data): void
-    {
-        $length = strlen($data);
-        $written = @fwrite($this->socket, $data);
-        if ($written === false) {
-            $this->throwException("Failed to write {$length} bytes.");
-        }
-        if ($written < strlen($data)) {
-            $this->throwException("Could only write {$written} out of {$length} bytes.");
-        }
-        $this->logger->debug("Wrote {$written} of {$length} bytes.");
-    }
-
-    protected function read(string $length): string
-    {
-        $data = '';
-        while (strlen($data) < $length) {
-            $buffer = @fread($this->socket, $length - strlen($data));
-            if ($buffer === false) {
-                $read = strlen($data);
-                $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");
-            }
-            if ($buffer === '') {
-                $this->throwException("Empty read; connection dead?");
-            }
-            $data .= $buffer;
-            $read = strlen($data);
-            $this->logger->debug("Read {$read} of {$length} bytes.");
-        }
-        return $data;
-    }
-
-    protected function throwException(string $message, int $code = 0): void
-    {
-        $meta = ['closed' => true];
-        if ($this->isConnected()) {
-            $meta = stream_get_meta_data($this->socket);
-            fclose($this->socket);
-            $this->socket = null;
-        }
-        $json_meta = json_encode($meta);
-        if (!empty($meta['timed_out'])) {
-            $this->logger->error($message, $meta);
-            throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
-        }
-        if (!empty($meta['eof'])) {
-            $code = ConnectionException::EOF;
-        }
-        $this->logger->error($message, $meta);
-        throw new ConnectionException($message, $code, $meta);
+        $this->connection = null;
     }
 }

@@ -107,13 +107,6 @@
         "return": [247, 33, 169, 172, 218, 57, 224, 185, 221, 35, 167]
     },
     {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "stream"
-    },
-    {
         "function": "fwrite",
         "params": [
             "@mock-stream"

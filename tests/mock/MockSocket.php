@@ -17,6 +17,7 @@ class MockSocket
     public static function handle($function, $params = [])
     {
         $current = array_shift(self::$queue);
+echo "$function > ".json_encode($current)."\n";
         if ($function == 'get_resource_type' && is_null($current)) {
             return null; // Catch destructors
         }
@@ -46,6 +47,7 @@ class MockSocket
     // Initialize call queue
     public static function initialize($op_file, $asserter): void
     {
+echo " --------- $op_file ------------- \n";
         $file = dirname(__DIR__) . "/scripts/{$op_file}.json";
         self::$queue = json_decode(file_get_contents($file), true);
         self::$asserter = $asserter;

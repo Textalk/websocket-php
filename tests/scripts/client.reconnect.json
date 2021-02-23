@@ -1,5 +1,19 @@
 [
     {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "unknown"
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": "unknown"
+    },
+    {
         "function": "stream_context_create",
         "params": [],
         "return": "@mock-stream-context"

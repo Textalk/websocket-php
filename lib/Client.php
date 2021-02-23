@@ -47,6 +47,8 @@ class Client extends Base
      */
     protected function connect(): void
     {
+        $this->connection = null;
+
         $url_parts = parse_url($this->socket_uri);
         if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
             $error = "Invalid url '{$this->socket_uri}' provided.";

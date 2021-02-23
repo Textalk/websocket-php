@@ -27,6 +27,9 @@ class Connection implements LoggerAwareInterface
     private $read_buffer;
     private $options = [];
 
+    protected $is_closing = false;
+    protected $close_status = null;
+
     private $uid;
 
     /* ---------- Construct & Destruct ----------------------------------------------- */
@@ -48,6 +51,25 @@ class Connection implements LoggerAwareInterface
         }
     }
 
+    /**
+     * Get string representation of instance
+     * @return string String representation
+     */
+    public function __toString(): string
+    {
+        return sprintf(
+            "%s(%s)",
+            get_class($this),
+            'closed'
+        );
+    }
+
+
+
+    public function getCloseStatus(): ?int
+    {
+        return $this->close_status;
+    }
 
     public function send(string $payload, string $opcode = 'text', bool $masked = true): void
     {
@@ -85,17 +107,21 @@ class Connection implements LoggerAwareInterface
      */
     public function close(int $status = 1000, string $message = 'ttfn', $c): void
     {
+        echo "Connection.close {$this->uid}\n";
+        if (!$this->isConnected()) {
+            return;
+        }
         $status_binstr = sprintf('%016b', $status);
         $status_str = '';
         foreach (str_split($status_binstr, 8) as $binstr) {
             $status_str .= chr(bindec($binstr));
         }
-        $c->send($status_str . $message, 'close', true);
-//        $this->pushFrame([true, $status_str . $message, 'close', true]);
+        $this->pushFrame([true, $status_str . $message, 'close', true]);
         $this->logger->debug("Closing with status: {$status_str}.");
 
         $this->is_closing = true;
-        $c->receive(); // Receiving a close frame will close the socket now.
+        $frame = $this->pullFrame();
+        $this->autoRespond($frame);
     }
 
 
@@ -212,7 +238,7 @@ class Connection implements LoggerAwareInterface
     }
 
     // Trigger auto response for frame
-    public function autoRespond(array $frame, bool $is_closing)
+    public function autoRespond(array $frame)
     {
         list ($final, $payload, $opcode, $masked) = $frame;
         $payload_length = strlen($payload);
@@ -222,34 +248,32 @@ class Connection implements LoggerAwareInterface
                 // If we received a ping, respond with a pong
                 $this->logger->debug("[connection] Received 'ping', sending 'pong'.");
                 $this->pushFrame([true, $payload, 'pong', $masked]);
-                return null;
+                return [$final, $payload, $opcode, $masked];
             case 'close':
                 // If we received close, possibly acknowledge and close connection
-                $status_bin = '';
-                $status = '';
-                // Get the close status.
                 $status_bin = '';
                 $status = '';
                 if ($payload_length > 0) {
                     $status_bin = $payload[0] . $payload[1];
                     $status = current(unpack('n', $payload));
-                    $close_status = $status;
+                    $this->close_status = $status;
                 }
                 // Get additional close message
                 if ($payload_length >= 2) {
                     $payload = substr($payload, 2);
                 }
-                $this->logger->debug("[connection] Received 'close', status: {$close_status}.");
-                if (!$is_closing) {
-                    $ack =  "{$status_bin} Close acknowledged: {$status}";
+
+                $this->logger->debug("[connection] Received 'close', status: {$status}.");
+                if (!$this->is_closing) {
+                    $ack =  "{$status_bin}Close acknowledged: {$status}";
                     $this->pushFrame([true, $ack, 'close', $masked]);
                 } else {
-                    $is_closing = false; // A close response, all done.
+                    $this->is_closing = false; // A close response, all done.
                 }
                 $this->disconnect();
-                return [$is_closing, $close_status];
+                return [$final, $payload, $opcode, $masked];
             default:
-                return null; // No auto response
+                return [$final, $payload, $opcode, $masked];
         }
     }
 

@@ -14,12 +14,9 @@ use WebSocket\Message\Factory;
 
 class Base implements LoggerAwareInterface
 {
-    protected $socket;
     protected $connection;
     protected $options = [];
-    protected $is_closing = false;
     protected $last_opcode = null;
-    protected $close_status = null;
     protected $logger;
     private $read_buffer;
 
@@ -39,7 +36,7 @@ class Base implements LoggerAwareInterface
 
     public function getCloseStatus(): ?int
     {
-        return $this->close_status;
+        return $this->connection ? $this->connection->getCloseStatus() : null;
     }
 
     public function isConnected(): bool
@@ -179,10 +176,9 @@ class Base implements LoggerAwareInterface
         }
 
         do {
-            //$response = $this->connection->pullFrame();
-            $response = $this->receiveFragment();
-            list ($payload, $final, $opcode) = $response;
-            //$this->connection->autoRespond($response, $this->is_closing);
+            $frame = $this->connection->pullFrame();
+            $frame = $this->connection->autoRespond($frame);
+            list ($final, $payload, $opcode, $masked) = $frame;
 
             // Continuation and factual opcode
             $continuation = ($opcode == 'continuation');
@@ -230,65 +226,6 @@ class Base implements LoggerAwareInterface
             : $payload;
     }
 
-    protected function receiveFragment(): array
-    {
-        $frame = $this->connection->pullFrame();
-        list ($final, $payload, $opcode, $masked) = $frame;
-        $payload_length = strlen($payload);
-
-//        $this->close_status = $this->connection->autoRespond($frame, $this->is_closing);
-//        $this->is_closing = false;
-//        return $frame;
-
-        $this->logger->debug("Read '{opcode}' frame", [
-            'opcode' => $opcode,
-            'final' => $final,
-            'content-length' => strlen($payload),
-        ]);
-
-        switch ($opcode) {
-            case 'ping':
-                // If we received a ping, respond with a pong
-                $this->logger->debug("Received 'ping', sending 'pong'.");
-                $this->connection->pushFrame([true, $payload, 'pong', $masked]);
-                return [$payload, true, $opcode];
-            case 'close':
-                // If we received close, possibly acknowledge and close connection
-                $status_bin = '';
-                $status = '';
-                // Get the close status.
-                $status_bin = '';
-                $status = '';
-                if ($payload_length > 0) {
-                    $status_bin = $payload[0] . $payload[1];
-                    $status = current(unpack('n', $payload));
-                    $this->close_status = $status;
-                }
-                // Get additional close message
-                if ($payload_length >= 2) {
-                    $payload = substr($payload, 2);
-                }
-
-                $this->logger->debug("[connection] Received 'close', status: {$this->close_status}.");
-
-                if ($this->is_closing) {
-                    $this->is_closing = false; // A close response, all done.
-                } else {
-                    $ack =  "{$status_bin}Close acknowledged: {$status}";
-                    $this->connection->pushFrame([true, $ack, 'close', $masked]);
-                }
-
-                // Close the socket.
-                $this->connection->disconnect();
-                $this->connection = null;
-
-                // Closing should not return message.
-                return [$payload, true, $opcode];
-            default:
-                return [$payload, $final, $opcode];
-        }
-    }
-
     /**
      * Tell the socket to close.
      *
@@ -300,23 +237,7 @@ class Base implements LoggerAwareInterface
         if (!$this->isConnected()) {
             return;
         }
-        //$this->connection->close($status, $message, $this);
-
-
-        $status_binstr = sprintf('%016b', $status);
-        $status_str = '';
-        foreach (str_split($status_binstr, 8) as $binstr) {
-            $status_str .= chr(bindec($binstr));
-        }
-if (!$this->isConnected()) {
-            $this->connect();
-        }
-        $this->connection->pushFrame([true, $status_str . $message, 'close', true]);
-//        $this->send($status_str . $message, 'close', true);
-        $this->logger->debug("Closing with status: {$status_str}.");
-
-        $this->is_closing = true;
-        $this->receive(); // Receiving a close frame will close the socket now.
+        $this->connection->close($status, $message, $this);
     }
 
     /**
@@ -327,6 +248,5 @@ if (!$this->isConnected()) {
         if ($this->isConnected()) {
             $this->connection->disconnect();
         }
-        $this->connection = null;
     }
 }

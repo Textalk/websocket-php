@@ -23,7 +23,6 @@ class ServerTest extends TestCase
     {
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
-$server->setLogger(new EchoLog());
         $this->assertTrue(MockSocket::isEmpty());
         MockSocket::initialize('server.accept', $this);
         $server->accept();

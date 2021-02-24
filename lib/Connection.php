@@ -36,7 +36,7 @@ class Connection implements LoggerAwareInterface
 
     public function __construct($stream, array $options = [])
     {
-      $this->uid = rand(100, 999);
+        $this->uid = rand(100, 999);
         echo "Connection.__construct {$this->uid}\n";
         $this->stream = $stream;
         $this->options = $options;
@@ -105,7 +105,7 @@ class Connection implements LoggerAwareInterface
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
      * @param string  $message A closing message, max 125 bytes.
      */
-    public function close(int $status = 1000, string $message = 'ttfn', $c): void
+    public function close(int $status = 1000, string $message = 'ttfn'): void
     {
         echo "Connection.close {$this->uid}\n";
         if (!$this->isConnected()) {

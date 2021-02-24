@@ -237,7 +237,7 @@ class Base implements LoggerAwareInterface
         if (!$this->isConnected()) {
             return;
         }
-        $this->connection->close($status, $message, $this);
+        $this->connection->close($status, $message);
     }
 
     /**

@@ -207,12 +207,15 @@ class Base implements LoggerAwareInterface
                 $mask .= chr(rand(0, 255));
             }
             $data .= $mask;
+
+            // Append payload to frame:
+            for ($i = 0; $i < $payload_length; $i++) {
+                $data .= $payload[$i] ^ $mask[$i % 4];
+            }
+        } else {
+            $data .= $payload;
         }
 
-        // Append payload to frame:
-        for ($i = 0; $i < $payload_length; $i++) {
-            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
-        }
         $this->write($data);
         $this->logger->debug("Sent '{$opcode}' frame", [
             'opcode' => $opcode,

@@ -49,12 +49,16 @@ class Base implements LoggerAwareInterface
         $this->options['timeout'] = $timeout;
         if ($this->isConnected()) {
             $this->connection->setTimeout($timeout);
+            $this->connection->setOptions($this->options);
         }
     }
 
     public function setFragmentSize(int $fragment_size): self
     {
         $this->options['fragment_size'] = $fragment_size;
+        if ($this->connection) {
+            $this->connection->setOptions($this->options);
+        }
         return $this;
     }
 
@@ -73,7 +77,6 @@ class Base implements LoggerAwareInterface
         if (!$this->isConnected()) {
             $this->connect();
         }
-        //$this->connection->send($payload, $opcode, $masked);
 
         if (!in_array($opcode, array_keys(self::$opcodes))) {
             $warning = "Bad opcode '{$opcode}'.  Try 'text' or 'binary'.";
@@ -81,24 +84,9 @@ class Base implements LoggerAwareInterface
             throw new BadOpcodeException($warning);
         }
 
-        $payload_chunks = str_split($payload, $this->options['fragment_size']);
-        $frame_opcode = $opcode;
-
-        for ($index = 0; $index < count($payload_chunks); ++$index) {
-            $chunk = $payload_chunks[$index];
-            $final = $index == count($payload_chunks) - 1;
-
-            $this->connection->pushFrame([$final, $chunk, $frame_opcode, $masked]);
-
-            // all fragments after the first will be marked a continuation
-            $frame_opcode = 'continuation';
-        }
-
-        $this->logger->info("Sent '{$opcode}' message", [
-            'opcode' => $opcode,
-            'content-length' => strlen($payload),
-            'frames' => count($payload_chunks),
-        ]);
+        $factory = new Factory();
+        $message = $factory->create($opcode, $payload);
+        $this->connection->pushMessage($message, $masked);
     }
 
     /**
@@ -171,59 +159,24 @@ class Base implements LoggerAwareInterface
     public function receive()
     {
         $filter = $this->options['filter'];
+        $return_obj = $this->options['return_obj'];
+
         if (!$this->isConnected()) {
             $this->connect();
         }
 
         do {
-            $frame = $this->connection->pullFrame();
-            $frame = $this->connection->autoRespond($frame);
-            list ($final, $payload, $opcode, $masked) = $frame;
+            $message = $this->connection->pullMessage();
+            $opcode = $message->getOpcode();
 
-            // Continuation and factual opcode
-            $continuation = ($opcode == 'continuation');
-            $payload_opcode = $continuation ? $this->read_buffer['opcode'] : $opcode;
-
-            // Filter frames
-            if (!in_array($payload_opcode, $filter)) {
-                if ($payload_opcode == 'close') {
-                    return null; // Always abort receive on close
-                }
-                $final = false;
-                continue; // Continue reading
+            if (in_array($opcode, $filter)) {
+                $this->last_opcode = $opcode;
+                return $return_obj ? $message : $message->getContent();
+            } elseif ($opcode == 'close') {
+                $this->last_opcode = null;
+                return $return_obj ? $message : null;
             }
-
-            // First continuation frame, create buffer
-            if (!$final && !$continuation) {
-                $this->read_buffer = ['opcode' => $opcode, 'payload' => $payload, 'frames' => 1];
-                continue; // Continue reading
-            }
-
-            // Subsequent continuation frames, add to buffer
-            if ($continuation) {
-                $this->read_buffer['payload'] .= $payload;
-                $this->read_buffer['frames']++;
-            }
-        } while (!$final);
-
-        // Final, return payload
-        $frames = 1;
-        if ($continuation) {
-            $payload = $this->read_buffer['payload'];
-            $frames = $this->read_buffer['frames'];
-            $this->read_buffer = null;
-        }
-        $this->logger->info("Received '{opcode}' message", [
-            'opcode' => $payload_opcode,
-            'content-length' => strlen($payload),
-            'frames' => $frames,
-        ]);
-
-        $this->last_opcode = $payload_opcode;
-        $factory = new Factory();
-        return $this->options['return_obj']
-            ? $factory->create($payload_opcode, $payload)
-            : $payload;
+        } while (true);
     }
 
     /**

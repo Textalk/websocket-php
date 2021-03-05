@@ -10,6 +10,7 @@
 namespace WebSocket;
 
 use Psr\Log\{LoggerAwareInterface, LoggerInterface, NullLogger};
+use WebSocket\Message\{Factory, Message};
 
 class Connection implements LoggerAwareInterface
 {
@@ -36,16 +37,13 @@ class Connection implements LoggerAwareInterface
 
     public function __construct($stream, array $options = [])
     {
-        $this->uid = rand(100, 999);
-        echo "Connection.__construct {$this->uid}\n";
         $this->stream = $stream;
-        $this->options = $options;
+        $this->setOptions($options);
         $this->logger = new NullLogger();
     }
 
     public function __destruct()
     {
-        echo "Connection.__destruct {$this->uid}\n";
         if ($this->getType() === 'stream') {
             fclose($this->stream);
         }
@@ -64,39 +62,14 @@ class Connection implements LoggerAwareInterface
         );
     }
 
-
+    public function setOptions(array $options = []): void
+    {
+        $this->options = array_merge($this->options, $options);
+    }
 
     public function getCloseStatus(): ?int
     {
         return $this->close_status;
-    }
-
-    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
-    {
-        if (!in_array($opcode, array_keys(self::$opcodes))) {
-            $warning = "Bad opcode '{$opcode}'.  Try 'text' or 'binary'.";
-            $this->logger->warning($warning);
-            throw new BadOpcodeException($warning);
-        }
-
-        $payload_chunks = str_split($payload, $this->options['fragment_size']);
-        $frame_opcode = $opcode;
-
-        for ($index = 0; $index < count($payload_chunks); ++$index) {
-            $chunk = $payload_chunks[$index];
-            $final = $index == count($payload_chunks) - 1;
-
-            $this->pushFrame([$final, $chunk, $frame_opcode, $masked]);
-
-            // all fragments after the first will be marked a continuation
-            $frame_opcode = 'continuation';
-        }
-
-        $this->logger->info("Sent '{$opcode}' message", [
-            'opcode' => $opcode,
-            'content-length' => strlen($payload),
-            'frames' => count($payload_chunks),
-        ]);
     }
 
     /**
@@ -107,7 +80,6 @@ class Connection implements LoggerAwareInterface
      */
     public function close(int $status = 1000, string $message = 'ttfn'): void
     {
-        echo "Connection.close {$this->uid}\n";
         if (!$this->isConnected()) {
             return;
         }
@@ -122,6 +94,72 @@ class Connection implements LoggerAwareInterface
         $this->is_closing = true;
         $frame = $this->pullFrame();
         $this->autoRespond($frame);
+    }
+
+
+    /* ---------- Message methods ---------------------------------------------------- */
+
+    // Push a message to stream
+    public function pushMessage(Message $message, bool $masked = true): void
+    {
+        $frames = $message->getFrames($masked, $this->options['fragment_size']);
+        foreach ($frames as $frame) {
+            $this->pushFrame($frame);
+        }
+        $this->logger->info("[connection] Pushed {$message}", [
+            'opcode' => $message->getOpcode(),
+            'content-length' => $message->getLength(),
+            'frames' => count($frames),
+        ]);
+    }
+
+    // Pull a message from stream
+    public function pullMessage(): Message
+    {
+        do {
+            $frame = $this->pullFrame();
+            $frame = $this->autoRespond($frame);
+            list ($final, $payload, $opcode, $masked) = $frame;
+
+            if ($opcode == 'close') {
+                $this->close();
+            }
+
+            // Continuation and factual opcode
+            $continuation = $opcode == 'continuation';
+            $payload_opcode = $continuation ? $this->read_buffer['opcode'] : $opcode;
+
+            // First continuation frame, create buffer
+            if (!$final && !$continuation) {
+                $this->read_buffer = ['opcode' => $opcode, 'payload' => $payload, 'frames' => 1];
+                continue; // Continue reading
+            }
+
+            // Subsequent continuation frames, add to buffer
+            if ($continuation) {
+                $this->read_buffer['payload'] .= $payload;
+                $this->read_buffer['frames']++;
+            }
+        } while (!$final);
+
+        // Final, return payload
+        $frames = 1;
+        if ($continuation) {
+            $payload = $this->read_buffer['payload'];
+            $frames = $this->read_buffer['frames'];
+            $this->read_buffer = null;
+        }
+
+        $factory = new Factory();
+        $message = $factory->create($payload_opcode, $payload);
+
+        $this->logger->info("[connection] Pulled {$message}", [
+            'opcode' => $payload_opcode,
+            'content-length' => strlen($payload),
+            'frames' => $frames,
+        ]);
+
+        return $message;
     }
 
 
@@ -192,11 +230,10 @@ class Connection implements LoggerAwareInterface
     }
 
     // Push frame to stream
-    public function pushFrame(array $frame): void
+    private function pushFrame(array $frame): void
     {
         list ($final, $payload, $opcode, $masked) = $frame;
         $data = '';
-
         $byte_1 = $final ? 0b10000000 : 0b00000000; // Final fragment marker.
         $byte_1 |= self::$opcodes[$opcode]; // Set opcode.
         $data .= pack('C', $byte_1);
@@ -223,13 +260,17 @@ class Connection implements LoggerAwareInterface
                 $mask .= chr(rand(0, 255));
             }
             $data .= $mask;
+
+            // Append payload to frame:
+            for ($i = 0; $i < $payload_length; $i++) {
+                $data .= $payload[$i] ^ $mask[$i % 4];
+            }
+        } else {
+            $data .= $payload;
         }
 
-        // Append payload to frame:
-        for ($i = 0; $i < $payload_length; $i++) {
-            $data .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i];
-        }
         $this->write($data);
+
         $this->logger->debug("[connection] Pushed '{$opcode}' frame", [
             'opcode' => $opcode,
             'final' => $final,
@@ -286,7 +327,6 @@ class Connection implements LoggerAwareInterface
      */
     public function disconnect(): bool
     {
-        echo "Connection.disconnect {$this->uid}\n";
         $this->logger->debug('Closing connection');
         return fclose($this->stream);
     }
@@ -297,7 +337,6 @@ class Connection implements LoggerAwareInterface
      */
     public function isConnected(): bool
     {
-        echo "Connection.isConnected {$this->uid} \n";
         return in_array($this->getType(), ['stream', 'persistent stream']);
     }
 
@@ -307,7 +346,6 @@ class Connection implements LoggerAwareInterface
      */
     public function getType(): ?string
     {
-        echo "Connection.getType {$this->uid} \n";
         return get_resource_type($this->stream);
     }
 
@@ -452,7 +490,7 @@ class Connection implements LoggerAwareInterface
 
     /* ---------- Internal helper methods -------------------------------------------- */
 
-    protected function throwException(string $message, int $code = 0): void
+    private function throwException(string $message, int $code = 0): void
     {
         $meta = ['closed' => true];
         if ($this->isConnected()) {

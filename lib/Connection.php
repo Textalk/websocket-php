@@ -49,19 +49,6 @@ class Connection implements LoggerAwareInterface
         }
     }
 
-    /**
-     * Get string representation of instance
-     * @return string String representation
-     */
-    public function __toString(): string
-    {
-        return sprintf(
-            "%s(%s)",
-            get_class($this),
-            'closed'
-        );
-    }
-
     public function setOptions(array $options = []): void
     {
         $this->options = array_merge($this->options, $options);
@@ -98,7 +85,7 @@ class Connection implements LoggerAwareInterface
         while (true) {
             $message = $this->pullMessage();
             if ($message->getOpcode() == 'close') {
-                return;
+                break;
             }
         }
     }

@@ -165,18 +165,20 @@ class Base implements LoggerAwareInterface
             $this->connect();
         }
 
-        do {
+        while (true) {
             $message = $this->connection->pullMessage();
             $opcode = $message->getOpcode();
-
             if (in_array($opcode, $filter)) {
                 $this->last_opcode = $opcode;
-                return $return_obj ? $message : $message->getContent();
+                $return = $return_obj ? $message : $message->getContent();
+                break;
             } elseif ($opcode == 'close') {
                 $this->last_opcode = null;
-                return $return_obj ? $message : null;
+                $return = $return_obj ? $message : null;
+                break;
             }
-        } while (true);
+        }
+        return $return;
     }
 
     /**

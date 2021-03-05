@@ -226,6 +226,15 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testFailedPersistentConnection(): void
+    {
+        MockSocket::initialize('client.connect-persistent-failure', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['persistent' => true]);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionMessage('Could not resolve stream pointer position');
+        $client->send('Connect');
+    }
+
     public function testBadScheme(): void
     {
         MockSocket::initialize('client.connect', $this);
@@ -270,6 +279,26 @@ class ClientTest extends TestCase
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('Could not open socket to "localhost:8000"');
+        $client->send('Connect');
+    }
+
+    public function testBadStreamConnection(): void
+    {
+        MockSocket::initialize('client.connect-bad-stream', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Invalid stream on "localhost:8000"');
+        $client->send('Connect');
+    }
+
+    public function testHandshakeFailure(): void
+    {
+        MockSocket::initialize('client.connect-handshake-failure', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not read from stream');
         $client->send('Connect');
     }
 

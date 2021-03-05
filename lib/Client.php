@@ -126,7 +126,7 @@ class Client extends Base
         $this->connection->setLogger($this->logger);
 
         if (!$this->isConnected()) {
-            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
+            $error = "Invalid stream on \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }

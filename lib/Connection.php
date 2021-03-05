@@ -92,11 +92,15 @@ class Connection implements LoggerAwareInterface
         $message = $factory->create('close', $status_str . $message);
         $this->pushMessage($message, true);
 
-        $this->logger->debug("Closing with status: {$status_str}.");
+        $this->logger->debug("Closing with status: {$status}.");
 
         $this->is_closing = true;
-        $frame = $this->pullFrame();
-        $this->autoRespond($frame);
+        while (true) {
+            $message = $this->pullMessage();
+            if ($message->getOpcode() == 'close') {
+                return;
+            }
+        }
     }
 
 

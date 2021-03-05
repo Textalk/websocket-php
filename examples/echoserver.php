@@ -16,7 +16,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 error_reporting(-1);
 
-echo "> Random server\n";
+echo "> Echo server\n";
 
 // Server options specified or random
 $options = array_merge([

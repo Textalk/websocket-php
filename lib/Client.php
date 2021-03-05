@@ -116,10 +116,16 @@ class Client extends Base
 
         restore_error_handler();
 
+        if (!$socket) {
+            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
+            $this->logger->error($error);
+            throw new ConnectionException($error);
+        }
+
         $this->connection = new Connection($socket, $this->options);
         $this->connection->setLogger($this->logger);
 
-        if (!$this->connection->isConnected()) {
+        if (!$this->isConnected()) {
             $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);

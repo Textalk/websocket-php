@@ -137,12 +137,21 @@ class Base implements LoggerAwareInterface
     /**
      * Get name of remote socket, or null if not connected
      * @return string|null
+     * @deprecated Will be removed in future version, use getPeer() instead
      */
     public function getPier(): ?string
     {
-        return $this->isConnected() ? $this->connection->getPier() : null;
+        return $this->getPeer();
     }
 
+    /**
+     * Get name of remote socket, or null if not connected
+     * @return string|null
+     */
+    public function getPeer(): ?string
+    {
+        return $this->isConnected() ? $this->connection->getPeer() : null;
+    }
     /**
      * Get string representation of instance
      * @return string String representation

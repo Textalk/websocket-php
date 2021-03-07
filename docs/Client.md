@@ -23,7 +23,7 @@ WebSocket\Client {
     public close(int $status = 1000, mixed $message = 'ttfn') : mixed
 
     public getName() : string|null
-    public getPier() : string|null
+    public getPeer() : string|null
     public getLastOpcode() : string
     public getCloseStatus() : int
     public isConnected() : bool

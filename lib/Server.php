@@ -9,6 +9,9 @@
 
 namespace WebSocket;
 
+use Closure;
+use Throwable;
+
 class Server extends Base
 {
     // Default options
@@ -26,6 +29,7 @@ class Server extends Base
     protected $listening;
     protected $request;
     protected $request_path;
+    private $connectors = [];
 
     /**
      * @param array $options
@@ -101,9 +105,86 @@ class Server extends Base
         return (bool)$this->listening;
     }
 
+    /**
+     * Set server to listen to incoming requests.
+     * @param Closure A callback function that will be called when server receives message.
+     *   function (Message $message, Connection $connection = null)
+     *   If callback function returns not null value, the listener will halt and return that value.
+     *   Otherwise it will continue listening and propagating messages.
+     * @return Returns any not null value returned by callback function.
+     */
+    public function listen(Closure $callback)
+    {
+        while (true) {
+            // Server accept
+            if ($stream = @stream_socket_accept($this->listening, 0)) {
+                $peer = stream_socket_get_name($stream, true);
+                $this->logger->info("[server] Accepted connection from {$peer}");
+                $connection = new Connection($stream, $this->options);
+                $connection->setLogger($this->logger);
+                if ($this->options['timeout']) {
+                    $connection->setTimeout($this->options['timeout']);
+                }
+                $this->performHandshake($connection);
+                $this->connectors[$peer] = $connection;
+            }
+
+            // Collect streams to listen to
+            $streams = array_filter(array_map(function ($connection, $peer) {
+                $stream = $connection->getStream();
+                if (is_null($stream)) {
+                    $this->logger->debug("[server] Remove {$peer} from listener stack");
+                    unset($this->connectors[$peer]);
+                }
+                return $stream;
+            }, $this->connectors, array_keys($this->connectors)));
+
+            // Handle incoming
+            if (!empty($streams)) {
+                $read = $streams;
+                $write = [];
+                $except = [];
+                if (stream_select($read, $write, $except, 0)) {
+                    foreach ($read as $stream) {
+                        try {
+                            $result = null;
+                            $peer = stream_socket_get_name($stream, true);
+                            $connection = $this->connectors[$peer];
+                            $this->logger->debug("[server] Handling {$peer}");
+                            $message = $connection->pullMessage();
+                            if (!$connection->isConnected()) {
+                                unset($this->connectors[$peer]);
+                                $connection = null;
+                            }
+                            // Trigger callback according to filter
+                            $opcode = $message->getOpcode();
+                            if (in_array($opcode, $this->options['filter'])) {
+                                $this->last_opcode = $opcode;
+                                $result = $callback($message, $connection);
+                            }
+                            // If callback returns not null, exit loop and return that value
+                            if (!is_null($result)) {
+                                return $result;
+                            }
+                        } catch (Throwable $e) {
+                            $this->logger->error("[server] Error occured on {$peer}; {$e->getMessage()}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public function close(int $status = 1000, string $message = 'ttfn'): void
+    {
+        parent::close($status, $message);
+        foreach ($this->connectors as $connection) {
+            $connection->close($status, $message);
+        }
+    }
+
     protected function connect(): void
     {
-
         $error = null;
         set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
             $this->logger->warning($message, ['severity' => $severity]);
@@ -131,19 +212,19 @@ class Server extends Base
 
         $this->logger->info("Client has connected to port {port}", [
             'port' => $this->port,
-            'pier' => $this->connection->getPier(),
+            'pier' => $this->connection->getPeer(),
         ]);
-        $this->performHandshake();
+        $this->performHandshake($this->connection);
     }
 
-    protected function performHandshake(): void
+    protected function performHandshake(Connection $connection): void
     {
         $request = '';
         do {
-            $buffer = $this->connection->getLine(1024, "\r\n");
+            $buffer = $connection->getLine(1024, "\r\n");
             $request .= $buffer . "\n";
-            $metadata = $this->connection->getMeta();
-        } while (!$this->connection->eof() && $metadata['unread_bytes'] > 0);
+            $metadata = $connection->getMeta();
+        } while (!$connection->eof() && $metadata['unread_bytes'] > 0);
 
         if (!preg_match('/GET (.*) HTTP\//mUi', $request, $matches)) {
             $error = "No GET in request: {$request}";
@@ -174,7 +255,7 @@ class Server extends Base
                 . "Sec-WebSocket-Accept: $response_key\r\n"
                 . "\r\n";
 
-        $this->connection->write($header);
+        $connection->write($header);
         $this->logger->debug("Handshake on {$get_uri}");
     }
 }

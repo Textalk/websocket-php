@@ -26,6 +26,7 @@ class Connection implements LoggerAwareInterface
     private $stream;
     private $logger;
     private $read_buffer;
+    private $msg_factory;
     private $options = [];
 
     protected $is_closing = false;
@@ -40,6 +41,7 @@ class Connection implements LoggerAwareInterface
         $this->stream = $stream;
         $this->setOptions($options);
         $this->logger = new NullLogger();
+        $this->msg_factory = new Factory();
     }
 
     public function __destruct()
@@ -60,6 +62,46 @@ class Connection implements LoggerAwareInterface
     }
 
     /**
+     * Convenience method to send text message
+     * @param string $payload Content as string
+     */
+    public function text(string $payload): void
+    {
+        $message = $this->msg_factory->create('text', $payload);
+        $this->pushMessage($message);
+    }
+
+    /**
+     * Convenience method to send binary message
+     * @param string $payload Content as binary string
+     */
+    public function binary(string $payload): void
+    {
+        $message = $this->msg_factory->create('binary', $payload);
+        $this->pushMessage($message);
+    }
+
+    /**
+     * Convenience method to send ping
+     * @param string $payload Optional text as string
+     */
+    public function ping(string $payload = ''): void
+    {
+        $message = $this->msg_factory->create('ping', $payload);
+        $this->pushMessage($message);
+    }
+
+    /**
+     * Convenience method to send unsolicited pong
+     * @param string $payload Optional text as string
+     */
+    public function pong(string $payload = ''): void
+    {
+        $message = $this->msg_factory->create('pong', $payload);
+        $this->pushMessage($message);
+    }
+
+    /**
      * Tell the socket to close.
      *
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
@@ -75,8 +117,7 @@ class Connection implements LoggerAwareInterface
         foreach (str_split($status_binstr, 8) as $binstr) {
             $status_str .= chr(bindec($binstr));
         }
-        $factory = new Factory();
-        $message = $factory->create('close', $status_str . $message);
+        $message = $this->msg_factory->create('close', $status_str . $message);
         $this->pushMessage($message, true);
 
         $this->logger->debug("Closing with status: {$status}.");
@@ -144,8 +185,7 @@ class Connection implements LoggerAwareInterface
             $this->read_buffer = null;
         }
 
-        $factory = new Factory();
-        $message = $factory->create($payload_opcode, $payload);
+        $message = $this->msg_factory->create($payload_opcode, $payload);
 
         $this->logger->info("[connection] Pulled {$message}", [
             'opcode' => $payload_opcode,
@@ -277,13 +317,12 @@ class Connection implements LoggerAwareInterface
     {
         list ($final, $payload, $opcode, $masked) = $frame;
         $payload_length = strlen($payload);
-        $factory = new Factory();
 
         switch ($opcode) {
             case 'ping':
                 // If we received a ping, respond with a pong
                 $this->logger->debug("[connection] Received 'ping', sending 'pong'.");
-                $message = $factory->create('pong', $payload);
+                $message = $this->msg_factory->create('pong', $payload);
                 $this->pushMessage($message, $masked);
                 return [$final, $payload, $opcode, $masked];
             case 'close':
@@ -303,7 +342,7 @@ class Connection implements LoggerAwareInterface
                 $this->logger->debug("[connection] Received 'close', status: {$status}.");
                 if (!$this->is_closing) {
                     $ack =  "{$status_bin}Close acknowledged: {$status}";
-                    $message = $factory->create('close', $ack);
+                    $message = $this->msg_factory->create('close', $ack);
                     $this->pushMessage($message, $masked);
                 } else {
                     $this->is_closing = false; // A close response, all done.
@@ -317,6 +356,11 @@ class Connection implements LoggerAwareInterface
 
 
     /* ---------- Stream I/O methods ------------------------------------------------- */
+
+    public function getStream()
+    {
+        return $this->isConnected() ? $this->stream : null;
+    }
 
     /**
      * Close connection stream.
@@ -359,7 +403,7 @@ class Connection implements LoggerAwareInterface
      * Get name of remote socket, or null if not connected.
      * @return string|null
      */
-    public function getPier(): ?string
+    public function getPeer(): ?string
     {
         return stream_socket_get_name($this->stream, true);
     }

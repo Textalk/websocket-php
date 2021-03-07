@@ -32,7 +32,7 @@ WebSocket\Server {
     public getHeader(string $header_name) : string|null
 
     public getName() : string|null
-    public getPier() : string|null
+    public getPeer() : string|null
     public getLastOpcode() : string
     public getCloseStatus() : int
     public isConnected() : bool

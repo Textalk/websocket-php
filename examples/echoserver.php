@@ -22,7 +22,7 @@ echo "> Echo server\n";
 $options = array_merge([
     'port'          => 8000,
     'timeout'       => 200,
-    'filter'        => ['text', 'binary', 'ping', 'pong'],
+    'filter'        => ['text', 'binary', 'ping', 'pong', 'close'],
 ], getopt('', ['port:', 'timeout:', 'debug']));
 
 // If debug mode and logger is available
@@ -42,46 +42,53 @@ try {
 
 echo "> Listening to port {$server->getPort()}\n";
 
-// Force quit to close server
-while (true) {
-    try {
-        while ($server->accept()) {
-            echo "> Accepted on port {$server->getPort()}\n";
-            while (true) {
-                $message = $server->receive();
-                $opcode = $server->getLastOpcode();
-                if (is_null($message)) {
-                    echo "> Closing connection\n";
-                    continue 2;
-                }
-                echo "> Got '{$message}' [opcode: {$opcode}]\n";
-                if (in_array($opcode, ['ping', 'pong'])) {
-                    $server->send($message);
-                    continue;
-                }
-                // Allow certain string to trigger server action
-                switch ($message) {
-                    case 'exit':
-                        echo "> Client told me to quit.  Bye bye.\n";
-                        $server->close();
-                        echo "> Close status: {$server->getCloseStatus()}\n";
-                        exit;
-                    case 'headers':
-                        $server->text(implode("\r\n", $server->getRequest()));
-                        break;
-                    case 'ping':
-                        $server->ping($message);
-                        break;
-                    case 'auth':
-                        $auth = $server->getHeader('Authorization');
-                        $server->text("{$auth} - {$message}");
-                        break;
-                    default:
-                        $server->text($message);
-                }
-            }
-        }
-    } catch (ConnectionException $e) {
-        echo "> ERROR: {$e->getMessage()}\n";
+$server->listen(function ($message, $connection) use ($server) {
+    $content = $message->getContent();
+    $opcode = $message->getOpcode();
+    $peer = $connection ? $connection->getPeer() : '(closed)';
+    echo "> Got '{$content}' [opcode: {$opcode}, peer: {$peer}]\n";
+
+    // Connection closed, can't respond
+    if (!$connection) {
+        return null; // Continue listening
     }
-}
+
+    if (in_array($opcode, ['ping', 'pong'])) {
+        $connection->text($content);
+        echo "< Sent '{$content}' [opcode: text, peer: {$peer}]\n";
+        return null; // Continue listening
+    }
+
+    // Allow certain string to trigger server action
+    switch ($content) {
+        case 'auth':
+            $auth = "{$server->getHeader('Authorization')} - {$content}";
+            $connection->text($auth);
+            echo "< Sent '{$auth}' [opcode: text, peer: {$peer}]\n";
+            break;
+        case 'close':
+            $connection->close(1000, $content);
+            echo "< Sent '{$content}' [opcode: close, peer: {$peer}]\n";
+            break;
+        case 'exit':
+            echo "> Client told me to quit.  Bye bye.\n";
+            $server->close();
+            return true; // Stop listener
+        case 'headers':
+            $headers = trim(implode("\r\n", $server->getRequest()));
+            $connection->text($headers);
+            echo "< Sent '{$headers}' [opcode: text, peer: {$peer}]\n";
+            break;
+        case 'ping':
+            $connection->ping($content);
+            echo "< Sent '{$content}' [opcode: ping, peer: {$peer}]\n";
+            break;
+        case 'pong':
+            $connection->pong($content);
+            echo "< Sent '{$content}' [opcode: pong, peer: {$peer}]\n";
+            break;
+        default:
+            $connection->text($content);
+            echo "< Sent '{$content}' [opcode: text, peer: {$peer}]\n";
+    }
+});

@@ -10,6 +10,7 @@
 namespace WebSocket;
 
 use Closure;
+use Psr\Log\NullLogger;
 use Throwable;
 
 class Server extends Base
@@ -24,23 +25,31 @@ class Server extends Base
       'timeout'       => null,
     ];
 
-    protected $addr;
     protected $port;
     protected $listening;
     protected $request;
     protected $request_path;
-    private $connectors = [];
+    private $connections = [];
+    private $listen = false;
+
+
+    /* ---------- Construct & Destruct ----------------------------------------------- */
 
     /**
      * @param array $options
      *   Associative array containing:
-     *   - timeout:       Set the socket timeout in seconds.
+     *   - filter:        Array of opcodes to handle. Default: ['text', 'binary'].
      *   - fragment_size: Set framgemnt size.  Default: 4096
-     *   - port:          Chose port for listening. Default 8000.
+     *   - logger:        PSR-3 compatible logger.  Default NullLogger.
+     *   - port:          Chose port for listening.  Default 8000.
+     *   - return_obj:    If receive() function return Message instance.  Default false.
+     *   - timeout:       Set the socket timeout in seconds.
      */
     public function __construct(array $options = [])
     {
-        $this->options = array_merge(self::$default_options, $options);
+        $this->options = array_merge(self::$default_options, [
+            'logger' => new NullLogger(),
+        ], $options);
         $this->port = $this->options['port'];
         $this->setLogger($this->options['logger']);
 
@@ -65,18 +74,166 @@ class Server extends Base
         $this->logger->info("Server listening to port {$this->port}");
     }
 
+    /**
+     * Disconnect streams on shutdown.
+     */
     public function __destruct()
     {
+/*
         if ($this->connection && $this->connection->isConnected()) {
             $this->connection->disconnect();
         }
         $this->connection = null;
+*/
+        foreach ($this->connections as $connection) {
+            if ($connection->isConnected()) {
+                $connection->disconnect();
+            }
+        }
+        $this->connections = [];
     }
 
+
+    /* ---------- Server operations -------------------------------------------------- */
+
+    /**
+     * Set server to listen to incoming requests.
+     * @param Closure A callback function that will be called when server receives message.
+     *   function (Message $message, Connection $connection = null)
+     *   If callback function returns non-null value, the listener will halt and return that value.
+     *   Otherwise it will continue listening and propagating messages.
+     * @return mixed Returns any non-null value returned by callback function.
+     */
+    public function listen(Closure $callback)
+    {
+        $this->listen = true;
+        while ($this->listen) {
+            // Server accept
+            if ($stream = @stream_socket_accept($this->listening, 0)) {
+                $peer = stream_socket_get_name($stream, true);
+                $this->logger->info("[server] Accepted connection from {$peer}");
+                $connection = new Connection($stream, $this->options);
+                $connection->setLogger($this->logger);
+                if ($this->options['timeout']) {
+                    $connection->setTimeout($this->options['timeout']);
+                }
+                $this->performHandshake($connection);
+                $this->connections[$peer] = $connection;
+            }
+
+            // Collect streams to listen to
+            $streams = array_filter(array_map(function ($connection, $peer) {
+                $stream = $connection->getStream();
+                if (is_null($stream)) {
+                    $this->logger->debug("[server] Remove {$peer} from listener stack");
+                    unset($this->connections[$peer]);
+                }
+                return $stream;
+            }, $this->connections, array_keys($this->connections)));
+
+            // Handle incoming
+            if (!empty($streams)) {
+                $read = $streams;
+                $write = [];
+                $except = [];
+                if (stream_select($read, $write, $except, 0)) {
+                    foreach ($read as $stream) {
+                        try {
+                            $result = null;
+                            $peer = stream_socket_get_name($stream, true);
+                            if (empty($peer)) {
+                                $this->logger->warning("[server] Got detached stream '{$peer}'");
+                                continue;
+                            }
+                            $connection = $this->connections[$peer];
+                            $this->logger->debug("[server] Handling {$peer}");
+                            $message = $connection->pullMessage();
+                            if (!$connection->isConnected()) {
+                                unset($this->connections[$peer]);
+                                $connection = null;
+                            }
+                            // Trigger callback according to filter
+                            $opcode = $message->getOpcode();
+                            if (in_array($opcode, $this->options['filter'])) {
+                                $this->last_opcode = $opcode;
+                                $result = $callback($message, $connection);
+                            }
+                            // If callback returns not null, exit loop and return that value
+                            if (!is_null($result)) {
+                                return $result;
+                            }
+                        } catch (Throwable $e) {
+                            $this->logger->error("[server] Error occured on {$peer}; {$e->getMessage()}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Tell server to stop listening to incoming requests.
+     * Active connections are still available when restarting listening.
+     */
+    public function stop(): void
+    {
+        $this->listen = false;
+    }
+
+    /**
+     * Accept an incoming request.
+     * Note that this operation will block accepting additional requests.
+     * @return bool True if listening
+     * @deprecated Will be removed in future version
+     */
+    public function accept(): bool
+    {
+        $this->connection = null;
+        return (bool)$this->listening;
+    }
+
+
+    /* ---------- Server option functions -------------------------------------------- */
+
+    /**
+     * Get current port.
+     * @return int port
+     */
     public function getPort(): int
     {
         return $this->port;
     }
+
+    // Inherited from Base:
+    // - setLogger
+    // - setTimeout
+    // - setFragmentSize
+    // - getFragmentSize
+
+
+    /* ---------- Connection broadcast operations ------------------------------------ */
+
+    /**
+     * Close all connections.
+     * @param int Close status, default: 1000
+     * @param string Close message, default: 'ttfn'
+     */
+    public function close(int $status = 1000, string $message = 'ttfn'): void
+    {
+        foreach ($this->connections as $connection) {
+            if ($connection->isConnected()) {
+                $connection->close($status, $message);
+            }
+        }
+    }
+
+    // Inherited from Base:
+    // - receive
+    // - send
+    // - text, binary, ping, pong
+
+
+    /* ---------- Connection functions (all deprecated) ------------------------------ */
 
     public function getPath(): string
     {
@@ -99,90 +256,17 @@ class Server extends Base
         return null;
     }
 
-    public function accept(): bool
-    {
-        $this->connection = null;
-        return (bool)$this->listening;
-    }
+    // Inherited from Base:
+    // - getLastOpcode
+    // - getCloseStatus
+    // - isConnected
+    // - disconnect
+    // - getName, getPeer, getPier
 
-    /**
-     * Set server to listen to incoming requests.
-     * @param Closure A callback function that will be called when server receives message.
-     *   function (Message $message, Connection $connection = null)
-     *   If callback function returns not null value, the listener will halt and return that value.
-     *   Otherwise it will continue listening and propagating messages.
-     * @return Returns any not null value returned by callback function.
-     */
-    public function listen(Closure $callback)
-    {
-        while (true) {
-            // Server accept
-            if ($stream = @stream_socket_accept($this->listening, 0)) {
-                $peer = stream_socket_get_name($stream, true);
-                $this->logger->info("[server] Accepted connection from {$peer}");
-                $connection = new Connection($stream, $this->options);
-                $connection->setLogger($this->logger);
-                if ($this->options['timeout']) {
-                    $connection->setTimeout($this->options['timeout']);
-                }
-                $this->performHandshake($connection);
-                $this->connectors[$peer] = $connection;
-            }
 
-            // Collect streams to listen to
-            $streams = array_filter(array_map(function ($connection, $peer) {
-                $stream = $connection->getStream();
-                if (is_null($stream)) {
-                    $this->logger->debug("[server] Remove {$peer} from listener stack");
-                    unset($this->connectors[$peer]);
-                }
-                return $stream;
-            }, $this->connectors, array_keys($this->connectors)));
+    /* ---------- Helper functions --------------------------------------------------- */
 
-            // Handle incoming
-            if (!empty($streams)) {
-                $read = $streams;
-                $write = [];
-                $except = [];
-                if (stream_select($read, $write, $except, 0)) {
-                    foreach ($read as $stream) {
-                        try {
-                            $result = null;
-                            $peer = stream_socket_get_name($stream, true);
-                            $connection = $this->connectors[$peer];
-                            $this->logger->debug("[server] Handling {$peer}");
-                            $message = $connection->pullMessage();
-                            if (!$connection->isConnected()) {
-                                unset($this->connectors[$peer]);
-                                $connection = null;
-                            }
-                            // Trigger callback according to filter
-                            $opcode = $message->getOpcode();
-                            if (in_array($opcode, $this->options['filter'])) {
-                                $this->last_opcode = $opcode;
-                                $result = $callback($message, $connection);
-                            }
-                            // If callback returns not null, exit loop and return that value
-                            if (!is_null($result)) {
-                                return $result;
-                            }
-                        } catch (Throwable $e) {
-                            $this->logger->error("[server] Error occured on {$peer}; {$e->getMessage()}");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public function close(int $status = 1000, string $message = 'ttfn'): void
-    {
-        parent::close($status, $message);
-        foreach ($this->connectors as $connection) {
-            $connection->close($status, $message);
-        }
-    }
-
+    // Connect when read/write operation is performed.
     protected function connect(): void
     {
         $error = null;
@@ -215,8 +299,10 @@ class Server extends Base
             'pier' => $this->connection->getPeer(),
         ]);
         $this->performHandshake($this->connection);
+        $this->connections = ['*' => $this->connection];
     }
 
+    // Perform upgrade handshake on new connections.
     protected function performHandshake(Connection $connection): void
     {
         $request = '';

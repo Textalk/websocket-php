@@ -2,6 +2,16 @@
 
 # Websocket: Changelog
 
+## `v1.6`
+
+ > PHP version `^7.2`
+
+### `1.6.0`
+
+ * Listener functions (@sirn-se)
+ * Multi connection server (@sirn-se)
+ * Major refactoring, using Connections (@sirn-se)
+
 ## `v1.5`
 
  > PHP version `^7.2`

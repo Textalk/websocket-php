@@ -10,9 +10,9 @@ It does not include convenience operations such as listeners and implicit error 
 
 ## Documentation
 
-- [Client](docs/Client.md)
-- [Server](docs/Server.md)
-- [Message](docs/Message.md)
+- [Client overwiew](docs/Client.md)
+- [Server overview](docs/Server.md)
+- [Classes](docs/Classes/Classes.md)
 - [Examples](docs/Examples.md)
 - [Changelog](docs/Changelog.md)
 - [Contributing](docs/Contributing.md)
@@ -25,8 +25,8 @@ composer require textalk/websocket
 ```
 
 * Current version support PHP versions `^7.2|8.0`.
-* For PHP `7.1` support use version `1.4`.
-* For PHP `^5.4` and `7.0` support use version `1.3`.
+* For PHP `7.1` support use version [`1.4`](https://github.com/Textalk/websocket-php/tree/1.4.0).
+* For PHP `^5.4` and `7.0` support use version [`1.3`](https://github.com/Textalk/websocket-php/tree/1.3.0).
 
 ## Client
 
@@ -42,18 +42,17 @@ $client->close();
 
 ## Server
 
-The library contains a rudimentary single stream/single thread [server](docs/Server.md).
+The library contains a websocket [server](docs/Server.md).
 It internally supports Upgrade handshake and implicit close and ping/pong operations.
-
-Note that it does **not** support threading or automatic association ot continuous client requests.
-If you require this kind of server behavior, you need to build it on top of provided server implementation.
+Preferred operation is using the listener function, but optional operations exist.
 
 ```php
 $server = new WebSocket\Server();
-$server->accept();
-$message = $server->receive();
-$server->text($message);
-$server->close();
+$server->listen(function ($message, $connection = null) {
+    echo "Got {$message->getContent()}\n";
+    if (!$connection) return; // Current connection is closed
+    $connection->text('Sending message to client');
+});
 ```
 
 ### License and Contributors

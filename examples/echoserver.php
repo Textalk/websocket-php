@@ -32,7 +32,7 @@ if (isset($options['debug']) && class_exists('WebSocket\EchoLog')) {
     echo "> Using logger\n";
 }
 
-// Setting timeout to 200 seconds to make time for all tests and manual runs.
+// Initiate server
 try {
     $server = new Server($options);
 } catch (ConnectionException $e) {
@@ -42,7 +42,7 @@ try {
 
 echo "> Listening to port {$server->getPort()}\n";
 
-$server->listen(function ($message, $connection) use ($server) {
+$server->listen(function ($message, $connection = null) use ($server) {
     $content = $message->getContent();
     $opcode = $message->getOpcode();
     $peer = $connection ? $connection->getPeer() : '(closed)';
@@ -50,13 +50,13 @@ $server->listen(function ($message, $connection) use ($server) {
 
     // Connection closed, can't respond
     if (!$connection) {
-        return null; // Continue listening
+        return; // Continue listening
     }
 
     if (in_array($opcode, ['ping', 'pong'])) {
         $connection->text($content);
         echo "< Sent '{$content}' [opcode: text, peer: {$peer}]\n";
-        return null; // Continue listening
+        return; // Continue listening
     }
 
     // Allow certain string to trigger server action
@@ -71,7 +71,7 @@ $server->listen(function ($message, $connection) use ($server) {
             echo "< Sent '{$content}' [opcode: close, peer: {$peer}]\n";
             break;
         case 'exit':
-            echo "> Client told me to quit.  Bye bye.\n";
+            echo "> Client told me to quit.\n";
             $server->close();
             return true; // Stop listener
         case 'headers':
@@ -86,6 +86,10 @@ $server->listen(function ($message, $connection) use ($server) {
         case 'pong':
             $connection->pong($content);
             echo "< Sent '{$content}' [opcode: pong, peer: {$peer}]\n";
+            break;
+        case 'stop':
+            $server->stop();
+            echo "> Client told me to stop listening.\n";
             break;
         default:
             $connection->text($content);

@@ -9,8 +9,14 @@
 
 namespace WebSocket;
 
-class Client extends Base
+use Psr\Log\{LoggerAwareInterface, LoggerAwareTrait, LoggerInterface, NullLogger};
+use WebSocket\Message\Factory;
+
+class Client implements LoggerAwareInterface
 {
+    use LoggerAwareTrait; // provides setLogger(LoggerInterface $logger)
+    use OpcodeTrait;
+
     // Default options
     protected static $default_options = [
       'context'       => null,
@@ -24,7 +30,13 @@ class Client extends Base
       'timeout'       => 5,
     ];
 
-    protected $socket_uri;
+    private $socket_uri;
+    private $connection;
+    private $options = [];
+    private $last_opcode = null;
+
+
+    /* ---------- Magic methods ------------------------------------------------------ */
 
     /**
      * @param string $uri     A ws/wss-URI
@@ -37,10 +49,241 @@ class Client extends Base
      */
     public function __construct(string $uri, array $options = [])
     {
-        $this->options = array_merge(self::$default_options, $options);
         $this->socket_uri = $uri;
+        $this->options = array_merge(self::$default_options, [
+            'logger' => new NullLogger(),
+        ], $options);
         $this->setLogger($this->options['logger']);
     }
+
+    /**
+     * Get string representation of instance.
+     * @return string String representation.
+     */
+    public function __toString(): string
+    {
+        return sprintf(
+            "%s(%s)",
+            get_class($this),
+            $this->getName() ?: 'closed'
+        );
+    }
+
+
+    /* ---------- Client option functions -------------------------------------------- */
+
+    /**
+     * Set timeout.
+     * @param int $timeout Timeout in seconds.
+     */
+    public function setTimeout(int $timeout): void
+    {
+        $this->options['timeout'] = $timeout;
+        if (!$this->isConnected()) {
+            return;
+        }
+        $this->connection->setTimeout($timeout);
+        $this->connection->setOptions($this->options);
+    }
+
+    /**
+     * Set fragmentation size.
+     * @param int $fragment_size Fragment size in bytes.
+     * @return self.
+     */
+    public function setFragmentSize(int $fragment_size): self
+    {
+        $this->options['fragment_size'] = $fragment_size;
+        $this->connection->setOptions($this->options);
+        return $this;
+    }
+
+    /**
+     * Get fragmentation size.
+     * @return int $fragment_size Fragment size in bytes.
+     */
+    public function getFragmentSize(): int
+    {
+        return $this->options['fragment_size'];
+    }
+
+
+    /* ---------- Connection operations ---------------------------------------------- */
+
+    /**
+     * Send text message.
+     * @param string $payload Content as string.
+     */
+    public function text(string $payload): void
+    {
+        $this->send($payload);
+    }
+
+    /**
+     * Send binary message.
+     * @param string $payload Content as binary string.
+     */
+    public function binary(string $payload): void
+    {
+        $this->send($payload, 'binary');
+    }
+
+    /**
+     * Send ping.
+     * @param string $payload Optional text as string.
+     */
+    public function ping(string $payload = ''): void
+    {
+        $this->send($payload, 'ping');
+    }
+
+    /**
+     * Send unsolicited pong.
+     * @param string $payload Optional text as string.
+     */
+    public function pong(string $payload = ''): void
+    {
+        $this->send($payload, 'pong');
+    }
+
+    /**
+     * Send message.
+     * @param string $payload Message to send.
+     * @param string $opcode Opcode to use, default: 'text'.
+     * @param bool $masked If message should be masked default: true.
+     */
+    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
+    {
+        if (!$this->isConnected()) {
+            $this->connect();
+        }
+
+        if (!in_array($opcode, array_keys(self::$opcodes))) {
+            $warning = "Bad opcode '{$opcode}'.  Try 'text' or 'binary'.";
+            $this->logger->warning($warning);
+            throw new BadOpcodeException($warning);
+        }
+
+        $factory = new Factory();
+        $message = $factory->create($opcode, $payload);
+        $this->connection->pushMessage($message, $masked);
+    }
+
+    /**
+     * Tell the socket to close.
+     * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
+     * @param string  $message A closing message, max 125 bytes.
+     */
+    public function close(int $status = 1000, string $message = 'ttfn'): void
+    {
+        if (!$this->isConnected()) {
+            return;
+        }
+        $this->connection->close($status, $message);
+    }
+
+    /**
+     * Disconnect from server.
+     */
+    public function disconnect(): void
+    {
+        if ($this->isConnected()) {
+            $this->connection->disconnect();
+        }
+    }
+
+    /**
+     * Receive message.
+     * Note that this operation will block reading.
+     * @return mixed Message, text or null depending on settings.
+     * @deprecated Will be removed in future version. Use listen() instead.
+     */
+    public function receive()
+    {
+        $filter = $this->options['filter'];
+        $return_obj = $this->options['return_obj'];
+
+        if (!$this->isConnected()) {
+            $this->connect();
+        }
+
+        while (true) {
+            $message = $this->connection->pullMessage();
+            $opcode = $message->getOpcode();
+            if (in_array($opcode, $filter)) {
+                $this->last_opcode = $opcode;
+                $return = $return_obj ? $message : $message->getContent();
+                break;
+            } elseif ($opcode == 'close') {
+                $this->last_opcode = null;
+                $return = $return_obj ? $message : null;
+                break;
+            }
+        }
+        return $return;
+    }
+
+
+    /* ---------- Connection functions ----------------------------------------------- */
+
+    /**
+     * Get last received opcode.
+     * @return string|null Opcode.
+     * @deprecated Will be removed in future version. Get opcode from Message instead.
+     */
+    public function getLastOpcode(): ?string
+    {
+        return $this->last_opcode;
+    }
+
+    /**
+     * Get close status on connection.
+     * @return int|null Close status.
+     */
+    public function getCloseStatus(): ?int
+    {
+        return $this->connection ? $this->connection->getCloseStatus() : null;
+    }
+
+    /**
+     * If Client has active connection.
+     * @return bool True if active connection.
+     */
+    public function isConnected(): bool
+    {
+        return $this->connection && $this->connection->isConnected();
+    }
+
+    /**
+     * Get name of local socket, or null if not connected.
+     * @return string|null
+     */
+    public function getName(): ?string
+    {
+        return $this->isConnected() ? $this->connection->getName() : null;
+    }
+
+    /**
+     * Get name of remote socket, or null if not connected.
+     * @return string|null
+     */
+    public function getPeer(): ?string
+    {
+        return $this->isConnected() ? $this->connection->getPeer() : null;
+    }
+
+    /**
+     * Get name of remote socket, or null if not connected.
+     * @return string|null
+     * @deprecated Will be removed in future version, use getPeer() instead.
+     */
+    public function getPier(): ?string
+    {
+        return $this->getPeer();
+    }
+
+
+    /* ---------- Helper functions --------------------------------------------------- */
 
     /**
      * Perform WebSocket handshake
@@ -207,7 +450,6 @@ class Client extends Base
 
     /**
      * Generate a random string for WebSocket key.
-     *
      * @return string Random string
      */
     protected static function generateKey(): string

@@ -100,9 +100,9 @@ class Server implements LoggerAwareInterface
      * Set server to listen to incoming requests.
      * @param Closure $callback A callback function that will be called when server receives message.
      *   function (Message $message, Connection $connection = null)
-     *   If callback function returns non-empty value, the listener will halt and return that value.
+     *   If callback function returns non-null value, the listener will halt and return that value.
      *   Otherwise it will continue listening and propagating messages.
-     * @return mixed Returns any non-empty value returned by callback function.
+     * @return mixed Returns any non-null value returned by callback function.
      */
     public function listen(Closure $callback)
     {
@@ -338,7 +338,6 @@ class Server implements LoggerAwareInterface
      * Receive message from single connection.
      * Note that this operation will block reading and only read from first available connection.
      * @return mixed Message, text or null depending on settings.
-     * @deprecated Will be removed in future version. Use listen() instead.
      */
     public function receive()
     {
@@ -370,7 +369,7 @@ class Server implements LoggerAwareInterface
     /* ---------- Connection functions (all deprecated) ------------------------------ */
 
     /**
-     * Get requested path from single connection.
+     * Get requested path from last connection.
      * @return string Path.
      * @deprecated Will be removed in future version.
      */
@@ -380,7 +379,7 @@ class Server implements LoggerAwareInterface
     }
 
     /**
-     * Get request from single connection.
+     * Get request from last connection.
      * @return array Request.
      * @deprecated Will be removed in future version.
      */
@@ -390,7 +389,7 @@ class Server implements LoggerAwareInterface
     }
 
     /**
-     * Get headers from single connection.
+     * Get headers from last connection.
      * @return string|null Headers.
      * @deprecated Will be removed in future version.
      */

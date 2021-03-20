@@ -50,6 +50,7 @@ $server->listen(function ($message, $connection = null) use ($server) {
 
     // Connection closed, can't respond
     if (!$connection) {
+        echo "> Connection closed\n";
         return; // Continue listening
     }
 

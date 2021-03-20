@@ -9,11 +9,13 @@
 
 namespace WebSocket;
 
-use Psr\Log\{LoggerAwareInterface, LoggerInterface, NullLogger};
+use Psr\Log\{LoggerAwareInterface, LoggerAwareTrait, LoggerInterface, NullLogger};
 use WebSocket\Message\{Factory, Message};
 
 class Connection implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     protected static $opcodes = [
         'continuation' => 0,
         'text'         => 1,
@@ -24,7 +26,6 @@ class Connection implements LoggerAwareInterface
     ];
 
     private $stream;
-    private $logger;
     private $read_buffer;
     private $msg_factory;
     private $options = [];
@@ -40,7 +41,7 @@ class Connection implements LoggerAwareInterface
     {
         $this->stream = $stream;
         $this->setOptions($options);
-        $this->logger = new NullLogger();
+        $this->setLogger(new NullLogger());
         $this->msg_factory = new Factory();
     }
 
@@ -200,7 +201,7 @@ class Connection implements LoggerAwareInterface
     /* ---------- Frame I/O methods -------------------------------------------------- */
 
     // Pull frame from stream
-    public function pullFrame(): array
+    private function pullFrame(): array
     {
         // Read the fragment "header" first, two bytes.
         $data = $this->read(2);
@@ -313,7 +314,7 @@ class Connection implements LoggerAwareInterface
     }
 
     // Trigger auto response for frame
-    public function autoRespond(array $frame)
+    private function autoRespond(array $frame)
     {
         list ($final, $payload, $opcode, $masked) = $frame;
         $payload_length = strlen($payload);
@@ -514,18 +515,6 @@ class Connection implements LoggerAwareInterface
             $this->throwException("Could only write {$written} out of {$length} bytes.");
         }
         $this->logger->debug("Wrote {$written} of {$length} bytes.");
-    }
-
-
-    /* ---------- PSR-3 Logger implemetation ----------------------------------------- */
-
-    /**
-     * Set logger.
-     * @param LoggerInterface Logger implementation
-     */
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
     }
 
 

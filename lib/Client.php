@@ -33,6 +33,7 @@ class Client implements LoggerAwareInterface
     private $socket_uri;
     private $connection;
     private $options = [];
+    private $listen = false;
     private $last_opcode = null;
 
 
@@ -67,6 +68,71 @@ class Client implements LoggerAwareInterface
             get_class($this),
             $this->getName() ?: 'closed'
         );
+    }
+
+
+    /* ---------- Client operations -------------------------------------------------- */
+
+    /**
+     * Set client to listen to incoming requests.
+     * @param Closure $callback A callback function that will be called when client receives message.
+     *   function (Message $message, Connection $connection = null)
+     *   If callback function returns non-null value, the listener will halt and return that value.
+     *   Otherwise it will continue listening and propagating messages.
+     * @return mixed Returns any non-null value returned by callback function.
+     */
+    public function listen(Closure $callback)
+    {
+        $this->listen = true;
+        while ($this->listen) {
+            // Connect
+            if (!$this->isConnected()) {
+                $this->connect();
+            }
+
+            // Handle incoming
+            $read = $this->connection->getStream();
+            $write = [];
+            $except = [];
+            if (stream_select($read, $write, $except, 0)) {
+                foreach ($read as $stream) {
+                    try {
+                        $result = null;
+                        $peer = stream_socket_get_name($stream, true);
+                        if (empty($peer)) {
+                            $this->logger->warning("[client] Got detached stream '{$peer}'");
+                            continue;
+                        }
+                        $this->logger->debug("[client] Handling {$peer}");
+                        $message = $this->connection->pullMessage();
+                        if (!$this->connection->isConnected()) {
+                            $this->connection = null;
+                        }
+                        // Trigger callback according to filter
+                        $opcode = $message->getOpcode();
+                        if (in_array($opcode, $this->options['filter'])) {
+                            $this->last_opcode = $opcode;
+                            $result = $callback($message, $this->connection);
+                        }
+                        // If callback returns not null, exit loop and return that value
+                        if (!is_null($result)) {
+                            return $result;
+                        }
+                    } catch (Throwable $e) {
+                        $this->logger->error("[client] Error occured on {$peer}; {$e->getMessage()}");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Tell client to stop listening to incoming requests.
+     * Active connections are still available when restarting listening.
+     */
+    public function stop(): void
+    {
+        $this->listen = false;
     }
 
 

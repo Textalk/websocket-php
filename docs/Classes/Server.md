@@ -1,4 +1,4 @@
-Classes: [Client](Classes/Client.md) • Server
+Classes: [Client](Client.md) • Server
 
 # Server class
 
@@ -65,14 +65,14 @@ public function __construct(array $options = [])
 ###### `options`
 
 An optional array of parameters.
-| Name | Type | | Default | Description |
-| --- | --- | --- | --- [
-| `filter` | `array` | `['text', 'binary']` | Array of opcodes to return on receive and listen functions
-| `fragment_size` | `int` | `4096` | Maximum payload size
-| `logger` | `Psr\Log\LoggerInterface` | `Psr\Log\NullLogger` |A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger
-| `port` | `int` | `8000` | The server port to listen to
-| `return_obj` | `bool` | `false` | Return a [Message](Classes/Message.md) instance on receive function
-| `timeout` | `int` | `5` | Time out in seconds
+Name | Type | Default | Description
+--- | --- | --- | ---
+filter` | array | ['text', 'binary'] | Array of opcodes to return on receive and listen functions
+fragment_size | int | 4096 | Maximum payload size
+logger | Psr\Log\LoggerInterface | Psr\Log\NullLogger |A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger
+port | int | 8000 | The server port to listen to
+return_obj | bool | false | Return a [Message](Message.md) instance on receive function
+timeout | int | 5 | Time out in seconds
 
 #### Return Values
 
@@ -80,7 +80,7 @@ Returns a new WebSocket\Server instance.
 
 #### Errors/Exceptions
 
-Emits [ConnectionException](Classes/ConnectionException.md) on failure.
+Emits [ConnectionException](ConnectionException.md) on failure.
 
 #### Examples
 
@@ -129,8 +129,8 @@ public function listen(Closure $callback) : mixed
 A callback function that is triggered whenever the server receives a message matching the filter.
 
 The callback takes two parameters;
-* The [Message](Classes/Message/Message.md) that has been received
-* The [Connection](Classes/Connection.md) the server has receievd on, can be `null` if connection is closed
+* The [Message](Message/Message.md) that has been received
+* The [Connection](Connection.md) the server has receievd on, can be `null` if connection is closed
 
 If callback function returns non-null value, the listener will halt and return that value.
 Otherwise it will continue listening and propagating messages.
@@ -141,7 +141,7 @@ Returns any non-null value returned by callback function.
 
 #### Errors/Exceptions
 
-Emits [ConnectionException](Classes/ConnectionException.md) on failure.
+Emits [ConnectionException](ConnectionException.md) on failure.
 
 #### Examples
 
@@ -173,7 +173,7 @@ Halt listener and return a value to calling code.
 ```php
 <?php
 
-$server = new WebSocket\Server(['filter' => ['text', 'binary', 'ping', 'pong', 'close']]);
+$server = new WebSocket\Server();
 $content = $server->listen(function ($message, $connection) {
     return $message->getContent();
 });

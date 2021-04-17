@@ -67,7 +67,7 @@ public function __construct(array $options = [])
 An optional array of parameters.
 Name | Type | Default | Description
 --- | --- | --- | ---
-filter` | array | ['text', 'binary'] | Array of opcodes to return on receive and listen functions
+filter | array | ["text", "binary"] | Array of opcodes to return on receive and listen functions
 fragment_size | int | 4096 | Maximum payload size
 logger | Psr\Log\LoggerInterface | Psr\Log\NullLogger |A [PSR-3](https://www.php-fig.org/psr/psr-3/) compatible logger
 port | int | 8000 | The server port to listen to

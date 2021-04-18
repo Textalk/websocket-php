@@ -128,6 +128,8 @@ class Client extends Base
             throw new ConnectionException($error);
         }
 
+        $address = "{$scheme}://{$host}{$path_with_query}";
+
         if (!$persistent || ftell($this->socket) == 0) {
             // Set timeout on the stream as well.
             stream_set_timeout($this->socket, $this->options['timeout']);
@@ -176,10 +178,6 @@ class Client extends Base
 
             // Get server response header (terminated with double CR+LF).
             $response = stream_get_line($this->socket, 1024, "\r\n\r\n");
-
-            /// @todo Handle version switching
-
-            $address = "{$scheme}://{$host}{$path_with_query}";
 
             // Validate response.
             if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {

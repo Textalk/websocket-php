@@ -4,7 +4,11 @@
 
 ## `v1.5`
 
- > PHP version `^7.2`
+ > PHP version `^7.2|^8.0`
+
+### `1.5.3`
+
+ * Fix for persistent connection (@sirn-se)
 
 ### `1.5.2`
 

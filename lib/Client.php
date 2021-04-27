@@ -440,6 +440,8 @@ class Client implements LoggerAwareInterface
             throw new ConnectionException($error);
         }
 
+        $address = "{$scheme}://{$host}{$path_with_query}";
+
         if (!$persistent || $this->connection->tell() == 0) {
             // Set timeout on the stream as well.
             $this->connection->setTimeout($this->options['timeout']);
@@ -488,10 +490,6 @@ class Client implements LoggerAwareInterface
 
             // Get server response header (terminated with double CR+LF).
             $response = $this->connection->getLine(1024, "\r\n\r\n");
-
-            /// @todo Handle version switching
-
-            $address = "{$scheme}://{$host}{$path_with_query}";
 
             // Validate response.
             if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {

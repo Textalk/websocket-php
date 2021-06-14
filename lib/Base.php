@@ -443,6 +443,12 @@ class Base implements LoggerAwareInterface
         while (strlen($data) < $length) {
             $buffer = @fread($this->socket, $length - strlen($data));
             if ($buffer === false) {
+                $meta = stream_get_meta_data($this->socket);
+                if (!empty($meta['timed_out'])) {
+                    $message = 'Client read timeout';
+                    $this->logger->error($message, $meta);
+                    throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
+                }
                 $read = strlen($data);
                 $this->throwException("Broken frame, read {$read} of stated {$length} bytes.");
             }
@@ -464,7 +470,6 @@ class Base implements LoggerAwareInterface
             fclose($this->socket);
             $this->socket = null;
         }
-        $json_meta = json_encode($meta);
         if (!empty($meta['timed_out'])) {
             $this->logger->error($message, $meta);
             throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);

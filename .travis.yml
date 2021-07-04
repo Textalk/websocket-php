@@ -1,3 +1,7 @@
+os: linux
+arch:
+  - arm64
+
 language: php
 
 php:

@@ -124,7 +124,7 @@ $server = new WebSocket\Server([
     'filter' => ['text', 'binary', 'ping'], // Specify message types for receive() to return
     'logger' => $my_psr3_logger, // Attach a PSR3 compatible logger
     'port' => 9000, // Listening port
-    'return_obj' => true, // Return Message insatnce rather than just text
+    'return_obj' => true, // Return Message instance rather than just text
     'timeout' => 60, // 1 minute time out
 ]);
 ```

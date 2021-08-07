@@ -124,7 +124,7 @@ $client = new WebSocket\Client("ws://echo.websocket.org/", [
         'origin' => 'localhost',
     ],
     'logger' => $my_psr3_logger, // Attach a PSR3 compatible logger
-    'return_obj' => true, // Return Message insatnce rather than just text
+    'return_obj' => true, // Return Message instance rather than just text
     'timeout' => 60, // 1 minute time out
 ]);
 ```

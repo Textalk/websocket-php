@@ -382,6 +382,18 @@ class ClientTest extends TestCase
         $client->receive();
     }
 
+    public function testReadTimeout(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $client->send('Connect');
+        MockSocket::initialize('receive-client-timeout', $this);
+        $this->expectException('WebSocket\TimeoutException');
+        $this->expectExceptionCode(1024);
+        $this->expectExceptionMessage('Client read timeout');
+        $client->receive();
+    }
+
     public function testEmptyRead(): void
     {
         MockSocket::initialize('client.connect', $this);

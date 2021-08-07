@@ -4,7 +4,7 @@
 
 ## `v1.6`
 
- > PHP version `^7.2|^8.0`
+ > PHP version `^7.3|^8.0`
 
 ### `1.6.0`
 
@@ -15,6 +15,15 @@
 ## `v1.5`
 
  > PHP version `^7.2|^8.0`
+
+### `1.5.5`
+
+ * Support for psr/log v2 and v3 (@simPod)
+ * GitHub Actions replaces Travis (@sirn-se)
+
+### `1.5.4`
+
+ * Keep open connection on read timeout (@marcroberts)
 
 ### `1.5.3`
 

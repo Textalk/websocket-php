@@ -445,4 +445,18 @@ class ServerTest extends TestCase
         $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
         $this->assertTrue(MockSocket::isEmpty());
     }
+
+    public function testUnconnectedServer(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertFalse($server->isConnected());
+        $server->setTimeout(30);
+        $server->close();
+        $this->assertFalse($server->isConnected());
+        $this->assertNull($server->getName());
+        $this->assertNull($server->getPeer());
+        $this->assertNull($server->getCloseStatus());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
 }

@@ -48,21 +48,6 @@ jobs:
     - name: Test
       run: make test
 
-  test-8-1:
-    runs-on: ubuntu-latest
-    name: Test PHP 8.1
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Set up PHP 8.1
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
-    - name: Composer
-      run: make install
-    - name: Test
-      run: make test
-
   cs-check:
     runs-on: ubuntu-latest
     name: Code standard

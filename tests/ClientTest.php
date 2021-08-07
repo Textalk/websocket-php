@@ -475,4 +475,16 @@ class ClientTest extends TestCase
         $this->assertEquals('127.0.0.1:8000', $client->getPier());
         $this->assertEquals('WebSocket\Client(127.0.0.1:12345)', "{$client}");
     }
+
+    public function testUnconnectedClient(): void
+    {
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->assertFalse($client->isConnected());
+        $client->setTimeout(30);
+        $client->close();
+        $this->assertFalse($client->isConnected());
+        $this->assertNull($client->getName());
+        $this->assertNull($client->getPeer());
+        $this->assertNull($client->getCloseStatus());
+    }
 }

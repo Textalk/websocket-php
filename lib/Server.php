@@ -16,7 +16,7 @@ use WebSocket\Message\Factory;
 
 class Server implements LoggerAwareInterface
 {
-    use LoggerAwareTrait; // provides setLogger(LoggerInterface $logger)
+    use LoggerAwareTrait; // Provides setLogger(LoggerInterface $logger)
     use OpcodeTrait;
 
     // Default options
@@ -29,10 +29,10 @@ class Server implements LoggerAwareInterface
       'timeout'       => null,
     ];
 
-    private $port;
-    private $listening;
-    private $request;
-    private $request_path;
+    protected $port;
+    protected $listening;
+    protected $request;
+    protected $request_path;
     private $connections = [];
     private $options = [];
     private $listen = false;

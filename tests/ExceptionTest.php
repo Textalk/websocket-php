@@ -13,7 +13,6 @@ use Throwable;
 
 class ExceptionTest extends TestCase
 {
-
     public function setUp(): void
     {
         error_reporting(-1);

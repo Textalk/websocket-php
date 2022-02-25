@@ -13,7 +13,6 @@ use PHPUnit\Framework\TestCase;
 
 class ServerTest extends TestCase
 {
-
     public function setUp(): void
     {
         error_reporting(-1);

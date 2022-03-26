@@ -179,8 +179,8 @@ class Client extends Base
             // Get server response header (terminated with double CR+LF).
             $response = '';
             do {
-              $buffer = stream_get_line($this->socket, 1024, "\r\n\r\n");
-              $response .= $buffer;
+                $buffer = stream_get_line($this->socket, 1024, "\r\n\r\n");
+                $response .= $buffer;
             } while (strlen($buffer) == 1024);
 
             // Validate response.

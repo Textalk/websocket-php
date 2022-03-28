@@ -179,9 +179,9 @@ class Client extends Base
             // Get server response header (terminated with double CR+LF).
             $response = '';
             do {
-                $buffer = stream_get_line($this->socket, 1024, "\r\n\r\n");
+                $buffer = fgets($this->socket, 1024);
                 $response .= $buffer;
-            } while (strlen($buffer) == 1024);
+            } while (substr_count($response, "\r\n\r\n") == 0);
 
             // Validate response.
             if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {

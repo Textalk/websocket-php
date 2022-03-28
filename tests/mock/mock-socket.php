@@ -56,6 +56,11 @@ function fread()
     $args = func_get_args();
     return MockSocket::handle('fread', $args);
 }
+function fgets()
+{
+    $args = func_get_args();
+    return MockSocket::handle('fgets', $args);
+}
 function stream_context_create()
 {
     $args = func_get_args();

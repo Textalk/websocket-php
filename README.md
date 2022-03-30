@@ -24,9 +24,9 @@ Preferred way to install is with [Composer](https://getcomposer.org/).
 composer require textalk/websocket
 ```
 
-* Current version support PHP versions `^7.2|8.0`.
-* For PHP `7.1` support use version `1.4`.
-* For PHP `^5.4` and `7.0` support use version `1.3`.
+* Current version support PHP versions `^7.2|^8.0`.
+* For PHP `7.1` support use version [`1.4`](https://github.com/Textalk/websocket-php/tree/1.4.0).
+* For PHP `^5.4` and `7.0` support use version [`1.3`](https://github.com/Textalk/websocket-php/tree/1.3.0).
 
 ## Client
 

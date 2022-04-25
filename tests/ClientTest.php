@@ -352,6 +352,16 @@ class ClientTest extends TestCase
         $client->receive();
     }
 
+    public function testHandshakeTimeout(): void
+    {
+        MockSocket::initialize('client.connect-handshake-timeout', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\TimeoutException');
+        $this->expectExceptionCode(1024);
+        $this->expectExceptionMessage('Client handshake timeout');
+        $client->send('Connect');
+    }
+
     public function testReadTimeout(): void
     {
         MockSocket::initialize('client.connect', $this);

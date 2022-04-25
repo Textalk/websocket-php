@@ -6,6 +6,10 @@
 
  > PHP version `^7.2|^8.0`
 
+### `1.5.8`
+
+ * Handle read error during handshake (@sirn-se)
+
 ### `1.5.7`
 
  * Large header block fix (@sirn-se)

@@ -180,6 +180,12 @@ class Client extends Base
             $response = '';
             do {
                 $buffer = fgets($this->socket, 1024);
+                if ($buffer === false) {
+                    $meta = stream_get_meta_data($this->socket);
+                    $message = 'Client handshake error';
+                    $this->logger->error($message, $meta);
+                    throw new ConnectionException($message);
+                }
                 $response .= $buffer;
             } while (substr_count($response, "\r\n\r\n") == 0);
 

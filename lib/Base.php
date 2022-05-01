@@ -12,7 +12,7 @@ namespace WebSocket;
 class Base
 {
     protected $socket;
-    protected $options = [];
+    protected $options = array();
     protected $is_closing = false;
     protected $last_opcode = null;
     protected $close_status = null;
@@ -244,10 +244,10 @@ class Base
             fclose($this->socket);
 
             // Closing should not return message.
-            return [null, true];
+            return array(null, true);
         }
 
-        return [$payload, $final];
+        return array($payload, $final);
     }
 
     /**

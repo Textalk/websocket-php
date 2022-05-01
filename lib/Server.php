@@ -12,11 +12,11 @@ namespace WebSocket;
 class Server extends Base
 {
     // Default options
-    protected static $default_options = [
-      'timeout'       => null,
-      'fragment_size' => 4096,
-      'port'          => 8000,
-    ];
+    protected static $default_options = array(
+        'timeout'       => null,
+        'fragment_size' => 4096,
+        'port'          => 8000,
+    );
 
     protected $addr;
     protected $port;
@@ -132,10 +132,10 @@ class Server extends Base
         $response_key = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
         $header = "HTTP/1.1 101 Switching Protocols\r\n"
-                . "Upgrade: websocket\r\n"
-                . "Connection: Upgrade\r\n"
-                . "Sec-WebSocket-Accept: $response_key\r\n"
-                . "\r\n";
+            . "Upgrade: websocket\r\n"
+            . "Connection: Upgrade\r\n"
+            . "Sec-WebSocket-Accept: $response_key\r\n"
+            . "\r\n";
 
         $this->write($header);
     }

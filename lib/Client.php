@@ -12,13 +12,13 @@ namespace WebSocket;
 class Client extends Base
 {
     // Default options
-    protected static $default_options = [
-      'timeout'       => 5,
-      'fragment_size' => 4096,
-      'context'       => null,
-      'headers'       => null,
-      'origin'        => null, // @deprecated
-    ];
+    protected static $default_options = array(
+        'timeout'       => 5,
+        'fragment_size' => 4096,
+        'context'       => null,
+        'headers'       => null,
+        'origin'        => null, // @deprecated
+    );
 
     protected $socket_uri;
 
@@ -166,7 +166,7 @@ class Client extends Base
             $address = $scheme . '://' . $host . $path_with_query;
             throw new ConnectionException(
                 "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
-                . $response
+                    . $response
             );
         }
 

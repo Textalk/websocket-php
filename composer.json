@@ -3,8 +3,7 @@
     "description": "WebSocket client and server",
     "license": "ISC",
     "type": "library",
-    "authors": [
-        {
+    "authors": [{
             "name": "Fredrik Liljegren",
             "email": "fredrik.liljegren@textalk.se"
         },
@@ -24,7 +23,7 @@
         }
     },
     "require": {
-        "php": "^5.4|^7.0"
+        "php": "^5.3|^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.1",

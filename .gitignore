@@ -4,3 +4,4 @@ build/
 composer.lock
 composer.phar
 vendor/
+.idea

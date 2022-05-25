@@ -24,7 +24,17 @@ class Client extends Base
       'timeout'       => 5,
     ];
 
+    protected string $pathWithQuery;
     protected $socket_uri;
+
+
+    /**
+     * @return string
+     */
+    public function getPathWithQuery(): string
+    {
+        return str_replace(" ", "%20", $this->pathWithQuery);
+    }
 
     /**
      * @param string $uri     A ws/wss-URI
@@ -70,12 +80,12 @@ class Client extends Base
         $query     = isset($url_parts['query'])    ? $url_parts['query'] : '';
         $fragment  = isset($url_parts['fragment']) ? $url_parts['fragment'] : '';
 
-        $path_with_query = $path;
+        $this->pathWithQuery = $path;
         if (!empty($query)) {
-            $path_with_query .= '?' . $query;
+            $this->pathWithQuery .= '?' . $query;
         }
         if (!empty($fragment)) {
-            $path_with_query .= '#' . $fragment;
+            $this->pathWithQuery .= '#' . $fragment;
         }
 
         if (!in_array($scheme, ['ws', 'wss'])) {
@@ -128,7 +138,7 @@ class Client extends Base
             throw new ConnectionException($error);
         }
 
-        $address = "{$scheme}://{$host}{$path_with_query}";
+        $address = "{$scheme}://{$host}{$this->getPathWithQuery()}";
 
         if (!$persistent || ftell($this->socket) == 0) {
             // Set timeout on the stream as well.
@@ -162,7 +172,7 @@ class Client extends Base
                 $headers = array_merge($headers, $this->options['headers']);
             }
 
-            $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(
+            $header = "GET " . $this->getPathWithQuery() . " HTTP/1.1\r\n" . implode(
                 "\r\n",
                 array_map(
                     function ($key, $value) {

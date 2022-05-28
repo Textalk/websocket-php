@@ -24,7 +24,7 @@ class Client extends Base
       'timeout'       => 5,
     ];
 
-    protected string $pathWithQuery;
+    protected $pathWithQuery;
     protected $socket_uri;
 
 

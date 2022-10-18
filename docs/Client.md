@@ -63,8 +63,8 @@ while (true) {
     } catch (\WebSocket\ConnectionException $e) {
         // Possibly log errors
     }
+    $client->close();
 }
-$client->close();
 ```
 
 ### Filtering received messages

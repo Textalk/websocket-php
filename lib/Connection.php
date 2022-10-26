@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2014-2021 Textalk/Abicart and contributors.
+ * Copyright (C) 2014-2022 Textalk/Abicart and contributors.
  *
  * This file is part of Websocket PHP and is free software under the ISC License.
  * License text: https://raw.githubusercontent.com/Textalk/websocket-php/master/COPYING
@@ -9,8 +9,15 @@
 
 namespace WebSocket;
 
-use Psr\Log\{LoggerAwareInterface, LoggerAwareTrait, LoggerInterface, NullLogger};
-use WebSocket\Message\{Factory, Message};
+use Psr\Log\{
+    LoggerAwareInterface,
+    LoggerAwareTrait,
+    LoggerInterface, NullLogger
+};
+use WebSocket\Message\{
+    Factory,
+    Message
+};
 
 class Connection implements LoggerAwareInterface
 {
@@ -404,7 +411,7 @@ class Connection implements LoggerAwareInterface
      * Get name of remote socket, or null if not connected.
      * @return string|null
      */
-    public function getPeer(): ?string
+    public function getRemoteName(): ?string
     {
         return stream_socket_get_name($this->stream, true);
     }

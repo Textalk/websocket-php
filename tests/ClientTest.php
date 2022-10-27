@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace WebSocket;
 
+use ErrorException;
 use Phrity\Net\Uri;
+use Phrity\Util\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class ClientTest extends TestCase
@@ -516,7 +518,13 @@ class ClientTest extends TestCase
     public function testDeprecated(): void
     {
         $client = new Client('ws://localhost:8000/my/mock/path');
-        $this->expectDeprecation();
-        $this->assertNull($client->getPier());
+        (new ErrorHandler())->with(function () use ($client) {
+            $this->assertNull($client->getPier());
+        }, function (ErrorException $e) {
+            $this->assertEquals(
+                'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+                $e->getMessage()
+            );
+        }, E_USER_DEPRECATED);
     }
 }

@@ -9,8 +9,10 @@
 
 namespace WebSocket;
 
+use ErrorException;
 use InvalidArgumentException;
 use Phrity\Net\Uri;
+use Phrity\Util\ErrorHandler;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\{
     LoggerAwareInterface,
@@ -330,36 +332,35 @@ class Client implements LoggerAwareInterface
         $persistent = $this->options['persistent'] === true;
         $flags = STREAM_CLIENT_CONNECT;
         $flags = $persistent ? $flags | STREAM_CLIENT_PERSISTENT : $flags;
+        $socket = null;
 
-        $error = $errno = $errstr = null;
-        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
-            $this->logger->warning($message, ['severity' => $severity]);
-            $error = $message;
-        }, E_ALL);
-
-        // Open the socket.
-        $socket = stream_socket_client(
-            $host_uri,
-            $errno,
-            $errstr,
-            $this->options['timeout'],
-            $flags,
-            $context
-        );
-
-        restore_error_handler();
-
-        if (!$socket) {
-            $error = "Could not open socket to \"{$host_uri->getAuthority()}\": {$errstr} ({$errno}) {$error}.";
-            $this->logger->error($error);
-            throw new ConnectionException($error);
+        try {
+            $handler = new ErrorHandler();
+            $socket = $handler->with(function () use ($host_uri, $flags, $context) {
+                $error = $errno = $errstr = null;
+                // Open the socket.
+                return stream_socket_client(
+                    $host_uri,
+                    $errno,
+                    $errstr,
+                    $this->options['timeout'],
+                    $flags,
+                    $context
+                );
+            });
+            if (!$socket) {
+                throw new ErrorException('No socket');
+            }
+        } catch (ErrorException $e) {
+            $error = "Could not open socket to \"{$host_uri->getAuthority()}\": {$e->getMessage()} ({$e->getCode()}).";
+            $this->logger->error($error, ['severity' => $e->getSeverity()]);
+            throw new ConnectionException($error, 0, [], $e);
         }
 
         $this->connection = new Connection($socket, $this->options);
         $this->connection->setLogger($this->logger);
-
         if (!$this->isConnected()) {
-            $error = "Invalid stream on \"{$host_uri->getAuthority()}\": {$errstr} ({$errno}) {$error}.";
+            $error = "Invalid stream on \"{$host_uri->getAuthority()}\".";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }

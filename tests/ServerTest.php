@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace WebSocket;
 
+use ErrorException;
+use Phrity\Util\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class ServerTest extends TestCase
@@ -490,5 +492,20 @@ class ServerTest extends TestCase
         $server->disconnect();
         $this->assertFalse($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testDeprecated(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+        (new ErrorHandler())->with(function () use ($server) {
+            $this->assertNull($server->getPier());
+        }, function (ErrorException $e) {
+            $this->assertEquals(
+                'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+                $e->getMessage()
+            );
+        }, E_USER_DEPRECATED);
     }
 }

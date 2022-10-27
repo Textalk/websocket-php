@@ -10,6 +10,8 @@
 namespace WebSocket;
 
 use Closure;
+use ErrorException;
+use Phrity\Util\ErrorHandler;
 use Psr\Log\{
     LoggerAwareInterface,
     LoggerAwareTrait,
@@ -389,22 +391,23 @@ class Server implements LoggerAwareInterface
     // Connect when read/write operation is performed.
     private function connect(): void
     {
-        $error = null;
-        set_error_handler(function (int $severity, string $message, string $file, int $line) use (&$error) {
-            $this->logger->warning($message, ['severity' => $severity]);
-            $error = $message;
-        }, E_ALL);
-
-        if (isset($this->options['timeout'])) {
-            $socket = stream_socket_accept($this->listening, $this->options['timeout']);
-        } else {
-            $socket = stream_socket_accept($this->listening);
-        }
-
-        restore_error_handler();
-
-        if (!$socket) {
-            throw new ConnectionException("Server failed to connect. {$error}");
+        try {
+            $handler = new ErrorHandler();
+            $socket = $handler->with(function () {
+                if (isset($this->options['timeout'])) {
+                    $socket = stream_socket_accept($this->listening, $this->options['timeout']);
+                } else {
+                    $socket = stream_socket_accept($this->listening);
+                }
+                if (!$socket) {
+                    throw new ErrorException('No socket');
+                }
+                return $socket;
+            });
+        } catch (ErrorException $e) {
+            $error = "Server failed to connect. {$e->getMessage()}";
+            $this->logger->error($error, ['severity' => $e->getSeverity()]);
+            throw new ConnectionException($error, 0, [], $e);
         }
 
         $connection = new Connection($socket, $this->options);

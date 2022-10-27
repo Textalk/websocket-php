@@ -518,12 +518,12 @@ class ClientTest extends TestCase
     public function testDeprecated(): void
     {
         $client = new Client('ws://localhost:8000/my/mock/path');
-        (new ErrorHandler())->with(function () use ($client) {
+        (new ErrorHandler())->withAll(function () use ($client) {
             $this->assertNull($client->getPier());
-        }, function (ErrorException $e) {
+        }, function ($exceptions, $result) {
             $this->assertEquals(
                 'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
-                $e->getMessage()
+                $exceptions[0]->getMessage()
             );
         }, E_USER_DEPRECATED);
     }

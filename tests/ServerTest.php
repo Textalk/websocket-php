@@ -499,12 +499,12 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertTrue(MockSocket::isEmpty());
-        (new ErrorHandler())->with(function () use ($server) {
+        (new ErrorHandler())->withAll(function () use ($server) {
             $this->assertNull($server->getPier());
-        }, function (ErrorException $e) {
+        }, function ($exceptions, $result) {
             $this->assertEquals(
                 'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
-                $e->getMessage()
+                $exceptions[0]->getMessage()
             );
         }, E_USER_DEPRECATED);
     }

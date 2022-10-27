@@ -40,11 +40,10 @@
         "return": 199
     },
     {
-        "function": "stream_get_line",
+        "function": "fgets",
         "params": [
             "@mock-stream",
-            1024,
-            "\r\n\r\n"
+            1024
         ],
         "return": false
     }

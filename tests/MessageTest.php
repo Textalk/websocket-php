@@ -14,7 +14,6 @@ use WebSocket\Message\Text;
 
 class MessageTest extends TestCase
 {
-
     public function setUp(): void
     {
         error_reporting(-1);

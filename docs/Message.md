@@ -21,15 +21,15 @@ Additionally;
 ```php
 WebSocket\Message\Message {
 
-    public __construct(string $payload = '')
-    public __toString() : string
+    public __construct(string $payload = '');
+    public __toString() : string;
 
-    public getOpcode() : string
-    public getLength() : int
-    public getTimestamp() : DateTime
-    public getContent() : string
-    public setContent(string $payload = '') : void
-    public hasContent() : bool
+    public getOpcode() : string;
+    public getLength() : int;
+    public getTimestamp() : DateTime;
+    public getContent() : string;
+    public setContent(string $payload = '') : void;
+    public hasContent() : bool;
 }
 ```
 

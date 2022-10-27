@@ -9,7 +9,15 @@
 
 namespace WebSocket;
 
-use Psr\Log\{LoggerAwareInterface, LoggerAwareTrait, LoggerInterface, NullLogger};
+use InvalidArgumentException;
+use Phrity\Net\Uri;
+use Psr\Http\Message\UriInterface;
+use Psr\Log\{
+    LoggerAwareInterface,
+    LoggerAwareTrait,
+    LoggerInterface,
+    NullLogger
+};
 use WebSocket\Message\Factory;
 
 class Client implements LoggerAwareInterface
@@ -19,15 +27,15 @@ class Client implements LoggerAwareInterface
 
     // Default options
     protected static $default_options = [
-      'context'       => null,
-      'filter'        => ['text', 'binary'],
-      'fragment_size' => 4096,
-      'headers'       => null,
-      'logger'        => null,
-      'origin'        => null, // @deprecated
-      'persistent'    => false,
-      'return_obj'    => false,
-      'timeout'       => 5,
+        'context'       => null,
+        'filter'        => ['text', 'binary'],
+        'fragment_size' => 4096,
+        'headers'       => null,
+        'logger'        => null,
+        'origin'        => null, // @deprecated
+        'persistent'    => false,
+        'return_obj'    => false,
+        'timeout'       => 5,
     ];
 
     private $socket_uri;
@@ -40,17 +48,17 @@ class Client implements LoggerAwareInterface
     /* ---------- Magic methods ------------------------------------------------------ */
 
     /**
-     * @param string $uri     A ws/wss-URI
-     * @param array  $options
+     * @param UriInterface|string $uri     A ws/wss-URI
+     * @param array               $options
      *   Associative array containing:
      *   - context:       Set the stream context. Default: empty context
      *   - timeout:       Set the socket timeout in seconds.  Default: 5
      *   - fragment_size: Set framgemnt size.  Default: 4096
      *   - headers:       Associative array of headers to set/override.
      */
-    public function __construct(string $uri, array $options = [])
+    public function __construct($uri, array $options = [])
     {
-        $this->socket_uri = $uri;
+        $this->socket_uri = $this->parseUri($uri);
         $this->options = array_merge(self::$default_options, [
             'logger' => new NullLogger(),
         ], $options);
@@ -197,7 +205,6 @@ class Client implements LoggerAwareInterface
      * Receive message.
      * Note that this operation will block reading.
      * @return mixed Message, text or null depending on settings.
-     * @deprecated Will be removed in future version. Use listen() instead.
      */
     public function receive()
     {
@@ -230,7 +237,6 @@ class Client implements LoggerAwareInterface
     /**
      * Get last received opcode.
      * @return string|null Opcode.
-     * @deprecated Will be removed in future version. Get opcode from Message instead.
      */
     public function getLastOpcode(): ?string
     {
@@ -268,9 +274,9 @@ class Client implements LoggerAwareInterface
      * Get name of remote socket, or null if not connected.
      * @return string|null
      */
-    public function getPeer(): ?string
+    public function getRemoteName(): ?string
     {
-        return $this->isConnected() ? $this->connection->getPeer() : null;
+        return $this->isConnected() ? $this->connection->getRemoteName() : null;
     }
 
     /**
@@ -280,7 +286,11 @@ class Client implements LoggerAwareInterface
      */
     public function getPier(): ?string
     {
-        return $this->getPeer();
+        trigger_error(
+            'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+            E_USER_DEPRECATED
+        );
+        return $this->getRemoteName();
     }
 
 
@@ -293,36 +303,15 @@ class Client implements LoggerAwareInterface
     {
         $this->connection = null;
 
-        $url_parts = parse_url($this->socket_uri);
-        if (empty($url_parts) || empty($url_parts['scheme']) || empty($url_parts['host'])) {
-            $error = "Invalid url '{$this->socket_uri}' provided.";
-            $this->logger->error($error);
-            throw new BadUriException($error);
-        }
-        $scheme    = $url_parts['scheme'];
-        $host      = $url_parts['host'];
-        $user      = isset($url_parts['user']) ? $url_parts['user'] : '';
-        $pass      = isset($url_parts['pass']) ? $url_parts['pass'] : '';
-        $port      = isset($url_parts['port']) ? $url_parts['port'] : ($scheme === 'wss' ? 443 : 80);
-        $path      = isset($url_parts['path']) ? $url_parts['path'] : '/';
-        $query     = isset($url_parts['query'])    ? $url_parts['query'] : '';
-        $fragment  = isset($url_parts['fragment']) ? $url_parts['fragment'] : '';
+        $host_uri = (new Uri())
+            ->withHost($this->socket_uri->getHost())
+            ->withScheme($this->socket_uri->getScheme() == 'wss' ? 'ssl' : 'tcp')
+            ->withPort($this->socket_uri->getPort());
 
-        $path_with_query = $path;
-        if (!empty($query)) {
-            $path_with_query .= '?' . $query;
-        }
-        if (!empty($fragment)) {
-            $path_with_query .= '#' . $fragment;
-        }
-
-        if (!in_array($scheme, ['ws', 'wss'])) {
-            $error = "Url should have scheme ws or wss, not '{$scheme}' from URI '{$this->socket_uri}'.";
-            $this->logger->error($error);
-            throw new BadUriException($error);
-        }
-
-        $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
+        $http_uri = (new Uri())
+            ->withPath($this->socket_uri->getPath())
+            ->withQuery($this->socket_uri->getQuery())
+            ->withFragment($this->socket_uri->getFragment());
 
         // Set the stream context options if they're already set in the config
         if (isset($this->options['context'])) {
@@ -350,7 +339,7 @@ class Client implements LoggerAwareInterface
 
         // Open the socket.
         $socket = stream_socket_client(
-            "{$host_uri}:{$port}",
+            $host_uri,
             $errno,
             $errstr,
             $this->options['timeout'],
@@ -361,7 +350,7 @@ class Client implements LoggerAwareInterface
         restore_error_handler();
 
         if (!$socket) {
-            $error = "Could not open socket to \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
+            $error = "Could not open socket to \"{$host_uri->getAuthority()}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }
@@ -370,12 +359,10 @@ class Client implements LoggerAwareInterface
         $this->connection->setLogger($this->logger);
 
         if (!$this->isConnected()) {
-            $error = "Invalid stream on \"{$host}:{$port}\": {$errstr} ({$errno}) {$error}.";
+            $error = "Invalid stream on \"{$host_uri->getAuthority()}\": {$errstr} ({$errno}) {$error}.";
             $this->logger->error($error);
             throw new ConnectionException($error);
         }
-
-        $address = "{$scheme}://{$host}{$path_with_query}";
 
         if (!$persistent || $this->connection->tell() == 0) {
             // Set timeout on the stream as well.
@@ -386,7 +373,7 @@ class Client implements LoggerAwareInterface
 
             // Default headers
             $headers = [
-                'Host'                  => $host . ":" . $port,
+                'Host'                  => $host_uri->getAuthority(),
                 'User-Agent'            => 'websocket-client-php',
                 'Connection'            => 'Upgrade',
                 'Upgrade'               => 'websocket',
@@ -395,8 +382,8 @@ class Client implements LoggerAwareInterface
             ];
 
             // Handle basic authentication.
-            if ($user || $pass) {
-                $headers['authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
+            if ($userinfo = $this->socket_uri->getUserInfo()) {
+                $headers['authorization'] = 'Basic ' . base64_encode($userinfo);
             }
 
             // Deprecated way of adding origin (use headers instead).
@@ -409,7 +396,7 @@ class Client implements LoggerAwareInterface
                 $headers = array_merge($headers, $this->options['headers']);
             }
 
-            $header = "GET " . $path_with_query . " HTTP/1.1\r\n" . implode(
+            $header = "GET {$http_uri} HTTP/1.1\r\n" . implode(
                 "\r\n",
                 array_map(
                     function ($key, $value) {
@@ -424,18 +411,31 @@ class Client implements LoggerAwareInterface
             $this->connection->write($header);
 
             // Get server response header (terminated with double CR+LF).
-            $response = $this->connection->getLine(1024, "\r\n\r\n");
+            $response = '';
+            try {
+                do {
+                    $buffer = $this->connection->gets(1024);
+                    $response .= $buffer;
+                } while (substr_count($response, "\r\n\r\n") == 0);
+            } catch (Exception $e) {
+                throw new ConnectionException('Client handshake error', $e->getCode(), $e->getData(), $e);
+            }
 
             // Validate response.
             if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
-                $error = "Connection to '{$address}' failed: Server sent invalid upgrade response: {$response}";
+                $error = sprintf(
+                    "Connection to '%s' failed: Server sent invalid upgrade response: %s",
+                    (string)$this->socket_uri,
+                    (string)$response
+                );
                 $this->logger->error($error);
                 throw new ConnectionException($error);
             }
 
             $keyAccept = trim($matches[1]);
-            $expectedResonse
-                = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+            $expectedResonse = base64_encode(
+                pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'))
+            );
 
             if ($keyAccept !== $expectedResonse) {
                 $error = 'Server sent bad upgrade response.';
@@ -444,7 +444,7 @@ class Client implements LoggerAwareInterface
             }
         }
 
-        $this->logger->info("Client connected to {$address}");
+        $this->logger->info("Client connected to {$this->socket_uri}");
     }
 
     /**
@@ -458,5 +458,24 @@ class Client implements LoggerAwareInterface
             $key .= chr(rand(33, 126));
         }
         return base64_encode($key);
+    }
+
+    protected function parseUri($uri): UriInterface
+    {
+        if ($uri instanceof UriInterface) {
+            $uri = $uri;
+        } elseif (is_string($uri)) {
+            try {
+                $uri = new Uri($uri);
+            } catch (InvalidArgumentException $e) {
+                throw new BadUriException("Invalid URI '{$uri}' provided.", 0, $e);
+            }
+        } else {
+            throw new BadUriException("Provided URI must be a UriInterface or string.");
+        }
+        if (!in_array($uri->getScheme(), ['ws', 'wss'])) {
+            throw new BadUriException("Invalid URI scheme, must be 'ws' or 'wss'.");
+        }
+        return $uri;
     }
 }

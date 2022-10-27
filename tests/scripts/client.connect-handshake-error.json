@@ -1,8 +1,8 @@
 [
     {
-        "function": "get_resource_type",
+        "function": "stream_context_create",
         "params": [],
-        "return": "stream-context"
+        "return": "@mock-stream-context"
     },
     {
         "function": "stream_socket_client",
@@ -45,14 +45,42 @@
             "@mock-stream",
             1024
         ],
-        "return-op": "key-respond",
-        "return": "HTTP\/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {key}\r\n\r\n"
+        "return": false
     },
     {
-        "function": "fwrite",
+        "function": "get_resource_type",
         "params": [
             "@mock-stream"
         ],
-        "return": 13
+        "return": "stream"
+    },
+    {
+        "function": "stream_get_meta_data",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": {
+            "timed_out": true,
+            "blocked": true,
+            "eof": false,
+            "stream_type": "tcp_socket\/ssl",
+            "mode": "r+",
+            "unread_bytes": 0,
+            "seekable": false
+        }
+    },
+    {
+        "function": "fclose",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": true
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": ""
     }
 ]

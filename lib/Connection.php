@@ -22,15 +22,7 @@ use WebSocket\Message\{
 class Connection implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
-
-    protected static $opcodes = [
-        'continuation' => 0,
-        'text'         => 1,
-        'binary'       => 2,
-        'close'        => 8,
-        'ping'         => 9,
-        'pong'         => 10,
-    ];
+    use OpcodeTrait;
 
     private $stream;
     private $read_buffer;
@@ -484,6 +476,22 @@ class Connection implements LoggerAwareInterface
     }
 
     /**
+     * Read line from stream.
+     * @param int $length Maximum number of bytes to read
+     * @return string Read data
+     */
+    public function gets(int $length): string
+    {
+        $line = fgets($this->stream, $length);
+        if ($line === false) {
+            $this->throwException('Could not read from stream');
+        }
+        $read = strlen($line);
+        $this->logger->debug("Read {$read} bytes of line.");
+        return $line;
+    }
+
+    /**
      * Read characters from stream.
      * @param int $length Maximum number of bytes to read
      * @return string Read data
@@ -541,13 +549,13 @@ class Connection implements LoggerAwareInterface
         if ($this->isConnected()) {
             $meta = $this->getMeta();
             $this->disconnect();
-        }
-        if (!empty($meta['timed_out'])) {
-            $this->logger->error($message, $meta);
-            throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
-        }
-        if (!empty($meta['eof'])) {
-            $code = ConnectionException::EOF;
+            if (!empty($meta['timed_out'])) {
+                $this->logger->error($message, $meta);
+                throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
+            }
+            if (!empty($meta['eof'])) {
+                $code = ConnectionException::EOF;
+            }
         }
         $this->logger->error($message, $meta);
         throw new ConnectionException($message, $code, $meta);

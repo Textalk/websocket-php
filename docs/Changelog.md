@@ -4,17 +4,32 @@
 
 ## `v1.6`
 
- > PHP version `^7.3|^8.0`
+ > PHP version `^7.4|^8.0`
 
 ### `1.6.0`
-
- * Listener functions (@sirn-se)
- * Multi connection server (@sirn-se)
- * Major refactoring, using Connections (@sirn-se)
+ * Connection separate from Client and Server (@sirn-se)
+ * getPier() deprecated, replaces by getRemoteName() (@sirn-se)
+ * Client accepts Psr\Http\Message\UriInterface as input for URI:s (@sirn-se)
+ * Bad URI throws exception when Client is instanciated, previously when used (@sirn-se)
+ * Major internal refactoring (@sirn-se)
+ * Preparations for multiple conection and listeners (@sirn-se)
 
 ## `v1.5`
 
  > PHP version `^7.2|^8.0`
+
+### `1.5.8`
+
+ * Handle read error during handshake (@sirn-se)
+
+### `1.5.7`
+
+ * Large header block fix (@sirn-se)
+
+### `1.5.6`
+
+ * Add test for PHP 8.1 (@sirn-se)
+ * Code standard (@sirn-se)
 
 ### `1.5.5`
 

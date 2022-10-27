@@ -10,7 +10,12 @@
 namespace WebSocket;
 
 use Closure;
-use Psr\Log\{LoggerAwareInterface, LoggerAwareTrait, LoggerInterface, NullLogger};
+use Psr\Log\{
+    LoggerAwareInterface,
+    LoggerAwareTrait,
+    LoggerInterface,
+    NullLogger
+};
 use Throwable;
 use WebSocket\Message\Factory;
 
@@ -21,12 +26,12 @@ class Server implements LoggerAwareInterface
 
     // Default options
     protected static $default_options = [
-      'filter'        => ['text', 'binary'],
-      'fragment_size' => 4096,
-      'logger'        => null,
-      'port'          => 8000,
-      'return_obj'    => false,
-      'timeout'       => null,
+        'filter'        => ['text', 'binary'],
+        'fragment_size' => 4096,
+        'logger'        => null,
+        'port'          => 8000,
+        'return_obj'    => false,
+        'timeout'       => null,
     ];
 
     protected $port;
@@ -97,94 +102,9 @@ class Server implements LoggerAwareInterface
     /* ---------- Server operations -------------------------------------------------- */
 
     /**
-     * Set server to listen to incoming requests.
-     * @param Closure $callback A callback function that will be called when server receives message.
-     *   function (Message $message, Connection $connection = null)
-     *   If callback function returns non-null value, the listener will halt and return that value.
-     *   Otherwise it will continue listening and propagating messages.
-     * @return mixed Returns any non-null value returned by callback function.
-     */
-    public function listen(Closure $callback)
-    {
-        $this->listen = true;
-        while ($this->listen) {
-            // Server accept
-            if ($stream = @stream_socket_accept($this->listening, 0)) {
-                $peer = stream_socket_get_name($stream, true);
-                $this->logger->info("[server] Accepted connection from {$peer}");
-                $connection = new Connection($stream, $this->options);
-                $connection->setLogger($this->logger);
-                if ($this->options['timeout']) {
-                    $connection->setTimeout($this->options['timeout']);
-                }
-                $this->performHandshake($connection);
-                $this->connections[$peer] = $connection;
-            }
-
-            // Collect streams to listen to
-            $streams = array_filter(array_map(function ($connection, $peer) {
-                $stream = $connection->getStream();
-                if (is_null($stream)) {
-                    $this->logger->debug("[server] Remove {$peer} from listener stack");
-                    unset($this->connections[$peer]);
-                }
-                return $stream;
-            }, $this->connections, array_keys($this->connections)));
-
-            // Handle incoming
-            if (!empty($streams)) {
-                $read = $streams;
-                $write = [];
-                $except = [];
-                if (stream_select($read, $write, $except, 0)) {
-                    foreach ($read as $stream) {
-                        try {
-                            $result = null;
-                            $peer = stream_socket_get_name($stream, true);
-                            if (empty($peer)) {
-                                $this->logger->warning("[server] Got detached stream '{$peer}'");
-                                continue;
-                            }
-                            $connection = $this->connections[$peer];
-                            $this->logger->debug("[server] Handling {$peer}");
-                            $message = $connection->pullMessage();
-                            if (!$connection->isConnected()) {
-                                unset($this->connections[$peer]);
-                                $connection = null;
-                            }
-                            // Trigger callback according to filter
-                            $opcode = $message->getOpcode();
-                            if (in_array($opcode, $this->options['filter'])) {
-                                $this->last_opcode = $opcode;
-                                $result = $callback($message, $connection);
-                            }
-                            // If callback returns not null, exit loop and return that value
-                            if (!is_null($result)) {
-                                return $result;
-                            }
-                        } catch (Throwable $e) {
-                            $this->logger->error("[server] Error occured on {$peer}; {$e->getMessage()}");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Tell server to stop listening to incoming requests.
-     * Active connections are still available when restarting listening.
-     */
-    public function stop(): void
-    {
-        $this->listen = false;
-    }
-
-    /**
      * Accept a single incoming request.
      * Note that this operation will block accepting additional requests.
      * @return bool True if listening.
-     * @deprecated Will be removed in future version. Use listen() instead.
      */
     public function accept(): bool
     {
@@ -366,12 +286,11 @@ class Server implements LoggerAwareInterface
     }
 
 
-    /* ---------- Connection functions (all deprecated) ------------------------------ */
+    /* ---------- Connection functions ----------------------------------------------- */
 
     /**
      * Get requested path from last connection.
      * @return string Path.
-     * @deprecated Will be removed in future version.
      */
     public function getPath(): string
     {
@@ -381,7 +300,6 @@ class Server implements LoggerAwareInterface
     /**
      * Get request from last connection.
      * @return array Request.
-     * @deprecated Will be removed in future version.
      */
     public function getRequest(): array
     {
@@ -391,7 +309,6 @@ class Server implements LoggerAwareInterface
     /**
      * Get headers from last connection.
      * @return string|null Headers.
-     * @deprecated Will be removed in future version.
      */
     public function getHeader($header): ?string
     {
@@ -407,7 +324,6 @@ class Server implements LoggerAwareInterface
     /**
      * Get last received opcode.
      * @return string|null Opcode.
-     * @deprecated Will be removed in future version. Get opcode from Message instead.
      */
     public function getLastOpcode(): ?string
     {
@@ -417,7 +333,6 @@ class Server implements LoggerAwareInterface
     /**
      * Get close status from single connection.
      * @return int|null Close status.
-     * @deprecated Will be removed in future version. Get close status from Connection instead.
      */
     public function getCloseStatus(): ?int
     {
@@ -427,7 +342,6 @@ class Server implements LoggerAwareInterface
     /**
      * If Server has active connections.
      * @return bool True if active connection.
-     * @deprecated Will be removed in future version.
      */
     public function isConnected(): bool
     {
@@ -442,7 +356,6 @@ class Server implements LoggerAwareInterface
     /**
      * Get name of local socket from single connection.
      * @return string|null Name of local socket.
-     * @deprecated Will be removed in future version. Get name from Connection instead.
      */
     public function getName(): ?string
     {
@@ -452,11 +365,10 @@ class Server implements LoggerAwareInterface
     /**
      * Get name of remote socket from single connection.
      * @return string|null Name of remote socket.
-     * @deprecated Will be removed in future version. Get peer from Connection instead.
      */
-    public function getPeer(): ?string
+    public function getRemoteName(): ?string
     {
-        return $this->isConnected() ? current($this->connections)->getPeer() : null;
+        return $this->isConnected() ? current($this->connections)->getRemoteName() : null;
     }
 
     /**
@@ -464,7 +376,11 @@ class Server implements LoggerAwareInterface
      */
     public function getPier(): ?string
     {
-        return $this->getPeer();
+        trigger_error(
+            'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+            E_USER_DEPRECATED
+        );
+        return $this->getRemoteName();
     }
 
 
@@ -500,7 +416,7 @@ class Server implements LoggerAwareInterface
 
         $this->logger->info("Client has connected to port {port}", [
             'port' => $this->port,
-            'pier' => $connection->getPeer(),
+            'peer' => $connection->getRemoteName(),
         ]);
         $this->performHandshake($connection);
         $this->connections = ['*' => $connection];

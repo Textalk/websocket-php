@@ -8,7 +8,6 @@ namespace WebSocket;
 
 class MockSocket
 {
-
     private static $queue = [];
     private static $stored = [];
     private static $asserter;

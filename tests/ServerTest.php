@@ -13,7 +13,6 @@ use PHPUnit\Framework\TestCase;
 
 class ServerTest extends TestCase
 {
-
     public function setUp(): void
     {
         error_reporting(-1);
@@ -431,7 +430,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertNull($server->getName());
-        $this->assertNull($server->getPier());
+        $this->assertNull($server->getRemoteName());
         $this->assertEquals('WebSocket\Server(closed)', "{$server}");
         MockSocket::initialize('server.accept', $this);
         $server->accept();
@@ -441,7 +440,7 @@ class ServerTest extends TestCase
         $server->ping();
         $server->pong();
         $this->assertEquals('127.0.0.1:12345', $server->getName());
-        $this->assertEquals('127.0.0.1:8000', $server->getPier());
+        $this->assertEquals('127.0.0.1:8000', $server->getRemoteName());
         $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
         $this->assertTrue(MockSocket::isEmpty());
     }
@@ -455,7 +454,7 @@ class ServerTest extends TestCase
         $server->close();
         $this->assertFalse($server->isConnected());
         $this->assertNull($server->getName());
-        $this->assertNull($server->getPeer());
+        $this->assertNull($server->getRemoteName());
         $this->assertNull($server->getCloseStatus());
         $this->assertTrue(MockSocket::isEmpty());
     }

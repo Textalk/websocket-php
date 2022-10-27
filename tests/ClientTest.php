@@ -512,4 +512,11 @@ class ClientTest extends TestCase
         $this->assertNull($client->getRemoteName());
         $this->assertNull($client->getCloseStatus());
     }
+
+    public function testDeprecated(): void
+    {
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectDeprecation();
+        $this->assertNull($client->getPier());
+    }
 }

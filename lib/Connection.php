@@ -62,46 +62,6 @@ class Connection implements LoggerAwareInterface
     }
 
     /**
-     * Convenience method to send text message
-     * @param string $payload Content as string
-     */
-    public function text(string $payload): void
-    {
-        $message = $this->msg_factory->create('text', $payload);
-        $this->pushMessage($message);
-    }
-
-    /**
-     * Convenience method to send binary message
-     * @param string $payload Content as binary string
-     */
-    public function binary(string $payload): void
-    {
-        $message = $this->msg_factory->create('binary', $payload);
-        $this->pushMessage($message);
-    }
-
-    /**
-     * Convenience method to send ping
-     * @param string $payload Optional text as string
-     */
-    public function ping(string $payload = ''): void
-    {
-        $message = $this->msg_factory->create('ping', $payload);
-        $this->pushMessage($message);
-    }
-
-    /**
-     * Convenience method to send unsolicited pong
-     * @param string $payload Optional text as string
-     */
-    public function pong(string $payload = ''): void
-    {
-        $message = $this->msg_factory->create('pong', $payload);
-        $this->pushMessage($message);
-    }
-
-    /**
      * Tell the socket to close.
      *
      * @param integer $status  http://tools.ietf.org/html/rfc6455#section-7.4
@@ -356,11 +316,6 @@ class Connection implements LoggerAwareInterface
 
 
     /* ---------- Stream I/O methods ------------------------------------------------- */
-
-    public function getStream()
-    {
-        return $this->isConnected() ? $this->stream : null;
-    }
 
     /**
      * Close connection stream.

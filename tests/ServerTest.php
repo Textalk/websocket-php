@@ -458,4 +458,37 @@ class ServerTest extends TestCase
         $this->assertNull($server->getCloseStatus());
         $this->assertTrue(MockSocket::isEmpty());
     }
+
+    public function testFailedHandshake(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept-failed-handshake', $this);
+        $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not read from stream');
+        $server->send('Connect');
+        $this->assertFalse($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testServerDisconnect(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.disconnect', $this);
+        $server->disconnect();
+        $this->assertFalse($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
 }

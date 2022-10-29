@@ -35,7 +35,7 @@ WebSocket\Server {
     public getRemoteName() : string|null;
     public getLastOpcode() : string;
     public getCloseStatus() : int;
-    public isConnected() : bool
+    public isConnected() : bool;
     public setTimeout(int $seconds) : void;
     public setFragmentSize(int $fragment_size) : self;
     public getFragmentSize() : int;

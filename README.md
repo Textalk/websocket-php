@@ -10,9 +10,8 @@ It does not include convenience operations such as listeners and implicit error 
 
 ## Documentation
 
-- [Client overwiew](docs/Client.md)
-- [Server overview](docs/Server.md)
-- [Classes](docs/Classes/Classes.md)
+- [Client](docs/Client.md)
+- [Server](docs/Server.md)
 - [Examples](docs/Examples.md)
 - [Changelog](docs/Changelog.md)
 - [Contributing](docs/Contributing.md)
@@ -43,17 +42,18 @@ $client->close();
 
 ## Server
 
-The library contains a websocket [server](docs/Server.md).
+The library contains a rudimentary single stream/single thread [server](docs/Server.md).
 It internally supports Upgrade handshake and implicit close and ping/pong operations.
-Preferred operation is using the listener function, but optional operations exist.
+
+Note that it does **not** support threading or automatic association ot continuous client requests.
+If you require this kind of server behavior, you need to build it on top of provided server implementation.
 
 ```php
 $server = new WebSocket\Server();
-$server->listen(function ($message, $connection = null) {
-    echo "Got {$message->getContent()}\n";
-    if (!$connection) return; // Current connection is closed
-    $connection->text('Sending message to client');
-});
+$server->accept();
+$message = $server->receive();
+$server->text($message);
+$server->close();
 ```
 
 ### License and Contributors

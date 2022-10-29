@@ -14,7 +14,7 @@ Available classes correspond to opcode;
 
 Additionally;
 * WebSocket\Message\Message - abstract base class for all messages above
-* WebSocket\Message\Factory - Factory class to create Msssage instances
+* WebSocket\Message\Factory - Factory class to create Message instances
 
 ##  Message abstract class synopsis
 
@@ -38,7 +38,7 @@ WebSocket\Message\Message {
 ```php
 WebSocket\Message\Factory {
 
-    public create(string $opcode, string $payload = '') : Message
+    public create(string $opcode, string $payload = '') : Message;
 }
 ```
 

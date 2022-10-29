@@ -8,11 +8,11 @@
 
 ### `1.6.0`
  * Connection separate from Client and Server (@sirn-se)
- * getPier() deprecated, replaces by getRemoteName() (@sirn-se)
- * Client accepts Psr\Http\Message\UriInterface as input for URI:s (@sirn-se)
+ * getPier() deprecated, replaced by getRemoteName() (@sirn-se)
+ * Client accepts `Psr\Http\Message\UriInterface` as input for URI:s (@sirn-se)
  * Bad URI throws exception when Client is instanciated, previously when used (@sirn-se)
- * Major internal refactoring (@sirn-se)
  * Preparations for multiple conection and listeners (@sirn-se)
+ * Major internal refactoring (@sirn-se)
 
 ## `v1.5`
 

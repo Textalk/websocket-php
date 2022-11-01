@@ -16,7 +16,6 @@ Base your patch on corresponding version branch, and target that version branch 
 
 * `v1.6-master` current version
 * `v1.5-master` previous version, bug fixes only
-* `v1.4-master` previous version, bug fixes only
 * Older versions should not be target of pull requests
 
 

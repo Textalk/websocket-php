@@ -10,27 +10,27 @@ It internally supports Upgrade handshake and implicit close and ping/pong operat
 ```php
 WebSocket\Client {
 
-    public __construct(string $uri, array $options = [])
-    public __destruct()
-    public __toString() : string
+    public __construct(UriInterface|string $uri, array $options = []);
+    public __destruct();
+    public __toString() : string;
 
-    public text(string $payload) : void
-    public binary(string $payload) : void
-    public ping(string $payload = '') : void
-    public pong(string $payload = '') : void
-    public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : mixed
-    public close(int $status = 1000, mixed $message = 'ttfn') : mixed
+    public text(string $payload) : void;
+    public binary(string $payload) : void;
+    public ping(string $payload = '') : void;
+    public pong(string $payload = '') : void;
+    public send(Message|string $payload, string $opcode = 'text', bool $masked = true) : void;
+    public close(int $status = 1000, mixed $message = 'ttfn') : void;
+    public receive() : Message|string|null;
 
-    public getName() : string|null
-    public getPier() : string|null
-    public getLastOpcode() : string
-    public getCloseStatus() : int
-    public isConnected() : bool
-    public setTimeout(int $seconds) : void
-    public setFragmentSize(int $fragment_size) : self
-    public getFragmentSize() : int
-    public setLogger(Psr\Log\LoggerInterface $logger = null) : void
+    public getName() : string|null;
+    public getRemoteName() : string|null;
+    public getLastOpcode() : string;
+    public getCloseStatus() : int;
+    public isConnected() : bool;
+    public setTimeout(int $seconds) : void;
+    public setFragmentSize(int $fragment_size) : self;
+    public getFragmentSize() : int;
+    public setLogger(Psr\Log\LoggerInterface $logger = null) : void;
 }
 ```
 

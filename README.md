@@ -12,7 +12,6 @@ It does not include convenience operations such as listeners and implicit error 
 
 - [Client](docs/Client.md)
 - [Server](docs/Server.md)
-- [Message](docs/Message.md)
 - [Examples](docs/Examples.md)
 - [Changelog](docs/Changelog.md)
 - [Contributing](docs/Contributing.md)
@@ -24,7 +23,8 @@ Preferred way to install is with [Composer](https://getcomposer.org/).
 composer require textalk/websocket
 ```
 
-* Current version support PHP versions `^7.2|^8.0`.
+* Current version support PHP versions `^7.4|^8.0`.
+* For PHP `7.2` and `7.3` support use version [`1.5`](https://github.com/Textalk/websocket-php/tree/1.5.0).
 * For PHP `7.1` support use version [`1.4`](https://github.com/Textalk/websocket-php/tree/1.4.0).
 * For PHP `^5.4` and `7.0` support use version [`1.3`](https://github.com/Textalk/websocket-php/tree/1.3.0).
 

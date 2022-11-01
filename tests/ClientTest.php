@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 namespace WebSocket;
 
+use ErrorException;
+use Phrity\Net\Uri;
+use Phrity\Util\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class ClientTest extends TestCase
@@ -225,22 +228,46 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
-    public function testBadScheme(): void
+    public function testFailedPersistentConnection(): void
     {
-        MockSocket::initialize('client.connect', $this);
-        $client = new Client('bad://localhost:8000/my/mock/path');
-        $this->expectException('WebSocket\BadUriException');
-        $this->expectExceptionMessage('Url should have scheme ws or wss');
+        MockSocket::initialize('client.connect-persistent-failure', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['persistent' => true]);
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionMessage('Could not resolve stream pointer position');
         $client->send('Connect');
     }
 
-    public function testBadUrl(): void
+    public function testBadScheme(): void
     {
         MockSocket::initialize('client.connect', $this);
-        $client = new Client('this is not an url');
         $this->expectException('WebSocket\BadUriException');
-        $this->expectExceptionMessage('Invalid url \'this is not an url\' provided.');
+        $this->expectExceptionMessage("Invalid URI scheme, must be 'ws' or 'wss'.");
+        $client = new Client('bad://localhost:8000/my/mock/path');
+    }
+
+    public function testBadUri(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $this->expectException('WebSocket\BadUriException');
+        $this->expectExceptionMessage("Invalid URI '--:this is not an uri:--' provided.");
+        $client = new Client('--:this is not an uri:--');
+    }
+
+    public function testInvalidUriType(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $this->expectException('WebSocket\BadUriException');
+        $this->expectExceptionMessage("Provided URI must be a UriInterface or string.");
+        $client = new Client([]);
+    }
+
+    public function testUriInterface(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $uri = new Uri('ws://localhost:8000/my/mock/path');
+        $client = new Client($uri);
         $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
     }
 
     public function testBadStreamContext(): void
@@ -272,13 +299,33 @@ class ClientTest extends TestCase
         $client->send('Connect');
     }
 
+    public function testBadStreamConnection(): void
+    {
+        MockSocket::initialize('client.connect-bad-stream', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Invalid stream on "localhost:8000"');
+        $client->send('Connect');
+    }
+
+    public function testHandshakeFailure(): void
+    {
+        MockSocket::initialize('client.connect-handshake-failure', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Client handshake error');
+        $client->send('Connect');
+    }
+
     public function testInvalidUpgrade(): void
     {
         MockSocket::initialize('client.connect-invalid-upgrade', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(0);
-        $this->expectExceptionMessage('Connection to \'ws://localhost/my/mock/path\' failed');
+        $this->expectExceptionMessage('Connection to \'ws://localhost:8000/my/mock/path\' failed');
         $client->send('Connect');
     }
 
@@ -357,7 +404,7 @@ class ClientTest extends TestCase
         MockSocket::initialize('client.connect-handshake-error', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $this->expectException('WebSocket\ConnectionException');
-        $this->expectExceptionCode(0);
+        $this->expectExceptionCode(1024);
         $this->expectExceptionMessage('Client handshake error');
         $client->send('Connect');
     }
@@ -444,7 +491,7 @@ class ClientTest extends TestCase
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $this->assertNull($client->getName());
-        $this->assertNull($client->getPier());
+        $this->assertNull($client->getRemoteName());
         $this->assertEquals('WebSocket\Client(closed)', "{$client}");
         $client->text('Connect');
         MockSocket::initialize('send-convenicance', $this);
@@ -452,7 +499,32 @@ class ClientTest extends TestCase
         $client->ping();
         $client->pong();
         $this->assertEquals('127.0.0.1:12345', $client->getName());
-        $this->assertEquals('127.0.0.1:8000', $client->getPier());
+        $this->assertEquals('127.0.0.1:8000', $client->getRemoteName());
         $this->assertEquals('WebSocket\Client(127.0.0.1:12345)', "{$client}");
+    }
+
+    public function testUnconnectedClient(): void
+    {
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        $this->assertFalse($client->isConnected());
+        $client->setTimeout(30);
+        $client->close();
+        $this->assertFalse($client->isConnected());
+        $this->assertNull($client->getName());
+        $this->assertNull($client->getRemoteName());
+        $this->assertNull($client->getCloseStatus());
+    }
+
+    public function testDeprecated(): void
+    {
+        $client = new Client('ws://localhost:8000/my/mock/path');
+        (new ErrorHandler())->withAll(function () use ($client) {
+            $this->assertNull($client->getPier());
+        }, function ($exceptions, $result) {
+            $this->assertEquals(
+                'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+                $exceptions[0]->getMessage()
+            );
+        }, E_USER_DEPRECATED);
     }
 }

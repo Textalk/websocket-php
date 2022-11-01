@@ -13,33 +13,33 @@ If you require this kind of server behavior, you need to build it on top of prov
 ```php
 WebSocket\Server {
 
-    public __construct(array $options = [])
-    public __destruct()
-    public __toString() : string
+    public __construct(array $options = []);
+    public __destruct();
+    public __toString() : string;
 
-    public accept() : bool
-    public text(string $payload) : void
-    public binary(string $payload) : void
-    public ping(string $payload = '') : void
-    public pong(string $payload = '') : void
-    public send(mixed $payload, string $opcode = 'text', bool $masked = true) : void
-    public receive() : mixed
-    public close(int $status = 1000, mixed $message = 'ttfn') : mixed
+    public accept() : bool;
+    public text(string $payload) : void;
+    public binary(string $payload) : void;
+    public ping(string $payload = '') : void;
+    public pong(string $payload = '') : void;
+    public send(Message|string $payload, string $opcode = 'text', bool $masked = true) : void;
+    public close(int $status = 1000, mixed $message = 'ttfn') : void;
+    public receive() : Message|string|null;
 
-    public getPort() : int
-    public getPath() : string
-    public getRequest() : array
-    public getHeader(string $header_name) : string|null
+    public getPort() : int;
+    public getPath() : string;
+    public getRequest() : array;
+    public getHeader(string $header_name) : string|null;
 
-    public getName() : string|null
-    public getPier() : string|null
-    public getLastOpcode() : string
-    public getCloseStatus() : int
-    public isConnected() : bool
-    public setTimeout(int $seconds) : void
-    public setFragmentSize(int $fragment_size) : self
-    public getFragmentSize() : int
-    public setLogger(Psr\Log\LoggerInterface $logger = null) : void
+    public getName() : string|null;
+    public getRemoteName() : string|null;
+    public getLastOpcode() : string;
+    public getCloseStatus() : int;
+    public isConnected() : bool;
+    public setTimeout(int $seconds) : void;
+    public setFragmentSize(int $fragment_size) : self;
+    public getFragmentSize() : int;
+    public setLogger(Psr\Log\LoggerInterface $logger = null) : void;
 }
 ```
 
@@ -124,7 +124,7 @@ $server = new WebSocket\Server([
     'filter' => ['text', 'binary', 'ping'], // Specify message types for receive() to return
     'logger' => $my_psr3_logger, // Attach a PSR3 compatible logger
     'port' => 9000, // Listening port
-    'return_obj' => true, // Return Message insatnce rather than just text
+    'return_obj' => true, // Return Message instance rather than just text
     'timeout' => 60, // 1 minute time out
 ]);
 ```

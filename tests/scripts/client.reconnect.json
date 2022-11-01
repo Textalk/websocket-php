@@ -4,14 +4,14 @@
         "params": [
             "@mock-stream"
         ],
-        "return": "Unknown"
+        "return": "unknown"
     },
     {
         "function": "get_resource_type",
         "params": [
             "@mock-stream"
         ],
-        "return": "stream"
+        "return": "unknown"
     },
     {
         "function": "stream_context_create",

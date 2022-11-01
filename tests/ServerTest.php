@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace WebSocket;
 
+use ErrorException;
+use Phrity\Util\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class ServerTest extends TestCase
@@ -430,7 +432,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.construct', $this);
         $server = new Server();
         $this->assertNull($server->getName());
-        $this->assertNull($server->getPier());
+        $this->assertNull($server->getRemoteName());
         $this->assertEquals('WebSocket\Server(closed)', "{$server}");
         MockSocket::initialize('server.accept', $this);
         $server->accept();
@@ -440,8 +442,70 @@ class ServerTest extends TestCase
         $server->ping();
         $server->pong();
         $this->assertEquals('127.0.0.1:12345', $server->getName());
-        $this->assertEquals('127.0.0.1:8000', $server->getPier());
+        $this->assertEquals('127.0.0.1:8000', $server->getRemoteName());
         $this->assertEquals('WebSocket\Server(127.0.0.1:12345)', "{$server}");
         $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testUnconnectedServer(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertFalse($server->isConnected());
+        $server->setTimeout(30);
+        $server->close();
+        $this->assertFalse($server->isConnected());
+        $this->assertNull($server->getName());
+        $this->assertNull($server->getRemoteName());
+        $this->assertNull($server->getCloseStatus());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testFailedHandshake(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.accept-failed-handshake', $this);
+        $server->accept();
+        $this->expectException('WebSocket\ConnectionException');
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('Could not read from stream');
+        $server->send('Connect');
+        $this->assertFalse($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testServerDisconnect(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+        MockSocket::initialize('server.accept', $this);
+        $server->accept();
+        $server->send('Connect');
+        $this->assertTrue($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+
+        MockSocket::initialize('server.disconnect', $this);
+        $server->disconnect();
+        $this->assertFalse($server->isConnected());
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testDeprecated(): void
+    {
+        MockSocket::initialize('server.construct', $this);
+        $server = new Server();
+        $this->assertTrue(MockSocket::isEmpty());
+        (new ErrorHandler())->withAll(function () use ($server) {
+            $this->assertNull($server->getPier());
+        }, function ($exceptions, $result) {
+            $this->assertEquals(
+                'getPier() is deprecated and will be removed in future version. Use getRemoteName() instead.',
+                $exceptions[0]->getMessage()
+            );
+        }, E_USER_DEPRECATED);
     }
 }

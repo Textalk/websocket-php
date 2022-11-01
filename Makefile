@@ -9,7 +9,7 @@ test: composer.lock
 	./vendor/bin/phpunit
 
 cs-check: composer.lock
-	./vendor/bin/phpcs --standard=codestandard.xml lib tests examples
+	./vendor/bin/phpcs --standard=PSR1,PSR12 --encoding=UTF-8 --report=full --colors lib tests examples
 
 coverage: composer.lock build
 	XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover build/logs/clover.xml

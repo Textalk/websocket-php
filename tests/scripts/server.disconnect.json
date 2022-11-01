@@ -1,4 +1,5 @@
 [
+
     {
         "function": "get_resource_type",
         "params": [
@@ -12,5 +13,12 @@
             "@mock-stream"
         ],
         "return": true
+    },
+    {
+        "function": "get_resource_type",
+        "params": [
+            "@mock-stream"
+        ],
+        "return": ""
     }
 ]

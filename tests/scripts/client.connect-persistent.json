@@ -24,13 +24,6 @@
         "return": "persistent stream"
     },
     {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "persistent stream"
-    },
-    {
         "function": "ftell",
         "params": [
             "@mock-stream"
@@ -68,13 +61,6 @@
             "@mock-stream"
         ],
         "return": 13
-    },
-    {
-        "function": "get_resource_type",
-        "params": [
-            "@mock-stream"
-        ],
-        "return": "persistent stream"
     },
     {
         "function": "get_resource_type",

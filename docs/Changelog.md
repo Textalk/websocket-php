@@ -6,6 +6,10 @@
 
  > PHP version `^7.4|^8.0`
 
+### `1.6.1`
+
+ * Fix client path for http request (@simPod, @sirn-se)
+
 ### `1.6.0`
  * Connection separate from Client and Server (@sirn-se)
  * getPier() deprecated, replaced by getRemoteName() (@sirn-se)

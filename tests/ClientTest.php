@@ -64,6 +64,24 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testClientNoPath(): void
+    {
+        MockSocket::initialize('client.connect-root', $this);
+        $client = new Client('ws://localhost:8000');
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testClientRelativePath(): void
+    {
+        MockSocket::initialize('client.connect', $this);
+        $uri = new Uri('ws://localhost:8000');
+        $uri = $uri->withPath('my/mock/path');
+        $client = new Client($uri);
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
     public function testClientWithTimeout(): void
     {
         MockSocket::initialize('client.connect-timeout', $this);

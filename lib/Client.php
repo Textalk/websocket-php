@@ -310,10 +310,15 @@ class Client implements LoggerAwareInterface
             ->withScheme($this->socket_uri->getScheme() == 'wss' ? 'ssl' : 'tcp')
             ->withPort($this->socket_uri->getPort());
 
+        // Path must be absolute
+        $http_path = $this->socket_uri->getPath();
+        if ($http_path === '' || $http_path[0] !== '/') {
+            $http_path = "/{$http_path}";
+        }
+
         $http_uri = (new Uri())
-            ->withPath($this->socket_uri->getPath())
-            ->withQuery($this->socket_uri->getQuery())
-            ->withFragment($this->socket_uri->getFragment());
+            ->withPath($http_path)
+            ->withQuery($this->socket_uri->getQuery());
 
         // Set the stream context options if they're already set in the config
         if (isset($this->options['context'])) {

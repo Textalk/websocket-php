@@ -33,10 +33,12 @@
     },
     {
         "function": "fwrite",
+        "regexp": true,
         "params": [
-            "@mock-stream"
+            "@mock-stream",
+            "GET /my/mock/path HTTP/1.1\r\nHost: localhost:8000\r\nUser-Agent: websocket-client-php\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n"
         ],
-        "return-op": "key-save",
+        "input-op": "key-save",
         "return": 199
     },
     {

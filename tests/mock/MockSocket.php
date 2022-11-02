@@ -21,6 +21,9 @@ class MockSocket
         }
         self::$asserter->assertEquals($current['function'], $function);
         foreach ($current['params'] as $index => $param) {
+            if (isset($current['input-op'])) {
+                $param = self::op($current['input-op'], $params, $param);
+            }
             self::$asserter->assertEquals($param, $params[$index], json_encode([$current, $params]));
         }
         if (isset($current['error'])) {
@@ -67,7 +70,7 @@ class MockSocket
             case 'key-save':
                 preg_match('#Sec-WebSocket-Key:\s(.*)$#mUi', $params[1], $matches);
                 self::$stored['sec-websocket-key'] = trim($matches[1]);
-                return $data;
+                return str_replace('{key}', self::$stored['sec-websocket-key'], $data);
             case 'key-respond':
                 $key = self::$stored['sec-websocket-key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
                 $encoded = base64_encode(pack('H*', sha1($key)));

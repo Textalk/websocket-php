@@ -8,7 +8,7 @@
 
 ### `1.6.2`
 
- * Fix issue where port was missing in socker uri (@sirn-se)
+ * Fix issue where port was missing in socket uri (@sirn-se)
 
 ### `1.6.1`
 

@@ -305,10 +305,12 @@ class Client implements LoggerAwareInterface
     {
         $this->connection = null;
 
-        $host_uri = (new Uri())
-            ->withHost($this->socket_uri->getHost())
+        $host_uri = $this->socket_uri
             ->withScheme($this->socket_uri->getScheme() == 'wss' ? 'ssl' : 'tcp')
-            ->withPort($this->socket_uri->getPort());
+            ->withPath('')
+            ->withQuery('')
+            ->withFragment('')
+            ->withUserInfo('');
 
         // Path must be absolute
         $http_path = $this->socket_uri->getPath();

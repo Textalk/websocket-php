@@ -6,6 +6,10 @@
 
  > PHP version `^7.4|^8.0`
 
+### `1.6.`
+
+ * Fix issue where port was missing in socker uri (@sirn-se)
+
 ### `1.6.1`
 
  * Fix client path for http request (@simPod, @sirn-se)

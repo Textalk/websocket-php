@@ -6,6 +6,10 @@
 
  > PHP version `^7.4|^8.0`
 
+### `1.6.3`
+
+ * Fix issue with implicit default ports (@etrinh, @sirn-se)
+
 ### `1.6.2`
 
  * Fix issue where port was missing in socket uri (@sirn-se)

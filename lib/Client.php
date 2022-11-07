@@ -307,6 +307,7 @@ class Client implements LoggerAwareInterface
 
         $host_uri = $this->socket_uri
             ->withScheme($this->socket_uri->getScheme() == 'wss' ? 'ssl' : 'tcp')
+            ->withPort($this->socket_uri->getPort() ?? ($this->socket_uri->getScheme() == 'wss' ? 443 : 80))
             ->withPath('')
             ->withQuery('')
             ->withFragment('')

@@ -82,6 +82,26 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
     }
 
+    public function testClientWsDefaultPort(): void
+    {
+        MockSocket::initialize('client.connect-default-port-ws', $this);
+        $uri = new Uri('ws://localhost');
+        $uri = $uri->withPath('my/mock/path');
+        $client = new Client($uri);
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
+    public function testClientWssDefaultPort(): void
+    {
+        MockSocket::initialize('client.connect-default-port-wss', $this);
+        $uri = new Uri('wss://localhost');
+        $uri = $uri->withPath('my/mock/path');
+        $client = new Client($uri);
+        $client->send('Connect');
+        $this->assertTrue(MockSocket::isEmpty());
+    }
+
     public function testClientWithTimeout(): void
     {
         MockSocket::initialize('client.connect-timeout', $this);

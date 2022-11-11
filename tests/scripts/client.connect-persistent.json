@@ -44,7 +44,7 @@
             "@mock-stream"
         ],
         "return-op": "key-save",
-        "return": 248
+        "return": 199
     },
     {
         "function": "fgets",

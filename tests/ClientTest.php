@@ -29,7 +29,7 @@ class ClientTest extends TestCase
         $this->assertTrue(MockSocket::isEmpty());
         $this->assertEquals(4096, $client->getFragmentSize());
 
-        MockSocket::initialize('send-receive', $this);
+        MockSocket::initialize('client.send-receive', $this);
         $client->send('Sending a message');
         $message = $client->receive();
         $this->assertTrue(MockSocket::isEmpty());
@@ -146,8 +146,8 @@ class ClientTest extends TestCase
 
         $payload = file_get_contents(__DIR__ . '/mock/payload.128.txt');
 
-        MockSocket::initialize('send-receive-128', $this);
-        $client->send($payload, 'text', false);
+        MockSocket::initialize('client.send-receive-128', $this);
+        $client->send($payload, 'text');
         $message = $client->receive();
         $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -163,8 +163,8 @@ class ClientTest extends TestCase
         $payload = file_get_contents(__DIR__ . '/mock/payload.65536.txt');
         $client->setFragmentSize(65540);
 
-        MockSocket::initialize('send-receive-65536', $this);
-        $client->send($payload, 'text', false);
+        MockSocket::initialize('client.send-receive-65536', $this);
+        $client->send($payload, 'text');
         $message = $client->receive();
         $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -178,7 +178,7 @@ class ClientTest extends TestCase
         $client->send('Connect');
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('send-receive-multi-fragment', $this);
+        MockSocket::initialize('client.send-receive-multi-fragment', $this);
         $client->setFragmentSize(8);
         $client->send('Multi fragment test');
         $message = $client->receive();
@@ -194,7 +194,7 @@ class ClientTest extends TestCase
         $client->send('Connect');
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('ping-pong', $this);
+        MockSocket::initialize('client.ping-pong', $this);
         $client->send('Server ping', 'ping');
         $client->send('', 'ping');
         $message = $client->receive();
@@ -210,7 +210,7 @@ class ClientTest extends TestCase
         $client->send('Connect');
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('client.close-remote', $this);
 
         $message = $client->receive();
         $this->assertNull($message);
@@ -406,7 +406,7 @@ class ClientTest extends TestCase
         MockSocket::initialize('client.connect', $this);
         $client = new Client('ws://localhost:8000/my/mock/path');
         $client->send('Connect');
-        MockSocket::initialize('send-broken-write', $this);
+        MockSocket::initialize('client.send-broken-write', $this);
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(1025);
         $this->expectExceptionMessage('Could only write 18 out of 22 bytes.');
@@ -487,7 +487,7 @@ class ClientTest extends TestCase
         $this->assertEquals('Multi fragment test', $message);
         $this->assertEquals('text', $client->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('client.close-remote', $this);
         $message = $client->receive();
         $this->assertEquals('Closing', $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -516,7 +516,7 @@ class ClientTest extends TestCase
         $this->assertEquals('Multi fragment test', $message->getContent());
         $this->assertEquals('text', $message->getOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('client.close-remote', $this);
         $message = $client->receive();
         $this->assertInstanceOf('WebSocket\Message\Message', $message);
         $this->assertInstanceOf('WebSocket\Message\Close', $message);
@@ -532,7 +532,7 @@ class ClientTest extends TestCase
         $this->assertNull($client->getRemoteName());
         $this->assertEquals('WebSocket\Client(closed)', "{$client}");
         $client->text('Connect');
-        MockSocket::initialize('send-convenicance', $this);
+        MockSocket::initialize('client.send-convenicance', $this);
         $client->binary(base64_encode('Binary content'));
         $client->ping();
         $client->pong();

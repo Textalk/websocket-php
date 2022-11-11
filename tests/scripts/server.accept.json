@@ -275,7 +275,7 @@
         "params": [
             "@mock-stream"
         ],
-        "return": 13
+        "return": 9
     },
     {
         "function": "get_resource_type",

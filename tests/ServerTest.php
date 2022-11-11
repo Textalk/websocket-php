@@ -48,7 +48,7 @@ class ServerTest extends TestCase
         $this->assertNull($server->getHeader('no such header'));
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('send-receive', $this);
+        MockSocket::initialize('server.send-receive', $this);
         $server->send('Sending a message');
         $message = $server->receive();
         $this->assertEquals('Receiving a message', $message);
@@ -101,8 +101,8 @@ class ServerTest extends TestCase
 
         $payload = file_get_contents(__DIR__ . '/mock/payload.128.txt');
 
-        MockSocket::initialize('send-receive-128', $this);
-        $server->send($payload, 'text', false);
+        MockSocket::initialize('server.send-receive-128', $this);
+        $server->send($payload, 'text');
         $message = $server->receive();
         $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -123,8 +123,8 @@ class ServerTest extends TestCase
         $payload = file_get_contents(__DIR__ . '/mock/payload.65536.txt');
         $server->setFragmentSize(65540);
 
-        MockSocket::initialize('send-receive-65536', $this);
-        $server->send($payload, 'text', false);
+        MockSocket::initialize('server.send-receive-65536', $this);
+        $server->send($payload, 'text');
         $message = $server->receive();
         $this->assertEquals($payload, $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -142,7 +142,7 @@ class ServerTest extends TestCase
         $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('send-receive-multi-fragment', $this);
+        MockSocket::initialize('server.send-receive-multi-fragment', $this);
         $server->setFragmentSize(8);
         $server->send('Multi fragment test');
         $message = $server->receive();
@@ -162,7 +162,7 @@ class ServerTest extends TestCase
         $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('ping-pong', $this);
+        MockSocket::initialize('server.ping-pong', $this);
         $server->send('Server ping', 'ping');
         $server->send('', 'ping');
         $message = $server->receive();
@@ -183,7 +183,7 @@ class ServerTest extends TestCase
         $this->assertTrue($server->isConnected());
         $this->assertTrue(MockSocket::isEmpty());
 
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('server.close-remote', $this);
 
         $message = $server->receive();
         $this->assertEquals('', $message);
@@ -327,10 +327,10 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->send('Connect');
-        MockSocket::initialize('send-broken-write', $this);
+        MockSocket::initialize('server.send-broken-write', $this);
         $this->expectException('WebSocket\ConnectionException');
         $this->expectExceptionCode(1025);
-        $this->expectExceptionMessage('Could only write 18 out of 22 bytes.');
+        $this->expectExceptionMessage('Could only write 14 out of 18 bytes.');
         $server->send('Failing to write');
     }
 
@@ -344,7 +344,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('send-failed-write', $this);
         $this->expectException('WebSocket\TimeoutException');
         $this->expectExceptionCode(1024);
-        $this->expectExceptionMessage('Failed to write 22 bytes.');
+        $this->expectExceptionMessage('Failed to write 18 bytes.');
         $server->send('Failing to write');
     }
 
@@ -391,7 +391,7 @@ class ServerTest extends TestCase
         $this->assertEquals('Multi fragment test', $message);
         $this->assertEquals('text', $server->getLastOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('server.close-remote', $this);
         $message = $server->receive();
         $this->assertEquals('Closing', $message);
         $this->assertTrue(MockSocket::isEmpty());
@@ -419,7 +419,7 @@ class ServerTest extends TestCase
         $this->assertEquals('Multi fragment test', $message->getContent());
         $this->assertEquals('text', $message->getOpcode());
         $this->assertTrue(MockSocket::isEmpty());
-        MockSocket::initialize('close-remote', $this);
+        MockSocket::initialize('server.close-remote', $this);
         $message = $server->receive();
         $this->assertInstanceOf('WebSocket\Message\Message', $message);
         $this->assertInstanceOf('WebSocket\Message\Close', $message);
@@ -437,7 +437,7 @@ class ServerTest extends TestCase
         MockSocket::initialize('server.accept', $this);
         $server->accept();
         $server->text('Connect');
-        MockSocket::initialize('send-convenicance', $this);
+        MockSocket::initialize('server.send-convenicance', $this);
         $server->binary(base64_encode('Binary content'));
         $server->ping();
         $server->pong();

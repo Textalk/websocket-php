@@ -78,7 +78,7 @@ class Connection implements LoggerAwareInterface
             $status_str .= chr(bindec($binstr));
         }
         $message = $this->msg_factory->create('close', $status_str . $message);
-        $this->pushMessage($message, true);
+        $this->pushMessage($message);
 
         $this->logger->debug("Closing with status: {$status}.");
 
@@ -95,8 +95,9 @@ class Connection implements LoggerAwareInterface
     /* ---------- Message methods ---------------------------------------------------- */
 
     // Push a message to stream
-    public function pushMessage(Message $message, bool $masked = true): void
+    public function pushMessage(Message $message, ?bool $masked = null): void
     {
+        $masked = is_null($masked) ? $this->options['masked'] : $masked;
         $frames = $message->getFrames($masked, $this->options['fragment_size']);
         foreach ($frames as $frame) {
             $this->pushFrame($frame);
@@ -283,7 +284,7 @@ class Connection implements LoggerAwareInterface
                 // If we received a ping, respond with a pong
                 $this->logger->debug("[connection] Received 'ping', sending 'pong'.");
                 $message = $this->msg_factory->create('pong', $payload);
-                $this->pushMessage($message, $masked);
+                $this->pushMessage($message);
                 return [$final, $payload, $opcode, $masked];
             case 'close':
                 // If we received close, possibly acknowledge and close connection
@@ -303,7 +304,7 @@ class Connection implements LoggerAwareInterface
                 if (!$this->is_closing) {
                     $ack =  "{$status_bin}Close acknowledged: {$status}";
                     $message = $this->msg_factory->create('close', $ack);
-                    $this->pushMessage($message, $masked);
+                    $this->pushMessage($message);
                 } else {
                     $this->is_closing = false; // A close response, all done.
                 }

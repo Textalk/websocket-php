@@ -284,6 +284,6 @@
         "params": [
             "@mock-stream"
         ],
-        "return": 13
+        "return": 9
     }
 ]

@@ -31,6 +31,7 @@ class Server implements LoggerAwareInterface
         'filter'        => ['text', 'binary'],
         'fragment_size' => 4096,
         'logger'        => null,
+        'masked'        => false,
         'port'          => 8000,
         'return_obj'    => false,
         'timeout'       => null,
@@ -208,10 +209,11 @@ class Server implements LoggerAwareInterface
      * Send message on all connections.
      * @param string $payload Message to send.
      * @param string $opcode Opcode to use, default: 'text'.
-     * @param bool $masked If message should be masked default: true.
+     * @param bool $masked If message should be masked default: false.
      */
-    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
+    public function send(string $payload, string $opcode = 'text', ?bool $masked = null): void
     {
+        $masked = is_null($masked) ? false : $masked;
         if (!$this->isConnected()) {
             $this->connect();
         }

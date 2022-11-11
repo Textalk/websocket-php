@@ -34,6 +34,7 @@ class Client implements LoggerAwareInterface
         'fragment_size' => 4096,
         'headers'       => null,
         'logger'        => null,
+        'masked'        => true,
         'origin'        => null, // @deprecated
         'persistent'    => false,
         'return_obj'    => false,
@@ -163,8 +164,9 @@ class Client implements LoggerAwareInterface
      * @param string $opcode Opcode to use, default: 'text'.
      * @param bool $masked If message should be masked default: true.
      */
-    public function send(string $payload, string $opcode = 'text', bool $masked = true): void
+    public function send(string $payload, string $opcode = 'text', ?bool $masked = null): void
     {
+        $masked = is_null($masked) ? true : $masked;
         if (!$this->isConnected()) {
             $this->connect();
         }

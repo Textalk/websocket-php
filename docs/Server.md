@@ -22,7 +22,7 @@ WebSocket\Server {
     public binary(string $payload) : void;
     public ping(string $payload = '') : void;
     public pong(string $payload = '') : void;
-    public send(Message|string $payload, string $opcode = 'text', bool $masked = true) : void;
+    public send(Message|string $payload, string $opcode = 'text') : void;
     public close(int $status = 1000, mixed $message = 'ttfn') : void;
     public receive() : Message|string|null;
 
@@ -103,9 +103,8 @@ $server->ping(); // Send an opcode=ping frame
 $server->pong(); // Send an unsolicited opcode=pong frame
 
 // Generic send method
-$server->send($payload); // Sent as masked opcode=text
-$server->send($payload, 'binary'); // Sent as masked opcode=binary
-$server->send($payload, 'binary', false); // Sent as unmasked opcode=binary
+$server->send($payload); // Sent as opcode=text
+$server->send($payload, 'binary'); // Sent as opcode=binary
 ```
 
 ## Constructor options

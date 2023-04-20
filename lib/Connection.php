@@ -162,6 +162,11 @@ class Connection implements LoggerAwareInterface
     // Pull frame from stream
     private function pullFrame(): array
     {
+        // non-blocking way to wait for stream to change
+        $x = [$this->stream];
+        $null = null;
+        stream_select($x, $null, $null, 60, 0);
+
         // Read the fragment "header" first, two bytes.
         $data = $this->read(2);
         list ($byte_1, $byte_2) = array_values(unpack('C*', $data));

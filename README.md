@@ -1,3 +1,8 @@
+# Celtra fork
+
+This repo was initially forked to enable non-blocking streams `stream_set_blocking($this->stream, false);`.
+This allows SIGTERM/SIGINT to interrupt the process faster.
+
 # Websocket Client and Server for PHP
 
 [![Build Status](https://github.com/Textalk/websocket-php/actions/workflows/acceptance.yml/badge.svg)](https://github.com/Textalk/websocket-php/actions)

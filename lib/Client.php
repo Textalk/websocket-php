@@ -347,7 +347,7 @@ class Client implements LoggerAwareInterface
             $socket = $handler->with(function () use ($host_uri, $flags, $context) {
                 $error = $errno = $errstr = null;
                 // Open the socket.
-                return stream_socket_client(
+                $stream = stream_socket_client(
                     $host_uri,
                     $errno,
                     $errstr,
@@ -355,6 +355,8 @@ class Client implements LoggerAwareInterface
                     $flags,
                     $context
                 );
+                stream_set_blocking($stream, false);
+                return $stream;
             });
             if (!$socket) {
                 throw new ErrorException('No socket');

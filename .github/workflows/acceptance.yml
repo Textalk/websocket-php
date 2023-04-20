@@ -3,36 +3,6 @@ name: Acceptance
 on: [push, pull_request]
 
 jobs:
-  test-7-4:
-    runs-on: ubuntu-latest
-    name: Test PHP 7.4
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set up PHP 7.4
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.4'
-    - name: Composer
-      run: make install
-    - name: Test
-      run: make test
-
-  test-8-0:
-    runs-on: ubuntu-latest
-    name: Test PHP 8.0
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set up PHP 8.0
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.0'
-    - name: Composer
-      run: make install
-    - name: Test
-      run: make test
-
   test-8-1:
     runs-on: ubuntu-latest
     name: Test PHP 8.1

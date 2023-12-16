@@ -3,6 +3,8 @@
 [![Build Status](https://github.com/Textalk/websocket-php/actions/workflows/acceptance.yml/badge.svg)](https://github.com/Textalk/websocket-php/actions)
 [![Coverage Status](https://coveralls.io/repos/github/Textalk/websocket-php/badge.svg?branch=master)](https://coveralls.io/github/Textalk/websocket-php)
 
+This library has been replaced by [`sirn-se/websocket-php`]([https://github.com/Textalk/websocket-php/tree/1.5.0](https://github.com/sirn-se/websocket-php))
+
 This library contains WebSocket client and server for PHP.
 
 The client and server provides methods for reading and writing to WebSocket streams.

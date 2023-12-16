@@ -3,7 +3,14 @@
 [![Build Status](https://github.com/Textalk/websocket-php/actions/workflows/acceptance.yml/badge.svg)](https://github.com/Textalk/websocket-php/actions)
 [![Coverage Status](https://coveralls.io/repos/github/Textalk/websocket-php/badge.svg?branch=master)](https://coveralls.io/github/Textalk/websocket-php)
 
+## Archived project
+
+This project has been archived and is no longer maintained. No bug fix and no additional features will be added.<br>
+You won't be able to submit new issues or pull requests, and no additional features will be added
+
 This library has been replaced by [sirn-se/websocket-php](https://github.com/sirn-se/websocket-php)
+
+## Websocket Client and Server for PHP
 
 This library contains WebSocket client and server for PHP.
 

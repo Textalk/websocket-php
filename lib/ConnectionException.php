@@ -20,7 +20,7 @@ class ConnectionException extends Exception
 
     private $data;
 
-    public function __construct(string $message, int $code = 0, array $data = [], Throwable $prev = null)
+    public function __construct(string $message, int $code = 0, array $data = [], ?Throwable $prev = null)
     {
         parent::__construct($message, $code, $prev);
         $this->data = $data;

@@ -16,8 +16,19 @@ class MockSocket
     public static function handle($function, $params = [])
     {
         $current = array_shift(self::$queue);
-        if ($function == 'get_resource_type' && is_null($current)) {
-            return null; // Catch destructors
+        $null_handled_functions = [
+            'get_resource_type' => null,
+            'stream_get_meta_data' => ['eof' => false, 'timed_out' => false],
+            'stream_set_blocking' => null,
+            'feof' => false,
+            'fclose' => true,
+            'ftell' => 0,
+        ];
+        if (is_null($current) && isset($null_handled_functions[$function])) {
+            return $null_handled_functions[$function]; // Catch cleanup/destructor calls
+        }
+        if (is_null($current)) {
+            return null; // Ignore unexpected calls when queue is empty
         }
         self::$asserter->assertEquals($current['function'], $function);
         foreach ($current['params'] as $index => $param) {

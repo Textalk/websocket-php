@@ -13,6 +13,14 @@
         ],
         "return": "127.0.0.1:12345"
     },
+  {
+    "function": "stream_set_blocking",
+    "params": [
+      "@mock-stream",
+      "@int"
+    ],
+    "return": "@mock-stream"
+  },
     {
         "function": "stream_get_line",
         "params": [

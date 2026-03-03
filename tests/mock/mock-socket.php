@@ -71,6 +71,11 @@ function stream_socket_client($remote_socket, &$errno, &$errstr, $timeout, $flag
     $args = [$remote_socket, $errno, $errstr, $timeout, $flags, $context];
     return MockSocket::handle('stream_socket_client', $args);
 }
+function stream_set_blocking($remote_socket, $blocking)
+{
+    $args = [$remote_socket, $blocking];
+    return MockSocket::handle('stream_set_blocking', $args);
+}
 function get_resource_type()
 {
     $args = func_get_args();

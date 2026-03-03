@@ -34,6 +34,7 @@ class Server implements LoggerAwareInterface
         'port'          => 8000,
         'return_obj'    => false,
         'timeout'       => null,
+        'blocking'      => true,
     ];
 
     protected $port;

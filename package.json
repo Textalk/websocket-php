@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "websocket": "^1.0.35",
+    "ws": "^8.19.0"
+  }
+}

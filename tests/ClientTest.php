@@ -427,8 +427,8 @@ class ClientTest extends TestCase
 
     public function testBrokenRead(): void
     {
-        MockSocket::initialize('client.connect', $this);
-        $client = new Client('ws://localhost:8000/my/mock/path');
+        MockSocket::initialize('client.connect-blocking', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['blocking' => true]);
         $client->send('Connect');
         MockSocket::initialize('receive-broken-read', $this);
         $this->expectException('WebSocket\ConnectionException');
@@ -461,8 +461,8 @@ class ClientTest extends TestCase
 
     public function testEmptyRead(): void
     {
-        MockSocket::initialize('client.connect', $this);
-        $client = new Client('ws://localhost:8000/my/mock/path');
+        MockSocket::initialize('client.connect-blocking', $this);
+        $client = new Client('ws://localhost:8000/my/mock/path', ['blocking' => true]);
         $client->send('Connect');
         MockSocket::initialize('receive-empty-read', $this);
         $this->expectException('WebSocket\TimeoutException');

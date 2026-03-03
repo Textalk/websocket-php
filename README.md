@@ -3,12 +3,9 @@
 [![Build Status](https://github.com/Textalk/websocket-php/actions/workflows/acceptance.yml/badge.svg)](https://github.com/Textalk/websocket-php/actions)
 [![Coverage Status](https://coveralls.io/repos/github/Textalk/websocket-php/badge.svg?branch=master)](https://coveralls.io/github/Textalk/websocket-php)
 
-## Archived project
+## Description
 
-This project has been archived and is no longer maintained. No bug fix and no additional features will be added.<br>
-You won't be able to submit new issues or pull requests, and no additional features will be added
-
-This library has been replaced by [sirn-se/websocket-php](https://github.com/sirn-se/websocket-php)
+This project was forked from archived project [Textalk/websocket-php](https://github.com/Textalk/websocket-php) and upgraded with non-blocking reads. Primary goal is to use only the client for non-blocking reads (server is largely left unchanged, but the state is not checked anymore). Non-blocking reads is enabled for client by default and returns empty message immediately. This feature is useful, if one has a threading mechanism already and just want to check for received messages.
 
 ## Websocket Client and Server for PHP
 

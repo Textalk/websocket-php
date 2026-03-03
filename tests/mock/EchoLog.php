@@ -6,11 +6,13 @@
 
 namespace WebSocket;
 
+use Stringable;
+
 class EchoLog implements \Psr\Log\LoggerInterface
 {
     use \Psr\Log\LoggerTrait;
 
-    public function log($level, $message, array $context = [])
+    public function log($level, Stringable|string $message, array $context = []): void
     {
         $message = $this->interpolate($message, $context);
         $context_string = empty($context) ? '' : json_encode($context);

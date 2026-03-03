@@ -28,6 +28,17 @@ class Connection implements LoggerAwareInterface
     private $read_buffer;
     private $msg_factory;
     private $options = [];
+    private $pings = 0;
+    private $pongs = 0;
+    private $nbstat = [
+        'state' => 0,
+        'data' => '',
+        'dlen' => 0,
+        'data0' => '',
+        'data1' => '',
+        'data2' => '',
+        'data3' => '',
+    ];
 
     protected $is_closing = false;
     protected $close_status = null;
@@ -42,6 +53,9 @@ class Connection implements LoggerAwareInterface
         $this->setOptions($options);
         $this->setLogger(new NullLogger());
         $this->msg_factory = new Factory();
+        if (false == $this->options['blocking']) {
+            stream_set_blocking($this->stream, $this->options['blocking']);
+        }
     }
 
     public function __destruct()
@@ -97,6 +111,9 @@ class Connection implements LoggerAwareInterface
     // Push a message to stream
     public function pushMessage(Message $message, bool $masked = true): void
     {
+        if ('ping' == $message->getOpcode()) { /* keep count */
+            $this->pings++;
+        }
         $frames = $message->getFrames($masked, $this->options['fragment_size']);
         foreach ($frames as $frame) {
             $this->pushFrame($frame);
@@ -118,6 +135,8 @@ class Connection implements LoggerAwareInterface
 
             if ($opcode == 'close') {
                 $this->close();
+            } else if ('pong' == $opcode) {
+                $this->pongs++;
             }
 
             // Continuation and factual opcode
@@ -156,15 +175,24 @@ class Connection implements LoggerAwareInterface
         return $message;
     }
 
-
     /* ---------- Frame I/O methods -------------------------------------------------- */
 
     // Pull frame from stream
     private function pullFrame(): array
     {
+        /* take care of non-blocking case */
+        $nbret = [true/*final*/, ''/*payload*/, 'text'/*opcode*/, false/*masked*/];
+
         // Read the fragment "header" first, two bytes.
-        $data = $this->read(2);
-        list ($byte_1, $byte_2) = array_values(unpack('C*', $data));
+        if (0 == $this->nbstat['state']) {
+            $this->nbstat['data0'] = $this->read(2);
+            if (strlen($this->nbstat['data0']) < 2) {
+                return $nbret;
+            }
+            // print ("header:" . bin2hex($this->nbstat['data0']) . "\n");
+            $this->nbstat['state'] = 1;
+        }
+        list ($byte_1, $byte_2) = array_values(unpack('C*', $this->nbstat['data0']));
         $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
         $rsv = $byte_1 & 0b01110000; // Unused bits, ignore
 
@@ -186,33 +214,62 @@ class Connection implements LoggerAwareInterface
         // Payload length
         $payload_length = $byte_2 & 0b01111111;
 
-        if ($payload_length > 125) {
-            if ($payload_length === 126) {
-                $data = $this->read(2); // 126: Payload is a 16-bit unsigned int
-                $payload_length = current(unpack('n', $data));
-            } else {
-                $data = $this->read(8); // 127: Payload is a 64-bit unsigned int
-                $payload_length = current(unpack('J', $data));
+        if (1 == $this->nbstat['state']) {
+            if ($payload_length > 125) {
+                if ($payload_length === 126) {
+                    $this->nbstat['data1'] = $this->read(2); // 126: Payload is a 16-bit unsigned int
+                    if (strlen($this->nbstat['data1']) < 2) {
+                        return $nbret;
+                    }
+                    $payload_length = current(unpack('n', $this->nbstat['data1']));
+                } else {
+                    $this->nbstat['data1'] = $this->read(8); // 127: Payload is a 64-bit unsigned int
+                    if (strlen($this->nbstat['data1']) < 8) {
+                        return $nbret;
+                    }
+                    $payload_length = current(unpack('J', $this->nbstat['data1']));
+                }
+            }
+            $this->nbstat['state'] = $masked ? 2 : 3;
+        } else { /* if entered again, I need to restore the $payload_length */
+            if ($payload_length > 125) {
+                if ($payload_length === 126) {
+                    $payload_length = current(unpack('n', $this->nbstat['data1']));
+                } else {
+                    $payload_length = current(unpack('J', $this->nbstat['data1']));
+                }
             }
         }
 
         // Get masking key.
-        if ($masked) {
-            $masking_key = $this->read(4);
+        if (2 == $this->nbstat['state']) {
+            $this->nbstat['data2'] = $this->read(4);
+            if (strlen($this->nbstat['data2']) < 2) {
+                return $nbret;
+            }
+            $this->nbstat['state'] = 3;
         }
+        $masking_key = $this->nbstat['data2'];
 
         // Get the actual payload, if any (might not be for e.g. close frames.
-        if ($payload_length > 0) {
-            $data = $this->read($payload_length);
-
-            if ($masked) {
-                // Unmask payload.
-                for ($i = 0; $i < $payload_length; $i++) {
-                    $payload .= ($data[$i] ^ $masking_key[$i % 4]);
+        if (3 == $this->nbstat['state']) {
+            if ($payload_length > 0) {
+                $this->nbstat['data3'] .= $this->read($payload_length - strlen($this->nbstat['data3']));
+                if (strlen($this->nbstat['data3']) < $payload_length) {
+                    return $nbret;
                 }
-            } else {
-                $payload = $data;
+
+                if ($masked) {
+                    // Unmask payload.
+                    for ($i = 0; $i < $payload_length; $i++) {
+                        $payload .= ($this->nbstat['data3'][$i] ^ $masking_key[$i % 4]);
+                    }
+                } else {
+                    $payload = $this->nbstat['data3'];
+                }
             }
+            $this->nbstat['state'] = 0;
+            $this->nbstat['data3'] = '';
         }
 
         $this->logger->debug("[connection] Pulled '{opcode}' frame", [
@@ -262,6 +319,8 @@ class Connection implements LoggerAwareInterface
         } else {
             $data .= $payload;
         }
+
+        // print("pushFrame:" . $frame[2] . " final:" . ($frame[0] ? "true" : "false") . " len:" . strlen($frame[1]) . " datalen:" . strlen($data) . " data:" . bin2hex($data) . "\n");
 
         $this->write($data);
 
@@ -437,13 +496,57 @@ class Connection implements LoggerAwareInterface
      */
     public function gets(int $length): string
     {
+        stream_set_blocking($this->stream, true);
+
         $line = fgets($this->stream, $length);
         if ($line === false) {
             $this->throwException('Could not read from stream');
         }
         $read = strlen($line);
         $this->logger->debug("Read {$read} bytes of line.");
+
+        stream_set_blocking($this->stream, $this->options['blocking']);
+
         return $line;
+    }
+
+    /**
+     * Non-blocking Read characters from stream.
+     * @param int $length Maximum number of bytes to read
+     * @return string when full data was read else will return an empty string
+     */
+    private function nbread(int $len = 1): string
+    {
+        $data = '';
+        if ($this->nbstat['dlen'] < $len) {
+            $rdat = fread($this->stream, $len - $this->nbstat['dlen']);
+            if ($rdat) {
+                $this->nbstat['data'] .= $rdat;
+                $this->nbstat['dlen'] += strlen($rdat);
+            } else {
+                $meta = stream_get_meta_data($this->stream);
+                if (!empty($meta['timed_out'])) {
+                    $message = 'Client read timeout';
+                    $this->logger->error($message, $meta);
+                    throw new TimeoutException($message, ConnectionException::TIMED_OUT, $meta);
+                }
+            }
+        }
+        if ($this->nbstat['dlen'] < $len)
+            return $data;
+        /* success, obtained required data */
+        $data = $this->nbstat['data'];
+        $this->nbstat['data'] = '';
+        $this->nbstat['dlen'] = 0;
+        return $data;
+    }
+
+    /**
+     * Returns true when equal pongs received for pings
+     */
+    public function pongs4pings(): bool
+    {
+        return ($this->pings > 0) && ($this->pings == $this->pongs);
     }
 
     /**
@@ -451,8 +554,13 @@ class Connection implements LoggerAwareInterface
      * @param int $length Maximum number of bytes to read
      * @return string Read data
      */
-    public function read(string $length): string
+    public function read(int $length): string
     {
+        /* non-blocking */
+        if (false == $this->options['blocking']) {
+            return $this->nbread($length);
+        }
+        /* blocking */
         $data = '';
         while (strlen($data) < $length) {
             $buffer = fread($this->stream, $length - strlen($data));
@@ -475,6 +583,7 @@ class Connection implements LoggerAwareInterface
             $read = strlen($data);
             $this->logger->debug("Read {$read} of {$length} bytes.");
         }
+
         return $data;
     }
 
@@ -485,7 +594,19 @@ class Connection implements LoggerAwareInterface
     public function write(string $data): void
     {
         $length = strlen($data);
-        $written = fwrite($this->stream, $data);
+        $loopcnt = 0;
+        do {
+            $length = strlen($data);
+            $written = fwrite($this->stream, $data);
+            if ((false == $this->options['blocking']) && ($written < $length)) {
+                /* when non-blocking, less data may be written, try few more times */
+                usleep(1000);
+                $data = substr($data, -($length-$written));
+                $loopcnt++;
+                // if ($loopcnt > 20) break;
+                continue;
+            }
+        } while ($written < $length);
         if ($written === false) {
             $this->throwException("Failed to write {$length} bytes.");
         }
